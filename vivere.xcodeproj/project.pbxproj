@@ -253,9 +253,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = QD8ZHL46RD;
+				DEVELOPMENT_TEAM = 6SLG9DB9N5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSBonjourServices = "_vivere-pair._tcp";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app uses local network to discover and connect with nearby devices";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "For live transcription";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "For live transcription";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -287,9 +289,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = QD8ZHL46RD;
+				DEVELOPMENT_TEAM = 6SLG9DB9N5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSBonjourServices = "_vivere-pair._tcp";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app uses local network to discover and connect with nearby devices";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "For live transcription";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "For live transcription";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var transcriber = SpeechTranscriber(localeIdentifier: "id-ID")
-    
+    @State private var transcriber = SpeechTranscriber(localeIdentifier: "id-ID")
+
     var body: some View {
         NavigationView {
             VStack(spacing: 16) {
@@ -30,7 +30,7 @@ struct ContentView: View {
                     }
                     .frame(minHeight: 180)
                 }
-                
+
                 GroupBox("Suggestions") {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 8) {
