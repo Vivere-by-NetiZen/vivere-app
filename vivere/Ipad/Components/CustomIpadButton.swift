@@ -33,11 +33,11 @@ struct CustomIpadButton: View {
                             .frame(minWidth:minWidth, minHeight: minHeight)
                             .foregroundColor(color)
                             .cornerRadius(20)
-                            .shadow(color: color, radius: 5, x: 5, y:5)
-                            .shadow(color: Color.black.opacity(0.2), radius:5, x: 5, y:5)
+                            .shadow(color: color.tint(0.2), radius: 0, x: 3, y:3)
                         RoundedRectangle(cornerRadius: 20)
-                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [20]))
+                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [15]))
                             .padding(10)
+                            .foregroundStyle(color == .deny || color == .darkBlue ? .white : .black)
                     }
                 )
 //                .padding()
@@ -83,7 +83,7 @@ struct CustomIpadButton: View {
 }
 
 #Preview {
-    CustomIpadButton(label: "label", icon: Image(systemName: "plus"), color:.accent, style: .icon) {
+    CustomIpadButton(label: "label", icon: Image(systemName: "plus"), color:.accent, style: .large) {
         print("clicked")
     }
 }
