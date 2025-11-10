@@ -10,9 +10,22 @@
 		34881A352EAB7021006CDD30 /* vivere.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = vivere.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		B1B95E802EB374ED00B8D339 /* Exceptions for "vivere" folder in "vivere" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 34881A342EAB7021006CDD30 /* vivere */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		34881A372EAB7021006CDD30 /* vivere */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				B1B95E802EB374ED00B8D339 /* Exceptions for "vivere" folder in "vivere" target */,
+			);
 			path = vivere;
 			sourceTree = "<group>";
 		};
@@ -253,9 +266,12 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = QD8ZHL46RD;
+				DEVELOPMENT_TEAM = AZ7BZG942H;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = vivere/Info.plist;
+				INFOPLIST_KEY_NSBonjourServices = "_vivere-pair._tcp";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app uses local network to discover and connect with nearby devices";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "For live transcription";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "For live transcription";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -263,12 +279,13 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.hikaru.vivere;
+				PRODUCT_BUNDLE_IDENTIFIER = com.netizen.vivere;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -287,9 +304,12 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = QD8ZHL46RD;
+				DEVELOPMENT_TEAM = AZ7BZG942H;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = vivere/Info.plist;
+				INFOPLIST_KEY_NSBonjourServices = "_vivere-pair._tcp";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app uses local network to discover and connect with nearby devices";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "For live transcription";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "For live transcription";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -297,12 +317,13 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.hikaru.vivere;
+				PRODUCT_BUNDLE_IDENTIFIER = com.netizen.vivere;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;

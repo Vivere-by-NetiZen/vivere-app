@@ -11,33 +11,33 @@ import UniformTypeIdentifiers
 import AVFoundation
 import AVFAudio
 import Speech
-import Combine
 
 @MainActor
-final class SpeechTranscriber: ObservableObject {
-    @Published var transcript: String = ""
-    @Published var isTranscribing: Bool = false
-    @Published var errorMessage: String?
-    @Published var suggestions: [String] = []
-    @Published var suggestionPoint: Int?
-    @Published var isFetchingSuggestion: Bool = false
-    
+@Observable
+final class SpeechTranscriber {
+    var transcript: String = ""
+    var isTranscribing: Bool = false
+    var errorMessage: String?
+    var suggestions: [String] = []
+    var suggestionPoint: Int?
+    var isFetchingSuggestion: Bool = false
+
     private let recognizer: SFSpeechRecognizer
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
-    
+
     // Audio engine for live mic capture
     private let audioEngine = AVAudioEngine()
     private var fedFrames: Int64 = 0
     private var lastProcessedSegmentCount: Int = 0
-    
+
     init(localeIdentifier: String = "id-ID") {
         guard let rec = SFSpeechRecognizer(locale: Locale(identifier: localeIdentifier)) else {
             fatalError("Unsupported locale for SFSpeechRecognizer.")
         }
         self.recognizer = rec
     }
-    
+
     private struct SuggestionResponse: Decodable {
         let suggestions: [String]
         init(from decoder: Decoder) throws {
@@ -46,7 +46,7 @@ final class SpeechTranscriber: ObservableObject {
         }
         private enum CodingKeys: String, CodingKey { case suggestions }
     }
-    
+
     func fetchSuggestions(from urlString: String = "https://server-macro.bunny-kitchen.ts.net/suggestions") {
         suggestions.removeAll()
         suggestionPoint = nil
@@ -92,7 +92,7 @@ final class SpeechTranscriber: ObservableObject {
             self.isFetchingSuggestion = false
         }
     }
-    
+
     func requestAuthorization() async {
         // Request Speech and Microphone permissions
         await withCheckedContinuation { continuation in
@@ -113,7 +113,7 @@ final class SpeechTranscriber: ObservableObject {
             }
         }
     }
-    
+
     private func startNewRecognitionTask() {
         // Create a fresh request and task so recognition can loop continuously
         let request = SFSpeechAudioBufferRecognitionRequest()
@@ -153,7 +153,7 @@ final class SpeechTranscriber: ObservableObject {
             }
         }
     }
-    
+
     func startLiveTranscription() {
         stopTranscription(resetTranscript: true)
         transcript = ""
@@ -192,12 +192,12 @@ final class SpeechTranscriber: ObservableObject {
             stopTranscription(resetTranscript: false)
         }
     }
-    
+
     func stopTranscription(resetTranscript: Bool = false) {
         if resetTranscript { transcript = "" }
         finishStream()
     }
-    
+
     private func finishStream() {
         // End the audio to the recognizer
         recognitionRequest?.endAudio()
