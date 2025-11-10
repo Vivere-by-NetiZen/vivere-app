@@ -4,7 +4,7 @@ struct ContentView: View {
     @State private var transcriber = SpeechTranscriber(localeIdentifier: "id-ID")
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 16) {
                 HStack {
                     Button(transcriber.isTranscribing ? "Stop" : "Start Live Transcription") {

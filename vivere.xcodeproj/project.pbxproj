@@ -6,8 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		B177924A2EB88B670023FC01 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = B17792492EB88B670023FC01 /* AppIcon.icon */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
-		34881A352EAB7021006CDD30 /* vivere.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = vivere.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		34881A352EAB7021006CDD30 /* vivere.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = vivere.app; path = "/Users/imo/Documents/GitHub/vivere-app/build/Debug-iphoneos/vivere.app"; sourceTree = "<absolute>"; };
+		B17792492EB88B670023FC01 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -46,16 +51,8 @@
 			isa = PBXGroup;
 			children = (
 				34881A372EAB7021006CDD30 /* vivere */,
-				34881A362EAB7021006CDD30 /* Products */,
+				B17792492EB88B670023FC01 /* AppIcon.icon */,
 			);
-			sourceTree = "<group>";
-		};
-		34881A362EAB7021006CDD30 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				34881A352EAB7021006CDD30 /* vivere.app */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -108,7 +105,7 @@
 			mainGroup = 34881A2C2EAB7021006CDD30;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 34881A362EAB7021006CDD30 /* Products */;
+			productRefGroup = 34881A2C2EAB7021006CDD30;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -122,6 +119,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B177924A2EB88B670023FC01 /* AppIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -264,6 +262,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 6SLG9DB9N5;
@@ -301,6 +300,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 6SLG9DB9N5;
