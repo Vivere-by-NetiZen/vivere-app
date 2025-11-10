@@ -73,3 +73,5 @@ playground.xcworkspace
 .env
 Secrets.plist
 GoogleService-Info.plist
+/.cursor
+.cursorrules
