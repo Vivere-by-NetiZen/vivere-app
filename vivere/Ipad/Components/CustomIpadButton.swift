@@ -14,7 +14,7 @@ enum CustomIpadButtonStyle {
 }
 
 struct CustomIpadButton: View {
-    let label:String
+    let label:LocalizedStringKey
     var icon:Image? = nil
     let color:Color
     let style:CustomIpadButtonStyle
@@ -22,7 +22,7 @@ struct CustomIpadButton: View {
     
     var body: some View {
         Button(action: action) {
-            finalLabelText
+            Text(label)
                 .font(style == .large ? .largeTitle : .title)
                 .fontWeight(.semibold)
                 .foregroundColor(Color(.black))
@@ -44,19 +44,6 @@ struct CustomIpadButton: View {
 //                .cornerRadius(20)
         }
         .buttonStyle(.plain)
-    }
-    
-    private var finalLabelText: Text {
-        switch style {
-        case .icon:
-            if let icon = icon {
-                return Text("\(icon) \(label)")
-            } else {
-                return Text(label)
-            }
-        default:
-            return Text(label)
-        }
     }
     
     private var minWidth: CGFloat {
