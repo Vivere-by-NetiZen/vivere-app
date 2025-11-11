@@ -119,6 +119,20 @@ struct iPadHomeView: View {
                     .offset(x: -54, y: -70)
                 }
             }
+
+            // Home image at bottom left corner
+            VStack {
+                Spacer()
+                HStack {
+                    Image("home")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 640, height: 400)
+                        .padding(.leading, -50)
+                        .padding(.bottom, -120)
+                    Spacer()
+                }
+            }
         }
     }
 }
@@ -144,16 +158,7 @@ struct PolaroidPhotoView: View {
                         .scaledToFill()
                         .frame(width: 360, height: 352)
                         .clipped()
-
-                    // Text below photo
-                    Text("Kami di RSUI bersama TSC")
-                        .font(.system(size: 17))
-                        .foregroundColor(.black)
-                        .multilineTextAlignment(.center)
-                        .padding(.bottom, 30)
                 }
-                .padding(.top, 20)
-                .padding(.horizontal, 20)
             }
         }
         .rotationEffect(.degrees(-3.4))

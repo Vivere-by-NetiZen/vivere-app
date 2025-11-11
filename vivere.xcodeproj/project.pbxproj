@@ -14,7 +14,6 @@
 		3475DA8B2EC2DA8300AB6874 /* Exceptions for "vivere" folder in "vivere" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Info.plist,
 			);
 			target = 34881A342EAB7021006CDD30 /* vivere */;
 		};
@@ -269,9 +268,8 @@
 				DEVELOPMENT_TEAM = 6SLG9DB9N5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = vivere/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "";
-				INFOPLIST_KEY_NSBonjourServices = "_vivere-pair._tcp";
+				INFOPLIST_KEY_NSBonjourServices = "_vivere-sync._udp _vivere-sync._tcp";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app uses local network to discover and connect with nearby devices";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "For live transcription";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "For live transcription";
@@ -308,9 +306,8 @@
 				DEVELOPMENT_TEAM = 6SLG9DB9N5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = vivere/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "";
-				INFOPLIST_KEY_NSBonjourServices = "_vivere-pair._tcp";
+				INFOPLIST_KEY_NSBonjourServices = "_vivere-sync._udp _vivere-sync._tcp";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app uses local network to discover and connect with nearby devices";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "For live transcription";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "For live transcription";
