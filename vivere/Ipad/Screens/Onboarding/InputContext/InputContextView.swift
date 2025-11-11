@@ -126,7 +126,7 @@ struct InputContextView: View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $isDoneInputing) {
-            // Main View
+            FinishOnboardingView()
         }
         .onAppear() {
             Task {
