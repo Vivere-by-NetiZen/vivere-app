@@ -10,22 +10,9 @@
 		34881A352EAB7021006CDD30 /* vivere.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = vivere.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		9BEF70852EC1D1AF00BA649C /* Exceptions for "vivere" folder in "vivere" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 34881A342EAB7021006CDD30 /* vivere */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		34881A372EAB7021006CDD30 /* vivere */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				9BEF70852EC1D1AF00BA649C /* Exceptions for "vivere" folder in "vivere" target */,
-			);
 			path = vivere;
 			sourceTree = "<group>";
 		};
@@ -266,11 +253,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = AZ7BZG942H;
+				DEVELOPMENT_TEAM = QD8ZHL46RD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+<<<<<<< HEAD
 				INFOPLIST_FILE = vivere/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "";
+=======
+>>>>>>> origin/development
 				INFOPLIST_KEY_NSBonjourServices = "_vivere-pair._tcp";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app uses local network to discover and connect with nearby devices";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "For live transcription";
@@ -305,11 +295,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = AZ7BZG942H;
+				DEVELOPMENT_TEAM = QD8ZHL46RD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+<<<<<<< HEAD
 				INFOPLIST_FILE = vivere/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "";
+=======
+>>>>>>> origin/development
 				INFOPLIST_KEY_NSBonjourServices = "_vivere-pair._tcp";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app uses local network to discover and connect with nearby devices";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "For live transcription";
