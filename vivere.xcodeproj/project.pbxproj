@@ -11,9 +11,10 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		3475DA8B2EC2DA8300AB6874 /* Exceptions for "vivere" folder in "vivere" target */ = {
+		B19F38B82EC342F500B9AB1E /* Exceptions for "vivere" folder in "vivere" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Info.plist,
 			);
 			target = 34881A342EAB7021006CDD30 /* vivere */;
 		};
@@ -23,7 +24,7 @@
 		34881A372EAB7021006CDD30 /* vivere */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				3475DA8B2EC2DA8300AB6874 /* Exceptions for "vivere" folder in "vivere" target */,
+				B19F38B82EC342F500B9AB1E /* Exceptions for "vivere" folder in "vivere" target */,
 			);
 			path = vivere;
 			sourceTree = "<group>";
@@ -268,6 +269,7 @@
 				DEVELOPMENT_TEAM = 6SLG9DB9N5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = vivere/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				INFOPLIST_KEY_NSBonjourServices = "_vivere-sync._udp _vivere-sync._tcp";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app uses local network to discover and connect with nearby devices";
@@ -306,6 +308,7 @@
 				DEVELOPMENT_TEAM = 6SLG9DB9N5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = vivere/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				INFOPLIST_KEY_NSBonjourServices = "_vivere-sync._udp _vivere-sync._tcp";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app uses local network to discover and connect with nearby devices";
