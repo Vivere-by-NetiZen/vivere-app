@@ -9,16 +9,16 @@ import SwiftUI
 
 struct FinishOnboardingView: View {
     @State private var isNextPressed: Bool = false
-    
+
     var body: some View {
         ZStack {
             Color.viverePrimary.ignoresSafeArea(edges: .all)
-            
+
             VStack {
                 //                Image("")
                 //                    .frame(width: 300, height: 300)
                 //                    .clipShape(Circle())
-                
+
                 //placeholder
                 ZStack {
                     Color.vivereSecondary.frame(width: 300, height: 300)
@@ -28,12 +28,12 @@ struct FinishOnboardingView: View {
                         .fontWeight(.semibold)
                         .foregroundColor(Color.red)
                 }
-                
+
                 Text("Semua sudah siap ⭐️")
                     .font(Font.largeTitle.bold())
                     .foregroundColor(.white)
                     .padding(.top, 30)
-                
+
                 Text("Pengaturan telah selesai, sekarang Anda bisa memulai percakapan hangat dengan Eyang.")
                     .font(Font.title)
                     .foregroundColor(Color.white)
@@ -41,7 +41,7 @@ struct FinishOnboardingView: View {
                     .multilineTextAlignment(.center)
                     .padding(.top, 10)
                     .padding(.bottom, 30)
-                
+
                 CustomIpadButton(label: "Mulai", color: .accent, style: .large){
                     isNextPressed = true
                 }
@@ -49,7 +49,7 @@ struct FinishOnboardingView: View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $isNextPressed) {
-            //Main View
+            iPadHomeView()
         }
     }
 }
