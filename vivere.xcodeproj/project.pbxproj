@@ -256,6 +256,11 @@
 				DEVELOPMENT_TEAM = QD8ZHL46RD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+<<<<<<< HEAD
+				INFOPLIST_FILE = vivere/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "";
+=======
+>>>>>>> origin/development
 				INFOPLIST_KEY_NSBonjourServices = "_vivere-pair._tcp";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app uses local network to discover and connect with nearby devices";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "For live transcription";
@@ -293,6 +298,11 @@
 				DEVELOPMENT_TEAM = QD8ZHL46RD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+<<<<<<< HEAD
+				INFOPLIST_FILE = vivere/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "";
+=======
+>>>>>>> origin/development
 				INFOPLIST_KEY_NSBonjourServices = "_vivere-pair._tcp";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app uses local network to discover and connect with nearby devices";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "For live transcription";

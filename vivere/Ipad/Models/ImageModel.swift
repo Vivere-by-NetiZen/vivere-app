@@ -6,10 +6,18 @@
 //
 
 import Foundation
+import SwiftData
 
 
-struct ImageModel : Codable {
-    var id = UUID()
-    let url: String
+@Model
+class ImageModel : Identifiable {
+    var id: UUID
+    var assetId: String
     var context: String?
+    
+    init(id: UUID = UUID(), assetId: String, context: String? = nil) {
+        self.id = id
+        self.assetId = assetId
+        self.context = context
+    }
 }
