@@ -10,7 +10,6 @@ import PhotosUI
 
 struct MediaCollectionView: View {
     @State var pickerItems = [PhotosPickerItem]()
-//    @State var selectedItems = [Image]()
     @State private var localIdentifier = [String]()
     @State private var isSelected: Bool = false
     
@@ -68,16 +67,9 @@ struct MediaCollectionView: View {
                 .buttonStyle(.plain)
                 .onChange(of: pickerItems) {
                     Task {
-//                        selectedItems.removeAll()
                         localIdentifier.removeAll()
-                        
                         for item in pickerItems {
                             if let _ = try await item.loadTransferable(type: Data.self) {
-//                                if let uiImg = UIImage(data: loadedData){
-//                                    selectedItems.append(Image(uiImage: uiImg))
-//                                } else {
-//                                    print("img not loaded")
-//                                }
                                 
                                 if let itemId = item.itemIdentifier {
                                     localIdentifier.append(itemId)
@@ -85,19 +77,19 @@ struct MediaCollectionView: View {
                                 
                             }
                         }
+                        isSelected = true
                     }
-                    isSelected = true
                 }
             }
             
         }
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $isSelected) {
-            InputContextView(imgId: localIdentifier)
+            InputContextView(imagesIds: localIdentifier)
         }
     }
 }
 
-#Preview {
+//#Preview {
     //    MediaCollectionView()
-}
+//}

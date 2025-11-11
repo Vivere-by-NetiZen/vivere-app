@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 @main
 struct VivereApp: App {
@@ -7,5 +8,6 @@ struct VivereApp: App {
             ContentView()
                 .preferredColorScheme(.light)
         }
+        .modelContainer(for: [ImageModel.self])
     }
 }
