@@ -8,8 +8,21 @@
 import SwiftUI
 
 struct IphoneView: View {
+    @State private var router = Router()
+    
     var body: some View {
-        SpeechTranscriberView()
+        NavigationStack(path: $router.path) {
+            HomeView()
+                .navigationDestination(for: Route.self) { route in
+                    switch route {
+                    case .home:
+                        HomeView()
+                    case .transcribe:
+                        SpeechTranscriberView()
+                    }
+                }
+        }
+        .environment(router)
     }
 }
 
