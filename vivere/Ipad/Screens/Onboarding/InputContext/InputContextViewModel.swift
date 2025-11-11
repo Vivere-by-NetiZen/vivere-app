@@ -8,7 +8,6 @@
 import Foundation
 import SwiftUI
 import Combine
-import SwiftData
 import PhotosUI
 
 class InputContextViewModel: ObservableObject {
@@ -20,8 +19,6 @@ class InputContextViewModel: ObservableObject {
     var selectedImages: [Image] = []
     var imageIdentifiers: [String] = []
     var imageContexts: [String] = []
-    
-    @Environment(\.modelContext) private var modelContext
     
     func loadImages(imagesIds: [String]) async {
         idx = 0
@@ -69,10 +66,5 @@ class InputContextViewModel: ObservableObject {
     
     func save(currContext: String) {
         imageContexts[idx] = currContext
-        for i in 0..<totalImgCount {
-            let imgData = ImageModel(assetId: imageIdentifiers[i], context: imageContexts[i])
-            modelContext.insert(imgData)
-            try? modelContext.save()
-        }
     }
 }
