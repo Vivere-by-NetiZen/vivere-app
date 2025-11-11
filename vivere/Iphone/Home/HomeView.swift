@@ -7,8 +7,15 @@
 
 import Foundation
 import SwiftUI
+import MultipeerConnectivity
 
 struct HomeView: View {
+    @AppStorage("hasSeenBeforeStart") private var hasSeenBeforeStart = false
+    @State private var showBeforeStart = false
+    @State private var sheetHeight: CGFloat = .zero
+    @Environment(Router.self) private var router
+    @Bindable var mpc: MPCManager
+    
     var body: some View {
         VStack (alignment: .center) {
             Image("Logo")
@@ -23,13 +30,64 @@ struct HomeView: View {
                 .font(.callout)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(Color.white)
+            if mpc.connectedPeers.isEmpty {
+                Text("Belum ada orang tersambung. Tap to connect.")
+            } else {
+                Text("Connected to:")
+                    .font(.headline)
+                ForEach(mpc.connectedPeers, id: \.self) { peer in
+                    Text(peer.displayName)
+                }
+            }
+            Button("Open Transcription") {
+                router.goToTranscribe()
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .ignoresSafeArea()
         .background(Color.viverePrimary)
+        .onAppear {
+            if !hasSeenBeforeStart {
+                showBeforeStart = true
+            }
+        }
+        .sheet(isPresented: $showBeforeStart) {
+            OnBoardingSheetView(onStart: {
+                hasSeenBeforeStart = true
+                showBeforeStart = false
+            })
+            .padding()
+            .fixedSize(horizontal: false, vertical: true)
+            .modifier(GetHeightModifier(height: $sheetHeight))
+            .background(.white)
+            .presentationDetents([.height(sheetHeight)])
+        }
+        .alert(item: $mpc.pendingInvitation) { invitation in
+            Alert(
+                title: Text("Pair Request"),
+                message: Text("\(invitation.peer.displayName) wants to connect"),
+                primaryButton: .default(Text("Connect")) {
+                    mpc.respondToInvitation(accept: true)
+                },
+                secondaryButton: .cancel(Text("Decline")) {
+                    mpc.respondToInvitation(accept: false)
+                }
+            )
+        }
     }
 }
 
-#Preview {
-    HomeView()
+struct GetHeightModifier: ViewModifier {
+    @Binding var height: CGFloat
+
+    func body(content: Content) -> some View {
+        content.background(
+            GeometryReader { geo -> Color in
+                DispatchQueue.main.async {
+                    height = geo.size.height
+                }
+                return Color.white
+            }
+        )
+    }
 }

@@ -11,7 +11,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		9BEF73112EC324D700BA649C /* Exceptions for "vivere" folder in "vivere" target */ = {
+		3475DA8B2EC2DA8300AB6874 /* Exceptions for "vivere" folder in "vivere" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -24,7 +24,7 @@
 		34881A372EAB7021006CDD30 /* vivere */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				9BEF73112EC324D700BA649C /* Exceptions for "vivere" folder in "vivere" target */,
+				3475DA8B2EC2DA8300AB6874 /* Exceptions for "vivere" folder in "vivere" target */,
 			);
 			path = vivere;
 			sourceTree = "<group>";
