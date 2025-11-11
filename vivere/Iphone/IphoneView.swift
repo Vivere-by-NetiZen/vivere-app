@@ -9,14 +9,15 @@ import SwiftUI
 
 struct IphoneView: View {
     @State private var router = Router()
+    @Bindable var mpc: MPCManager
     
     var body: some View {
         NavigationStack(path: $router.path) {
-            HomeView()
+            HomeView(mpc: mpc)
                 .navigationDestination(for: Route.self) { route in
                     switch route {
                     case .home:
-                        HomeView()
+                        HomeView(mpc: mpc)
                     case .transcribe:
                         SpeechTranscriberView()
                     }
@@ -26,6 +27,6 @@ struct IphoneView: View {
     }
 }
 
-#Preview {
-    IphoneView()
-}
+//#Preview {
+//    IphoneView()
+//}

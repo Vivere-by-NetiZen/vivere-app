@@ -2,17 +2,15 @@ import SwiftUI
 import Charts
 
 struct SpeechTranscriberView: View {
-    @State private var recording = false
-    
-    private var state = SpeechTranscriberViewModel()
+    @State private var hasRecorded: Bool = false
+    private var viewModel = SpeechTranscriberViewModel()
     
     private var composedTranscript: String {
-        let finals = state.finalTranscripts.joined(separator: " ")
-        if state.partialTranscript.isEmpty {
+        let finals = viewModel.finalTranscripts.joined(separator: " ")
+        if viewModel.partialTranscript.isEmpty {
             return finals.isEmpty ? "-" : finals
         } else {
-            // Append partial after finals with a separating space if needed
-            return finals.isEmpty ? state.partialTranscript : "\(finals) \(state.partialTranscript)"
+            return finals.isEmpty ? viewModel.partialTranscript : "\(finals) \(viewModel.partialTranscript)"
         }
     }
     
@@ -33,113 +31,52 @@ struct SpeechTranscriberView: View {
                 .ignoresSafeArea()
                 
                 VStack(spacing: 16) {
-                    ScrollView {
-                        Text(composedTranscript)
-                            .font(.system(size: 24, weight: .semibold, design: .default))
-                            .foregroundColor(.black)
-                            .italic(state.partialTranscript.isEmpty ? false : true)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, 8)
-                    }
-                    .frame(minHeight: 180)
-                    .padding(4)
-                    
-                    GroupBox("Suggestions") {
-                        ScrollView {
+                    if !hasRecorded {
+                        InitialQuestionCard(question: viewModel.isFetchingInitialQuestions ? "Loading..." : viewModel.initialQuestion)
+                    } else {
+                        if !viewModel.suggestions.isEmpty {
                             VStack(alignment: .leading, spacing: 8) {
-                                if let p = state.suggestionPoint {
-                                    Text("Point: \(p)")
-                                        .font(.headline)
-                                }
-                                if state.suggestions.isEmpty {
-                                    Text("—")
-                                        .foregroundStyle(.secondary)
-                                } else {
-                                    ForEach(Array(state.suggestions.enumerated()), id: \.offset) { idx, item in
-                                        HStack(alignment: .top, spacing: 8) {
-                                            Text("\(idx+1).")
-                                                .fontWeight(.semibold)
-                                            Text(item)
-                                                .fixedSize(horizontal: false, vertical: true)
-                                                .frame(maxWidth: .infinity, alignment: .leading)
-                                        }
-                                    }
+                                ForEach(Array(viewModel.suggestions.enumerated()), id: \.offset) { idx, item in
+                                    Text(item)
+                                        .font(.body.weight(.medium))
+                                        .multilineTextAlignment(.center)
+                                        .foregroundColor(.black)
+                                        .padding(.vertical, 16)
+                                        .padding(.horizontal, 20)
+                                        .frame(maxWidth: .infinity)
+                                        .background(Color.white)
+                                        .cornerRadius(16)
+                                        .shadow(color: .black.opacity(0.05), radius: 1, y: 1)
                                 }
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, 4)
+                            .frame(minHeight: 180, maxHeight: 320)
+                        } else {
+                            Spacer()
                         }
-                        .frame(minHeight: 180, maxHeight: 320)
+                        
+                        MicVisualizerView()
                     }
                     
-                    MicVisualizerView()
-                    
-                    if state.isStreaming {
-                        HStack{
-                            Button(action: {
-                                if state.isPaused {
-                                    state.resumeStream()
-                                } else {
-                                    state.pauseStream()
-                                }
-                            }) {
-                                if !state.isPaused {
-                                    RoundedRectangle(cornerRadius: 35)
-                                        .fill(Color.white)
-                                        .frame(width: 160, height: 60)
-                                        .overlay(
-                                            Image(systemName: "pause.fill")
-                                                .font(.system(size: 40, weight: .bold))
-                                                .foregroundColor(.red)
-                                        )
-                                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                                        .transition(.scale.combined(with: .opacity))
-                                } else {
-                                    RoundedRectangle(cornerRadius: 35)
-                                        .fill(Color.white)
-                                        .frame(width: 160, height: 60)
-                                        .overlay(
-                                            Image(systemName: "play.fill")
-                                                .font(.system(size: 40, weight: .bold))
-                                                .foregroundColor(.red)
-                                        )
-                                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                                        .transition(.scale.combined(with: .opacity))
-                                }
-                            }
-                            
-                            if (state.suggested) {
-                                Button(action: {state.toggle(resume: false)}) {
-                                    RoundedRectangle(cornerRadius: 35)
-                                        .fill(state.isPaused ? Color.blue : Color.gray)
-                                        .frame(width: 160, height: 60)
-                                        .overlay(
-                                            Text("Akhiri Sesi")
-                                                .font(Font.system(size: 20, weight: .bold))
-                                                .foregroundStyle(.white)
-                                        )
-                                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                                        .transition(.scale.combined(with: .opacity))
-                                        .disabled(!state.isPaused)
-                                }
-                            } else {
-                                Button(action: { state.getSuggestion() }) {
-                                    RoundedRectangle(cornerRadius: 35)
-                                        .fill(state.isPaused ? Color.blue : Color.gray)
-                                        .frame(width: 160, height: 60)
-                                        .overlay(
-                                            Text("Rekomendasi")
-                                                .font(Font.system(size: 20, weight: .bold))
-                                                .foregroundStyle(.white)
-                                        )
-                                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                                        .transition(.scale.combined(with: .opacity))
-                                        .disabled(!state.isPaused)
-                                }
-                            }
+                    if viewModel.isStreaming {
+                        Button(action: {
+                            viewModel.toggle(resume: hasRecorded)
+                        }) {
+                            RoundedRectangle(cornerRadius: 35)
+                                .fill(Color.white)
+                                .frame(width: 160, height: 60)
+                                .overlay(
+                                    Image(systemName: "stop.fill")
+                                        .font(.system(size: 40, weight: .bold))
+                                        .foregroundColor(.red)
+                                )
+                                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                                .transition(.scale.combined(with: .opacity))
                         }
                     } else {
-                        Button(action: {state.toggle(resume: false)}) {
+                        Button(action: {
+                            viewModel.toggle(resume: hasRecorded)
+                            hasRecorded = true
+                        }) {
                             Circle()
                                 .fill(Color.red)
                                 .frame(width: 90, height: 60)
@@ -151,12 +88,25 @@ struct SpeechTranscriberView: View {
                                 .transition(.scale.combined(with: .opacity))
                         }
                         .buttonStyle(.plain)
-                        .animation(.easeInOut(duration: 0.25), value: state.isStreaming)
+                        .animation(.easeInOut(duration: 0.25), value: viewModel.isStreaming)
                     }
                 }
-                .padding()
             }
             .background(Color(hex: "#4A6FA5"))
+        }
+        .onAppear {
+            if let image = UIImage(named: "IMG_7427") {
+                viewModel.getInitialQuestion(image: image)
+            } else {
+                // Fallback for bundle file with known extension, e.g., jpg
+                if let url = Bundle.main.url(forResource: "IMG_7427", withExtension: "jpg"),
+                   let fileImage = UIImage(contentsOfFile: url.path) {
+                    viewModel.getInitialQuestion(image: fileImage)
+                } else {
+                    // Optional: log or set an error state
+                    print("Test image img_7427 not found in assets or bundle.")
+                }
+            }
         }
     }
 }
