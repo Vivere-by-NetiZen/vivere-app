@@ -3,7 +3,9 @@ import Charts
 
 struct SpeechTranscriberView: View {
     @State private var hasRecorded: Bool = false
-    private var viewModel = SpeechTranscriberViewModel()
+    // Use the shared view model so it reflects prefetch results
+    private var viewModel = SpeechTranscriberViewModel.shared
+    @Environment(MPCManager.self) private var mpc
     
     private var composedTranscript: String {
         let finals = viewModel.finalTranscripts.joined(separator: " ")
@@ -93,20 +95,6 @@ struct SpeechTranscriberView: View {
                 }
             }
             .background(Color(hex: "#4A6FA5"))
-        }
-        .onAppear {
-            if let image = UIImage(named: "IMG_7427") {
-                viewModel.getInitialQuestion(image: image)
-            } else {
-                // Fallback for bundle file with known extension, e.g., jpg
-                if let url = Bundle.main.url(forResource: "IMG_7427", withExtension: "jpg"),
-                   let fileImage = UIImage(contentsOfFile: url.path) {
-                    viewModel.getInitialQuestion(image: fileImage)
-                } else {
-                    // Optional: log or set an error state
-                    print("Test image img_7427 not found in assets or bundle.")
-                }
-            }
         }
     }
 }
