@@ -95,6 +95,6 @@ struct PuzzleView: View {
     }
 }
 
-//#Preview {
-//    PuzzleView()
-//}
+#Preview {
+    PuzzleView()
+}

@@ -17,6 +17,9 @@ struct CustomIpadButton<Label: View>: View {
     let color: Color
     let action: () -> Void
     let label: Label
+    let showDashedBorder: Bool
+    let shadowColor: Color?
+    let shadowOffset: CGSize
 
     // Backward compatible initializer for string-based API
     init(
@@ -24,10 +27,16 @@ struct CustomIpadButton<Label: View>: View {
         icon: Image? = nil,
         color: Color,
         style: CustomIpadButtonStyle,
+        showDashedBorder: Bool = true,
+        shadowColor: Color? = nil,
+        shadowOffset: CGSize = CGSize(width: 3, height: 3),
         action: @escaping () -> Void
     ) where Label == AnyView {
         self.color = color
         self.action = action
+        self.showDashedBorder = showDashedBorder
+        self.shadowColor = shadowColor
+        self.shadowOffset = shadowOffset
 
         let finalLabelText: Text = {
             switch style {
@@ -54,11 +63,17 @@ struct CustomIpadButton<Label: View>: View {
     // New flexible initializer with @ViewBuilder
     init(
         color: Color,
+        showDashedBorder: Bool = true,
+        shadowColor: Color? = nil,
+        shadowOffset: CGSize = CGSize(width: 3, height: 3),
         action: @escaping () -> Void,
         @ViewBuilder label: () -> Label
     ) {
         self.color = color
         self.action = action
+        self.showDashedBorder = showDashedBorder
+        self.shadowColor = shadowColor
+        self.shadowOffset = shadowOffset
         self.label = label()
     }
 
@@ -69,11 +84,18 @@ struct CustomIpadButton<Label: View>: View {
                     ZStack {
                         RoundedRectangle(cornerRadius: 20)
                             .foregroundColor(color)
-                            .shadow(color: color.tint(0.2), radius: 0, x: 3, y: 3)
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [15]))
-                            .padding(10)
-                            .foregroundStyle(color == .deny || color == .darkBlue ? .white : .black)
+                            .shadow(
+                                color: shadowColor ?? color.tint(0.2),
+                                radius: 0,
+                                x: shadowOffset.width,
+                                y: shadowOffset.height
+                            )
+                        if showDashedBorder {
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(style: StrokeStyle(lineWidth: 2, dash: [15]))
+                                .padding(10)
+                                .foregroundStyle(color == .deny || color == .darkBlue ? .white : .black)
+                        }
                     }
                 )
         }
