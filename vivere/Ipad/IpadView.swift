@@ -9,12 +9,20 @@ import SwiftUI
 
 struct IpadView: View {
     @State private var isLandscape: Bool = false
-//    @Bindable var mpc: MPCManager
-    
+    @AppStorage("hasCompletedIpadOnboarding") private var hasCompletedIpadOnboarding: Bool = false
+
     var body: some View {
         ZStack {
-            OnboardingView()
-            if !isLandscape{
+            if hasCompletedIpadOnboarding {
+                iPadHomeView()
+                    .onAppear {
+                        hasCompletedIpadOnboarding = true
+                    }
+            } else {
+                OnboardingView()
+            }
+
+            if !isLandscape {
                 Color.viverePrimary.ignoresSafeArea(.all)
                 Text("Please use landscape mode")
                     .font(Font.largeTitle.bold())
@@ -31,5 +39,16 @@ struct IpadView: View {
                     }
             }
         }
+        // Mark onboarding as completed once the home screen is visible for the first time.
+        .onChange(of: hasCompletedIpadOnboarding) { _, newValue in
+            // no-op; kept to make intent explicit
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .didReachIpadHome)) { _ in
+            hasCompletedIpadOnboarding = true
+        }
     }
+}
+
+extension Notification.Name {
+    static let didReachIpadHome = Notification.Name("didReachIpadHome")
 }

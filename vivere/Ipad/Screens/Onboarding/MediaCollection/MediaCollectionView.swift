@@ -33,11 +33,6 @@ struct MediaCollectionView: View {
                 .frame(maxWidth: 400)
                 .padding()
                 
-                
-                //                Image("")
-                //                    .frame(width: 300, height: 300)
-                //                    .clipShape(Circle())
-                
                 //placeholder
                 ZStack {
                     Color.vivereSecondary.frame(width: 300, height: 300)
@@ -65,9 +60,15 @@ struct MediaCollectionView: View {
                     CustomIpadButtonAsView(label: "\(Image(systemName: "square.and.arrow.up")) Tambahkan Foto", color: .accent, style: .large)
                 }
                 .buttonStyle(.plain)
+                .onAppear() {
+                    Task {
+                        await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+                    }
+                }
                 .onChange(of: pickerItems) {
                     Task {
                         localIdentifier.removeAll()
+                        
                         for item in pickerItems {
                             if let _ = try await item.loadTransferable(type: Data.self) {
                                 
