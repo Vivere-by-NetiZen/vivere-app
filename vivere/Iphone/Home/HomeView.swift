@@ -14,9 +14,11 @@ struct HomeView: View {
     @State private var showBeforeStart = false
     @State private var sheetHeight: CGFloat = .zero
     @Environment(Router.self) private var router
-    @Bindable var mpc: MPCManager
+    @Environment(MPCManager.self) private var mpc
     
     var body: some View {
+        @Bindable var bindableMpc = mpc
+        
         VStack (alignment: .center) {
             Image("Logo")
                 .resizable()
@@ -62,7 +64,7 @@ struct HomeView: View {
             .background(.white)
             .presentationDetents([.height(sheetHeight)])
         }
-        .alert(item: $mpc.pendingInvitation) { invitation in
+        .alert(item: $bindableMpc.pendingInvitation) { invitation in
             Alert(
                 title: Text("Pair Request"),
                 message: Text("\(invitation.peer.displayName) wants to connect"),

@@ -9,7 +9,7 @@ import SwiftUI
 
 struct IpadView: View {
     @State private var isLandscape: Bool = false
-    @Bindable var mpc: MPCManager
+//    @Bindable var mpc: MPCManager
     
     var body: some View {
         ZStack {
