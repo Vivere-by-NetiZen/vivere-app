@@ -43,6 +43,9 @@ class MPCManager: NSObject {
     var pendingInvitation: PendingInvitation?
     private var pendingInvitationHandler: ((Bool, MCSession?) -> Void)?
     
+    // New: track which peer is currently being invited by the iPad
+    var invitingPeer: MCPeerID?
+    
     private(set) var preferredPeer: MCPeerID?
     
     private var advertiser: MCNearbyServiceAdvertiser?
@@ -107,7 +110,11 @@ class MPCManager: NSObject {
     func connect(to peer: MCPeerID) {
         guard role == .ipadHost else { return }
         guard session.connectedPeers.isEmpty else { return }   // only 1 at a time
-        browser?.invitePeer(peer, to: session, withContext: nil, timeout: 10)
+        // Mark inviting state and use a longer timeout to allow slow accepts
+        DispatchQueue.main.async {
+            self.invitingPeer = peer
+        }
+        browser?.invitePeer(peer, to: session, withContext: nil, timeout: 60)
     }
     
     // Save & load preferred peer
@@ -238,6 +245,10 @@ extension MPCManager: MCSessionDelegate {
                  didChange state: MCSessionState) {
         DispatchQueue.main.async {
             self.connectedPeers = session.connectedPeers
+            // Clear inviting state if this peer finished connecting or failed
+            if self.invitingPeer == peerID && (state == .connected || state == .notConnected) {
+                self.invitingPeer = nil
+            }
         }
         
         // Persist preferred peer on first successful pairing, on both roles
@@ -291,7 +302,11 @@ extension MPCManager: MCNearbyServiceBrowserDelegate {
             if peerID == preferred {
                 print("Found preferred iPhone \(peerID.displayName)")
                 if session.connectedPeers.isEmpty {
-                    browser.invitePeer(peerID, to: session, withContext: nil, timeout: 10)
+                    // Mark inviting and use longer timeout for auto-invite as well
+                    DispatchQueue.main.async {
+                        self.invitingPeer = peerID
+                    }
+                    browser.invitePeer(peerID, to: session, withContext: nil, timeout: 60)
                 }
             } else {
                 print("Ignoring non-preferred peer \(peerID.displayName)")
@@ -310,6 +325,10 @@ extension MPCManager: MCNearbyServiceBrowserDelegate {
         guard role == .ipadHost else { return }
         DispatchQueue.main.async {
             self.discoveredPeers.removeAll { $0 == peerID }
+            // If we were inviting this peer and it disappeared, clear inviting state
+            if self.invitingPeer == peerID {
+                self.invitingPeer = nil
+            }
         }
     }
     
@@ -323,3 +342,4 @@ extension MPCManager: MCNearbyServiceBrowserDelegate {
         preferredPeer = nil
     }
 }
+

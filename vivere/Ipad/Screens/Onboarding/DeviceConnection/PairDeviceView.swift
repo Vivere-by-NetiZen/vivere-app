@@ -31,6 +31,7 @@ struct PairDeviceView: View {
                         .font(.body)
                         .foregroundColor(.black)
                         .multilineTextAlignment(.center)
+                        .lineLimit(nil)
                 }
                 
                 if mpc.discoveredPeers.isEmpty {
@@ -48,6 +49,14 @@ struct PairDeviceView: View {
                                     Text("Terhubung")
                                         .font(.caption)
                                         .foregroundStyle(Color.green)
+                                } else if mpc.invitingPeer == peer {
+                                    HStack(spacing: 8) {
+                                        ProgressView()
+                                            .progressViewStyle(.circular)
+                                        Text("Mengundang…")
+                                            .font(.caption)
+                                            .foregroundStyle(.gray)
+                                    }
                                 } else {
                                     Button("Hubungkan") {
                                         mpc.connect(to: peer)
@@ -61,13 +70,13 @@ struct PairDeviceView: View {
                     .frame(maxWidth: 572)
                 }
                 
-                Button("Lanjutkan") {
-                    isPaired = true
-                }
-                .font(Font.title2)
-                .fontWeight(.semibold)
-                .cornerRadius(10)
-                .buttonStyle(.borderedProminent)
+//                Button("Lanjutkan") {
+//                    isPaired = true
+//                }
+//                .font(Font.title2)
+//                .fontWeight(.semibold)
+//                .cornerRadius(10)
+//                .buttonStyle(.borderedProminent)
             }
             .padding(40)
             .background(

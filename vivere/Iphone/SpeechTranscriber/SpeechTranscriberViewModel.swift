@@ -9,7 +9,8 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
     // Shared instance so different views can observe the same state
     static let shared = SpeechTranscriberViewModel()
 
-    var urlString: String = "wss://presymphonic-preexclusively-kaylene.ngrok-free.dev/ws/audio"
+    private let config = AppConfig.shared
+    var urlString: String
     var isStreaming: Bool = false
     var status: String = "idle"
     var level: Float = 0
@@ -33,6 +34,8 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
 
     // Private init to enforce singleton
     private init() {
+        // Initialize ws/audio url from config
+        self.urlString = config.ws("ws/audio").absoluteString
         streamer.delegate = self
     }
 
@@ -51,7 +54,6 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
     }
 
     func toggle(resume: Bool) {
-        print("isStreaming \(isStreaming)")
         if isStreaming {
             stop(resume: resume)
         } else {
@@ -115,7 +117,7 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
         streamer.stop()
     }
     
-    func getSuggestions(from urlString: String = "https://presymphonic-preexclusively-kaylene.ngrok-free.dev/suggestions") {
+    func getSuggestions(from urlString: String? = nil) {
         suggestions.removeAll()
         suggestionPoint = nil
         errorMessage = nil
@@ -126,15 +128,13 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
             errorMessage = "Transcript is empty."
             return
         }
-        guard let url = URL(string: urlString) else {
-            errorMessage = "Invalid server URL."
-            return
-        }
+        // Build default suggestions URL from config if none provided
+        let suggestionsURL = urlString.flatMap(URL.init(string:)) ?? config.api("suggestions")
         isFetchingSuggestion = true
         let payload = ["transcript": transcript]
         do {
             let body = try JSONSerialization.data(withJSONObject: payload, options: [])
-            var req = URLRequest(url: url)
+            var req = URLRequest(url: suggestionsURL)
             req.httpMethod = "POST"
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
             req.httpBody = body
@@ -165,7 +165,7 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
         }
     }
     
-    func getInitialQuestion(image: UIImage, from urlString: String = "https://presymphonic-preexclusively-kaylene.ngrok-free.dev/initial-questions") {
+    func getInitialQuestion(image: UIImage, from urlString: String? = nil) {
         initialQuestion.removeAll()
         errorMessage = nil
         
@@ -204,10 +204,8 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
             errorMessage = "Failed to encode image."
             return
         }
-        guard let url = URL(string: urlString) else {
-            errorMessage = "Invalid server URL."
-            return
-        }
+        // Build default initial-questions URL from config if none provided
+        let endpointURL = urlString.flatMap(URL.init(string:)) ?? config.api("initial-questions")
         
         let boundary = "Boundary-\(UUID().uuidString)"
         var body = Data()
@@ -220,7 +218,7 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
         body.append("\r\n".data(using: .utf8)!)
         body.append("--\(boundary)--\r\n".data(using: .utf8)!)
         
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: endpointURL)
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.httpBody = body

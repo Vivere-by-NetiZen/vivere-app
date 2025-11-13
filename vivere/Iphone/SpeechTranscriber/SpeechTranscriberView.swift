@@ -1,11 +1,12 @@
 import SwiftUI
 import Charts
+import CoreHaptics
 
 struct SpeechTranscriberView: View {
-    @State private var hasRecorded: Bool = false
-    // Use the shared view model so it reflects prefetch results
+    @State private var hasRequestSuggestion: Bool = false
     private var viewModel = SpeechTranscriberViewModel.shared
     @Environment(MPCManager.self) private var mpc
+    @Environment(Router.self) private var router
     
     private var composedTranscript: String {
         let finals = viewModel.finalTranscripts.joined(separator: " ")
@@ -33,8 +34,11 @@ struct SpeechTranscriberView: View {
                 .ignoresSafeArea()
                 
                 VStack(spacing: 16) {
-                    if !hasRecorded {
+                    if !hasRequestSuggestion {
                         InitialQuestionCard(question: viewModel.isFetchingInitialQuestions ? "Loading..." : viewModel.initialQuestion)
+                            .padding(.top, 80)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(nil)
                     } else {
                         if !viewModel.suggestions.isEmpty {
                             VStack(alignment: .leading, spacing: 8) {
@@ -45,56 +49,52 @@ struct SpeechTranscriberView: View {
                                         .foregroundColor(.black)
                                         .padding(.vertical, 16)
                                         .padding(.horizontal, 20)
-                                        .frame(maxWidth: .infinity)
+                                        .frame(maxWidth: .infinity, alignment: .center)
                                         .background(Color.white)
                                         .cornerRadius(16)
                                         .shadow(color: .black.opacity(0.05), radius: 1, y: 1)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .lineLimit(nil)
                                 }
                             }
-                            .frame(minHeight: 180, maxHeight: 320)
+                            .padding(.horizontal, 16)
+                            .padding(.top, 64)
+                            
+                            Spacer()
                         } else {
                             Spacer()
                         }
-                        
-                        MicVisualizerView()
                     }
                     
-                    if viewModel.isStreaming {
+                    MicVisualizerView()
+                        .frame(minHeight: 150, maxHeight: 180)
+                        .padding(.bottom, 0)
+                    
+                    
+                    HStack {
                         Button(action: {
-                            viewModel.toggle(resume: hasRecorded)
+                            viewModel.getSuggestions()
+                            hasRequestSuggestion = true
                         }) {
-                            RoundedRectangle(cornerRadius: 35)
-                                .fill(Color.white)
-                                .frame(width: 160, height: 60)
-                                .overlay(
-                                    Image(systemName: "stop.fill")
-                                        .font(.system(size: 40, weight: .bold))
-                                        .foregroundColor(.red)
-                                )
-                                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                                .transition(.scale.combined(with: .opacity))
+                            Text("Dapatkan Rekomendasi")
+                                .foregroundStyle(.white)
                         }
-                    } else {
-                        Button(action: {
-                            viewModel.toggle(resume: hasRecorded)
-                            hasRecorded = true
-                        }) {
-                            Circle()
-                                .fill(Color.red)
-                                .frame(width: 90, height: 60)
-                                .overlay(
-                                    Circle()
-                                        .stroke(Color.white, lineWidth: 6)
-                                )
-                                .shadow(color: .black.opacity(0.1), radius: 4)
-                                .transition(.scale.combined(with: .opacity))
-                        }
-                        .buttonStyle(.plain)
-                        .animation(.easeInOut(duration: 0.25), value: viewModel.isStreaming)
+                        .buttonStyle(.borderedProminent)
+                        .padding(8)
+                        
+                        Button("Selesaikan Sesi", role: .destructive, action: {
+                            viewModel.toggle(resume: false)
+                            router.popToRoot()
+                        })
+                        .buttonStyle(.borderedProminent)
+                        .padding(8)
                     }
                 }
             }
             .background(Color(hex: "#4A6FA5"))
+        }
+        .onAppear {
+            viewModel.toggle(resume: false)
         }
     }
 }
