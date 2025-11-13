@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		B1F54AF22EC45C7600CD09A8 /* ConfettiSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = B1F54AF12EC45C7600CD09A8 /* ConfettiSwiftUI */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		34881A352EAB7021006CDD30 /* vivere.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = vivere.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -36,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B1F54AF22EC45C7600CD09A8 /* ConfettiSwiftUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +83,7 @@
 			);
 			name = vivere;
 			packageProductDependencies = (
+				B1F54AF12EC45C7600CD09A8 /* ConfettiSwiftUI */,
 			);
 			productName = testing;
 			productReference = 34881A352EAB7021006CDD30 /* vivere.app */;
@@ -107,6 +113,9 @@
 			);
 			mainGroup = 34881A2C2EAB7021006CDD30;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				B1F54AF02EC45C7600CD09A8 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 34881A362EAB7021006CDD30 /* Products */;
 			projectDirPath = "";
@@ -361,6 +370,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		B1F54AF02EC45C7600CD09A8 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/simibac/ConfettiSwiftUI";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.3;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		B1F54AF12EC45C7600CD09A8 /* ConfettiSwiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B1F54AF02EC45C7600CD09A8 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */;
+			productName = ConfettiSwiftUI;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 34881A2D2EAB7021006CDD30 /* Project object */;
 }
