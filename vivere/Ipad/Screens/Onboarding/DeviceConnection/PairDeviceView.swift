@@ -6,10 +6,12 @@
 //
 
 import SwiftUI
+import MultipeerConnectivity
 
 struct PairDeviceView: View {
     @Binding var isNextPressed: Bool
     @Binding var isPaired: Bool
+    @Environment(MPCManager.self) private var mpc
     
     var body: some View {
         ZStack {
@@ -18,16 +20,47 @@ struct PairDeviceView: View {
                 .onTapGesture {_ in
                     isNextPressed = false
                 }
-            VStack {
-                Text("Pair Device Screen Placeholder")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .padding()
-                    .background(Color.white)
-                    .cornerRadius(20)
-                    .padding()
-                    .foregroundColor(.black)
+            VStack(spacing: 30) {
+                VStack(spacing: 16) {
+                    Text("Hubungkan Perangkat Anda")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(.black)
                     
+                    Text("Tekan tombol \"hubungkan\" di bawah lalu dekatkan iPad dengan iPhone, perangkat akan otomatis terhubung satu sama lain.")
+                        .font(.body)
+                        .foregroundColor(.black)
+                        .multilineTextAlignment(.center)
+                }
+                
+                if mpc.discoveredPeers.isEmpty {
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(height: 267)
+                        .cornerRadius(8)
+                } else {
+                    List {
+                        ForEach(mpc.discoveredPeers, id:\.self) { peer in
+                            HStack {
+                                Text(peer.displayName)
+                                Spacer()
+                                if mpc.connectedPeers.contains(peer) {
+                                    Text("Terhubung")
+                                        .font(.caption)
+                                        .foregroundStyle(Color.green)
+                                } else {
+                                    Button("Hubungkan") {
+                                        mpc.connect(to: peer)
+                                    }
+                                    .buttonStyle(.bordered)
+                                }
+                                
+                            }
+                        }
+                    }
+                    .frame(maxWidth: 572)
+                }
+                
                 Button("Lanjutkan") {
                     isPaired = true
                 }
@@ -36,6 +69,13 @@ struct PairDeviceView: View {
                 .cornerRadius(10)
                 .buttonStyle(.borderedProminent)
             }
+            .padding(40)
+            .background(
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(Color.white)
+                    .shadow(radius: 16)
+            )
+            .frame(maxWidth: 572, maxHeight: 478)
         }
     }
 }

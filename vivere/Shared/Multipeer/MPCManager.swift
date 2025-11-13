@@ -8,6 +8,7 @@
 import Foundation
 import MultipeerConnectivity
 import Combine
+import UIKit
 
 enum DeviceRole {
     case ipadHost
@@ -32,6 +33,12 @@ class MPCManager: NSObject {
     var discoveredPeers: [MCPeerID] = []
     var connectedPeers: [MCPeerID] = []
     var lastReceivedMessage: String = ""
+    
+    // New: publish received image intended for initial question
+    var receivedInitialQuestionImage: UIImage? = nil
+    
+    // New: a monotonically increasing tick for command events (e.g., "show_transcriber")
+    var lastCommandTick: Int = 0
     
     var pendingInvitation: PendingInvitation?
     private var pendingInvitationHandler: ((Bool, MCSession?) -> Void)?
@@ -149,7 +156,6 @@ class MPCManager: NSObject {
     func resetLocalPeerIdentity() {
         // Warning: changing MCPeerID will break existing pairings until re-paired.
         UserDefaults.standard.removeObject(forKey: localPeerKey)
-        // Note: To fully apply a new identity, recreate session/advertiser/browser or reinit MPCManager.
     }
     
     func respondToInvitation(accept: Bool) {
@@ -158,9 +164,16 @@ class MPCManager: NSObject {
         pendingInvitation = nil
     }
     
+    // Existing string helper
     func send(message: String) {
         guard !session.connectedPeers.isEmpty else { return }
         guard let data = message.data(using: .utf8) else { return }
+        try? session.send(data, toPeers: session.connectedPeers, with: .reliable)
+    }
+    
+    // New generic data send
+    func send(data: Data) {
+        guard !session.connectedPeers.isEmpty else { return }
         try? session.send(data, toPeers: session.connectedPeers, with: .reliable)
     }
 }
@@ -185,9 +198,37 @@ extension MPCManager: MCSessionDelegate {
     
     func session(_ session: MCSession, didReceive data: Data,
                  fromPeer peerID: MCPeerID) {
+        // Try to parse our simple envelope: [4 bytes typeLen][type utf8][payload]
+        if data.count >= 4 {
+            let typeLenData = data.prefix(4)
+            let typeLen = typeLenData.withUnsafeBytes { $0.load(as: UInt32.self).bigEndian }
+            let afterLen = data.dropFirst(4)
+            if afterLen.count >= Int(typeLen) {
+                let typeData = afterLen.prefix(Int(typeLen))
+                let payload = afterLen.dropFirst(Int(typeLen))
+                let type = String(data: typeData, encoding: .utf8) ?? ""
+                
+                if type == "initial_question_image",
+                   let image = UIImage(data: payload) {
+                    DispatchQueue.main.async {
+                        self.receivedInitialQuestionImage = image
+                    }
+                    return
+                }
+            }
+        }
+        
+        // Fallback: treat as utf8 string commands/messages
         if let message = String(data: data, encoding: .utf8) {
             DispatchQueue.main.async {
+                // Always keep lastReceivedMessage for any UI/logs
                 self.lastReceivedMessage = "From \(peerID.displayName): \(message)"
+                
+                // If it's a navigation command, tick the counter so .onChange always fires
+                if message == "show_transcriber" {
+                    print("nambah satu")
+                    self.lastCommandTick &+= 1
+                }
             }
         }
     }
@@ -205,7 +246,6 @@ extension MPCManager: MCSessionDelegate {
                 savePreferredPeer(peerID)
                 print("Saved preferred peer: \(peerID.displayName)")
             } else if peerID != preferredPeer {
-                // Optional: handle non-preferred connections
                 print("Connected to non-preferred peer; preferred is \(preferredPeer!.displayName)")
             }
         }

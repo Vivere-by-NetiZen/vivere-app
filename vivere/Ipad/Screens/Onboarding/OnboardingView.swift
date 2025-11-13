@@ -18,6 +18,8 @@ struct OnboardingView: View {
                 
                 HStack {
                     Image("Logo")
+                        .resizable()
+                        .frame(width: 42, height: 44)
                     Text("Logo")
                         .font(.largeTitle)
                         .fontWeight(.semibold)
