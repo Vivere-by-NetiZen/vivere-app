@@ -3,59 +3,62 @@ import SwiftUI
 struct MicVisualizerView: View {
     private var transcriber = SpeechTranscriber.shared
 
-    let barWidth: CGFloat = 60
-    let extraHeight: CGFloat = 150
+    private let barCount: Int = 64
+    private let historyCapacity: Int = 256
+    private let barWidth: CGFloat = 3
+    private let barSpacing: CGFloat = 2
+    private let cornerRadius: CGFloat = 1.5
+    private let baseHeight: CGFloat = 8
+    private let maxExtraHeight: CGFloat = 150
+    private let color = Color(.viverePrimary)
 
     @State private var tick: Int = 0
     @State private var isActive: Bool = true
+    @State private var history: [CGFloat] = []
+    @State private var smoothed: [CGFloat] = []
+    private let smoothing: CGFloat = 0.1
+    private let idleJitter: CGFloat = 0.02
 
-    @State private var smoothedBuckets: [CGFloat] = Array(repeating: 0, count: 4)
-
-    private let smoothing: CGFloat = 0.25
-
-    private var rawBuckets: [CGFloat] {
-        let values = transcriber.downSampledMagnitudes
-        guard !values.isEmpty else { return Array(repeating: 0, count: 4) }
-
-        let bucketCount = 4
-        let chunkSize = max(1, values.count / bucketCount)
-        var buckets: [CGFloat] = []
-
-        var start = 0
-        for _ in 0..<bucketCount {
-            let end = min(values.count, start + chunkSize)
-            if start < end {
-                let slice = values[start..<end]
-                let avg = slice.reduce(0, +) / Float(slice.count)
-                buckets.append(CGFloat(avg))
-            } else {
-                buckets.append(0)
-            }
-            start = end
-        }
-
-        return buckets
+    private var currentScalar: CGFloat {
+        let mags = transcriber.downSampledMagnitudes
+        guard !mags.isEmpty else { return 0 }
+        
+        let upper = max(1, mags.count / 3)
+        let slice = mags.prefix(upper)
+        let avg = slice.reduce(0, +) / Float(slice.count)
+        let clamped = min(avg, Constants.magnitudeLimit)
+        // Normalize to 0...1
+        return CGFloat(clamped / Constants.magnitudeLimit)
     }
 
     var body: some View {
-        HStack(spacing: 16) {
-            ForEach(smoothedBuckets.indices, id: \.self) { index in
-                let magnitude = smoothedBuckets[index]
-                Capsule()
-                    .fill(Color(red: 75/255, green: 97/255, blue: 140/255))
-                    .frame(
-                        width: barWidth,
-                        height: barWidth + (magnitude * extraHeight / CGFloat(Constants.magnitudeLimit))
-                    )
-                    .shadow(color: .black.opacity(0.3), radius: 6, x: 0, y: 6)
+        GeometryReader { geo in
+            let totalWidth = CGFloat(barCount) * barWidth + CGFloat(barCount - 1) * barSpacing
+            let scale = min(1, geo.size.width / totalWidth)
+
+            HStack(alignment: .bottom, spacing: barSpacing * scale) {
+                ForEach(visibleBars.indices, id: \.self) { i in
+                    let norm = visibleBars[i]
+                    let extra = norm * maxExtraHeight
+                    RoundedRectangle(cornerRadius: cornerRadius * scale, style: .continuous)
+                        .fill(color)
+                        .frame(width: barWidth * scale, height: baseHeight + extra)
+                        .shadow(color: .black.opacity(0.15), radius: 2, x: 0, y: 1)
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color(.systemBackground).opacity(0.0))
+            )
         }
-        .padding()
-        .clipShape(RoundedRectangle(cornerRadius: 24))
-        .animation(.easeOut(duration: 0.08), value: smoothedBuckets)
+        .animation(.easeOut(duration: 0.08), value: smoothed)
         .onAppear {
             isActive = true
-            smoothedBuckets = rawBuckets
+            history = Array(repeating: 0, count: historyCapacity)
+            smoothed = Array(repeating: 0, count: historyCapacity)
             startTicking()
         }
         .onDisappear {
@@ -63,19 +66,39 @@ struct MicVisualizerView: View {
         }
     }
 
+    private var visibleBars: [CGFloat] {
+        let count = min(barCount, smoothed.count)
+        guard count > 0 else { return [] }
+        let start = max(0, smoothed.count - count)
+        return Array(smoothed[start..<smoothed.count])
+    }
+
     private func startTicking() {
         func schedule() {
             guard isActive else { return }
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0/60.0) {
-                let target = rawBuckets
-                var next = smoothedBuckets
-                if next.count != target.count { next = Array(repeating: 0, count: target.count) }
-                for i in 0..<target.count {
-                    let current = next[i]
-                    let goal = target[i]
-                    next[i] = current + (goal - current) * smoothing
+                // Compute target magnitude with a tiny idle jitter so it doesn’t freeze visually
+                var target = currentScalar
+                if target < 0.01 {
+                    target += CGFloat.random(in: -idleJitter...idleJitter)
+                    target = max(0, min(0.03, target))
                 }
-                smoothedBuckets = next
+
+                // Append to history ring buffer
+                if history.count >= historyCapacity {
+                    history.removeFirst()
+                }
+                history.append(target)
+
+                // Smooth towards history
+                if smoothed.count != history.count {
+                    smoothed = Array(repeating: 0, count: history.count)
+                }
+                for i in 0..<history.count {
+                    let current = smoothed[i]
+                    let goal = history[i]
+                    smoothed[i] = current + (goal - current) * smoothing
+                }
 
                 tick &+= 1
                 schedule()

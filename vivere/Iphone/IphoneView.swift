@@ -21,6 +21,7 @@ struct IphoneView: View {
                         HomeView()
                     case .transcribe:
                         SpeechTranscriberView()
+                            .navigationBarHidden(true)
                     }
                 }
                 // Trigger navigation on every "show_transcriber" command by ticking a counter
