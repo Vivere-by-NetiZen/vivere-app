@@ -28,7 +28,7 @@ struct PuzzleView: View {
                     }
                 }
                 ZStack {
-                    if let referenceImage = UIImage(named: "puzzleImage") {
+                    if let referenceImage = UIImage(named: "card1") {
                         Image(uiImage: referenceImage)
                             .resizable()
                             .frame(width: size * CGFloat(col), height: size * CGFloat(row))
@@ -54,17 +54,22 @@ struct PuzzleView: View {
     }
     
     func setupPuzzle(screenSize: CGSize) {
-        guard let uiImg = UIImage(named: "puzzleImage") else { return }
+        guard let uiImg = UIImage(named: "card1") else { return }
         let imgs = splitImageIntoPieces(img: uiImg, col: col, row: row)
         let puzzleAreaWidth = size * CGFloat(col)
         let puzzleAreaHeight = size * CGFloat(row)
         let minX = (screenSize.width - puzzleAreaWidth) / 2
         let minY = (screenSize.height - puzzleAreaHeight) / 2
+        let dents = getPuzzleDent()
         for r in 0..<row {
             for c in 0..<col {
-                let correctPos = CGPoint(x: CGFloat(c) * size + size / 2, y: CGFloat(r) * size + size / 2)
+                let xSizeCorrecttion = (CGFloat(dents[r * col + c][1]) * size * 0.2 - CGFloat(dents[r * col + c][3]) * size * 0.2)/2
+                let ySizeCorrecttion = (CGFloat(dents[r * col + c][2]) * size * 0.2 - CGFloat(dents[r * col + c][0]) * size * 0.2)/2
+                
+                
+                let correctPos = CGPoint(x: (CGFloat(c) * size + size / 2)+xSizeCorrecttion, y: (CGFloat(r) * size + size / 2)+ySizeCorrecttion)
                 let currPos = CGPoint(x: CGFloat.random(in: minX...(minX + puzzleAreaWidth - size)), y: CGFloat.random(in: minY...(minY + puzzleAreaHeight - size)))
-                let piece = PuzzlePiece(img: imgs[r * col + c], currPos: currPos, correctPos: correctPos)
+                let piece = PuzzlePiece(img: imgs[r * col + c], dents: dents[r * col + c], currPos: currPos, correctPos: correctPos)
                 pieces.append(piece)
             }
         }
@@ -75,18 +80,24 @@ struct PuzzleView: View {
         var imgs: [Image] = []
         let width = cgImage.width / col
         let height = cgImage.height / row
+        let paths = getCropPath()
+        let dents = getPuzzleDent()
         
         for r in 0..<row {
             for c in 0..<col {
+                let path = paths[r * col + c]
+                let dent = dents[r * col + c]
+                
                 let rect = CGRect(
-                    x: c * width,
-                    y: r * height,
-                    width: width,
-                    height: height
+                    x: c * width - Int(CGFloat(dent[3]) * CGFloat(width) * 0.2),
+                    y: r * height - Int(CGFloat(dent[0]) * CGFloat(height) * 0.2),
+                    width: width + Int(CGFloat(dent[1]) * CGFloat(width) * 0.2) + Int(CGFloat(dent[3]) * CGFloat(width) * 0.2),
+                    height: height + Int(CGFloat(dent[2]) * CGFloat(height) * 0.2) + Int(CGFloat(dent[0]) * CGFloat(height) * 0.2)
                 )
-                                
+                
                 if let croppedCGImage = cgImage.cropping(to: rect) {
-                    let piece = UIImage(cgImage: croppedCGImage)
+                    let piece = UIImage(cgImage: croppedCGImage).crop(with: path)
+                    
                     imgs.append(Image(uiImage: piece))
                 }
             }
