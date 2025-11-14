@@ -9,16 +9,13 @@ import SwiftUI
 
 struct FinishOnboardingView: View {
     @State private var isNextPressed: Bool = false
+    @AppStorage("hasCompletedIpadOnboarding") private var hasCompletedIpadOnboarding: Bool = false
 
     var body: some View {
         ZStack {
             Color.viverePrimary.ignoresSafeArea(edges: .all)
 
             VStack {
-                //                Image("")
-                //                    .frame(width: 300, height: 300)
-                //                    .clipShape(Circle())
-
                 //placeholder
                 ZStack {
                     Color.vivereSecondary.frame(width: 300, height: 300)
@@ -43,6 +40,9 @@ struct FinishOnboardingView: View {
                     .padding(.bottom, 30)
 
                 CustomIpadButton(label: "Mulai", color: .accent, style: .large){
+                    hasCompletedIpadOnboarding = true
+                    NotificationCenter.default.post(name: .didReachIpadHome, object: nil)
+
                     isNextPressed = true
                 }
             }
@@ -50,6 +50,7 @@ struct FinishOnboardingView: View {
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $isNextPressed) {
             iPadHomeView()
+                .navigationBarBackButtonHidden(true)
         }
     }
 }

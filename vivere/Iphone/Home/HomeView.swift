@@ -14,38 +14,58 @@ struct HomeView: View {
     @State private var showBeforeStart = false
     @State private var sheetHeight: CGFloat = .zero
     @Environment(Router.self) private var router
-    @Bindable var mpc: MPCManager
+    @Environment(MPCManager.self) private var mpc
     
     var body: some View {
-        VStack (alignment: .center) {
-            Image("Logo")
-                .resizable()
-                .frame(width: 117, height: 117)
-                .padding(.bottom, 22)
-            Text("Hai! ini Vivere mu")
-                .font(.title)
-                .foregroundStyle(Color.white)
-                .padding(.bottom, 3)
-            Text("Ciptakan obrolan bermakna dengan lansia bersama Vivere!")
-                .font(.callout)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(Color.white)
-            if mpc.connectedPeers.isEmpty {
-                Text("Belum ada orang tersambung. Tap to connect.")
-            } else {
-                Text("Connected to:")
-                    .font(.headline)
-                ForEach(mpc.connectedPeers, id: \.self) { peer in
-                    Text(peer.displayName)
+        @Bindable var bindableMpc = mpc
+        
+        ZStack {
+            Color.viverePrimary.ignoresSafeArea()
+            
+            // Main content centered vertically
+            VStack(alignment: .center, spacing: 12) {
+                Image("Logo")
+                    .resizable()
+                    .frame(width: 117, height: 117)
+                    .padding(.bottom, 22)
+                Text("Hai! ini Vivere mu")
+                    .font(.title)
+                    .foregroundStyle(Color.white)
+                    .padding(.bottom, 3)
+                Text("Ciptakan obrolan bermakna dengan lansia bersama Vivere!")
+                    .font(.callout)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Color.white)
+                    .padding(.bottom, 220)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            
+            // Status section anchored at the bottom
+            VStack(spacing: 8) {
+                if mpc.connectedPeers.isEmpty {
+                    Text("Belum ada orang tersambung. Tap to connect.")
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                } else {
+                    VStack(spacing: 6) {
+                        Text("Connected to:")
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                        ForEach(mpc.connectedPeers, id: \.self) { peer in
+                            Text(peer.displayName)
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+                Button("Open Transcription") {
+                    router.goToTranscribe()
                 }
             }
-            Button("Open Transcription") {
-                router.goToTranscribe()
-            }
+            .padding(.bottom, 24)
+            .frame(maxHeight: .infinity, alignment: .bottom)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .ignoresSafeArea()
-        .background(Color.viverePrimary)
         .onAppear {
             if !hasSeenBeforeStart {
                 showBeforeStart = true
@@ -62,7 +82,7 @@ struct HomeView: View {
             .background(.white)
             .presentationDetents([.height(sheetHeight)])
         }
-        .alert(item: $mpc.pendingInvitation) { invitation in
+        .alert(item: $bindableMpc.pendingInvitation) { invitation in
             Alert(
                 title: Text("Pair Request"),
                 message: Text("\(invitation.peer.displayName) wants to connect"),

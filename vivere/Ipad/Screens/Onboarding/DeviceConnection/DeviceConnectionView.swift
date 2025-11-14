@@ -10,6 +10,7 @@ import SwiftUI
 struct DeviceConnectionView: View {
     @State private var isNextPressed: Bool = false
     @State private var isPaired: Bool = false
+    @Environment(MPCManager.self) private var mpc
     
     var body: some View {
         ZStack {
@@ -31,13 +32,7 @@ struct DeviceConnectionView: View {
                 }
                 .frame(maxWidth: 400)
                 .padding()
-                
-                
-                //                Image("")
-                //                    .frame(width: 300, height: 300)
-                //                    .clipShape(Circle())
-                
-                //placeholder
+
                 ZStack {
                     Color.vivereSecondary.frame(width: 300, height: 300)
                         .clipShape(Circle())
@@ -74,6 +69,16 @@ struct DeviceConnectionView: View {
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $isPaired) {
             MediaCollectionView()
+        }
+        .onChange(of: isNextPressed) { _, next in
+            if next, !mpc.connectedPeers.isEmpty {
+                isPaired = true
+            }
+        }
+        .onChange(of: mpc.connectedPeers) { _, peers in
+            if isNextPressed, !peers.isEmpty {
+                isPaired = true
+            }
         }
     }
 }

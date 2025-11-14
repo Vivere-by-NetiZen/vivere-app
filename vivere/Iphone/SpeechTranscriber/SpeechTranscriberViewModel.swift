@@ -1,11 +1,16 @@
 import Foundation
 import UIKit
 import Combine
+import AVFoundation
 
 @MainActor
 @Observable
 final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
-    var urlString: String = "wss://presymphonic-preexclusively-kaylene.ngrok-free.dev/ws/audio"
+    // Shared instance so different views can observe the same state
+    static let shared = SpeechTranscriberViewModel()
+
+    private let config = AppConfig.shared
+    var urlString: String
     var isStreaming: Bool = false
     var status: String = "idle"
     var level: Float = 0
@@ -27,12 +32,28 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
     // Use the shared instance so the visualizer (which reads MicStreamer.shared) sees updates.
     private let streamer = SpeechTranscriber.shared
 
-    init() {
+    // Private init to enforce singleton
+    private init() {
+        // Initialize ws/audio url from config
+        self.urlString = config.ws("ws/audio").absoluteString
         streamer.delegate = self
     }
 
+    // MARK: - Microphone Permission (callable at app start)
+    static func requestMicrophonePermissionIfNeeded() {
+        let av = AVAudioSession.sharedInstance()
+        if #available(iOS 17.0, *) {
+            AVAudioApplication.requestRecordPermission { granted in
+                print("Mic permission (iOS 17+): \(granted)")
+            }
+        } else {
+            av.requestRecordPermission { granted in
+                print("Mic permission (< iOS 17): \(granted)")
+            }
+        }
+    }
+
     func toggle(resume: Bool) {
-        print("isStreaming \(isStreaming)")
         if isStreaming {
             stop(resume: resume)
         } else {
@@ -55,7 +76,6 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
             isPaused = false
             suggested = false
         } catch {
-            // Surface the error to UI; keep paused state unchanged on failure
             errorMessage = "Failed to resume: \(error.localizedDescription)"
             status = "error"
         }
@@ -79,7 +99,6 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
 
         do {
             try streamer.start(url: url)
-            // Set streaming true after we successfully kick off start()
             isStreaming = true
         } catch {
             print("start error: \(error.localizedDescription)")
@@ -91,7 +110,6 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
     func stop(resume: Bool) {
         isStreaming = false
         if resume {
-            print("Masuk")
             pauseStream()
             getSuggestions()
             return
@@ -99,7 +117,7 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
         streamer.stop()
     }
     
-    func getSuggestions(from urlString: String = "https://presymphonic-preexclusively-kaylene.ngrok-free.dev/suggestions") {
+    func getSuggestions(from urlString: String? = nil) {
         suggestions.removeAll()
         suggestionPoint = nil
         errorMessage = nil
@@ -110,15 +128,13 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
             errorMessage = "Transcript is empty."
             return
         }
-        guard let url = URL(string: urlString) else {
-            errorMessage = "Invalid server URL."
-            return
-        }
+        // Build default suggestions URL from config if none provided
+        let suggestionsURL = urlString.flatMap(URL.init(string:)) ?? config.api("suggestions")
         isFetchingSuggestion = true
         let payload = ["transcript": transcript]
         do {
             let body = try JSONSerialization.data(withJSONObject: payload, options: [])
-            var req = URLRequest(url: url)
+            var req = URLRequest(url: suggestionsURL)
             req.httpMethod = "POST"
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
             req.httpBody = body
@@ -149,12 +165,10 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
         }
     }
     
-    func getInitialQuestion(image: UIImage, from urlString: String = "https://presymphonic-preexclusively-kaylene.ngrok-free.dev/initial-questions") {
-        // Reset previous state
+    func getInitialQuestion(image: UIImage, from urlString: String? = nil) {
         initialQuestion.removeAll()
         errorMessage = nil
         
-        // Choose encoding dynamically: prefer JPEG for non-alpha images; fall back to PNG
         let hasAlpha: Bool = {
             guard let cgImage = image.cgImage else { return false }
             let alphaInfo = cgImage.alphaInfo
@@ -171,12 +185,10 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
         var filename: String
         
         if hasAlpha {
-            // Preserve transparency with PNG
             imageData = image.pngData()
             mimeType = "image/png"
             filename = "image.png"
         } else {
-            // Try JPEG first for better size; fall back to PNG if JPEG fails
             if let jpeg = image.jpegData(compressionQuality: 0.8) {
                 imageData = jpeg
                 mimeType = "image/jpeg"
@@ -192,31 +204,21 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
             errorMessage = "Failed to encode image."
             return
         }
-        guard let url = URL(string: urlString) else {
-            errorMessage = "Invalid server URL."
-            return
-        }
+        // Build default initial-questions URL from config if none provided
+        let endpointURL = urlString.flatMap(URL.init(string:)) ?? config.api("initial-questions")
         
-        // Build multipart/form-data body
         let boundary = "Boundary-\(UUID().uuidString)"
         var body = Data()
-        
-        // Adjust fieldName to match your FastAPI parameter (e.g., "file" or "image")
         let fieldName = "image"
         
-        // --boundary
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        // Content-Disposition with name and filename
         body.append("Content-Disposition: form-data; name=\"\(fieldName)\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
-        // Content-Type of the file
         body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
-        // file data
         body.append(imageData)
         body.append("\r\n".data(using: .utf8)!)
-        // --boundary--
         body.append("--\(boundary)--\r\n".data(using: .utf8)!)
         
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: endpointURL)
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.httpBody = body
@@ -234,7 +236,6 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
                     return
                 }
                 
-                // Decode assumed response { "questions": [String] }
                 let decoded = try JSONDecoder().decode(InitialQuestionsResponse.self, from: data)
                 await MainActor.run {
                     self?.initialQuestion = decoded.question
@@ -279,4 +280,3 @@ private struct InitialQuestionsResponse: Decodable {
     }
     private enum CodingKeys: String, CodingKey { case question }
 }
-

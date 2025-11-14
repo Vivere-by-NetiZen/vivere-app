@@ -8,6 +8,7 @@
 import Foundation
 import MultipeerConnectivity
 import Combine
+import UIKit
 
 enum DeviceRole {
     case ipadHost
@@ -33,8 +34,17 @@ class MPCManager: NSObject {
     var connectedPeers: [MCPeerID] = []
     var lastReceivedMessage: String = ""
     
+    // New: publish received image intended for initial question
+    var receivedInitialQuestionImage: UIImage? = nil
+    
+    // New: a monotonically increasing tick for command events (e.g., "show_transcriber")
+    var lastCommandTick: Int = 0
+    
     var pendingInvitation: PendingInvitation?
     private var pendingInvitationHandler: ((Bool, MCSession?) -> Void)?
+    
+    // New: track which peer is currently being invited by the iPad
+    var invitingPeer: MCPeerID?
     
     private(set) var preferredPeer: MCPeerID?
     
@@ -100,7 +110,11 @@ class MPCManager: NSObject {
     func connect(to peer: MCPeerID) {
         guard role == .ipadHost else { return }
         guard session.connectedPeers.isEmpty else { return }   // only 1 at a time
-        browser?.invitePeer(peer, to: session, withContext: nil, timeout: 10)
+        // Mark inviting state and use a longer timeout to allow slow accepts
+        DispatchQueue.main.async {
+            self.invitingPeer = peer
+        }
+        browser?.invitePeer(peer, to: session, withContext: nil, timeout: 60)
     }
     
     // Save & load preferred peer
@@ -149,7 +163,6 @@ class MPCManager: NSObject {
     func resetLocalPeerIdentity() {
         // Warning: changing MCPeerID will break existing pairings until re-paired.
         UserDefaults.standard.removeObject(forKey: localPeerKey)
-        // Note: To fully apply a new identity, recreate session/advertiser/browser or reinit MPCManager.
     }
     
     func respondToInvitation(accept: Bool) {
@@ -158,9 +171,16 @@ class MPCManager: NSObject {
         pendingInvitation = nil
     }
     
+    // Existing string helper
     func send(message: String) {
         guard !session.connectedPeers.isEmpty else { return }
         guard let data = message.data(using: .utf8) else { return }
+        try? session.send(data, toPeers: session.connectedPeers, with: .reliable)
+    }
+    
+    // New generic data send
+    func send(data: Data) {
+        guard !session.connectedPeers.isEmpty else { return }
         try? session.send(data, toPeers: session.connectedPeers, with: .reliable)
     }
 }
@@ -185,9 +205,37 @@ extension MPCManager: MCSessionDelegate {
     
     func session(_ session: MCSession, didReceive data: Data,
                  fromPeer peerID: MCPeerID) {
+        // Try to parse our simple envelope: [4 bytes typeLen][type utf8][payload]
+        if data.count >= 4 {
+            let typeLenData = data.prefix(4)
+            let typeLen = typeLenData.withUnsafeBytes { $0.load(as: UInt32.self).bigEndian }
+            let afterLen = data.dropFirst(4)
+            if afterLen.count >= Int(typeLen) {
+                let typeData = afterLen.prefix(Int(typeLen))
+                let payload = afterLen.dropFirst(Int(typeLen))
+                let type = String(data: typeData, encoding: .utf8) ?? ""
+                
+                if type == "initial_question_image",
+                   let image = UIImage(data: payload) {
+                    DispatchQueue.main.async {
+                        self.receivedInitialQuestionImage = image
+                    }
+                    return
+                }
+            }
+        }
+        
+        // Fallback: treat as utf8 string commands/messages
         if let message = String(data: data, encoding: .utf8) {
             DispatchQueue.main.async {
+                // Always keep lastReceivedMessage for any UI/logs
                 self.lastReceivedMessage = "From \(peerID.displayName): \(message)"
+                
+                // If it's a navigation command, tick the counter so .onChange always fires
+                if message == "show_transcriber" {
+                    print("nambah satu")
+                    self.lastCommandTick &+= 1
+                }
             }
         }
     }
@@ -197,6 +245,10 @@ extension MPCManager: MCSessionDelegate {
                  didChange state: MCSessionState) {
         DispatchQueue.main.async {
             self.connectedPeers = session.connectedPeers
+            // Clear inviting state if this peer finished connecting or failed
+            if self.invitingPeer == peerID && (state == .connected || state == .notConnected) {
+                self.invitingPeer = nil
+            }
         }
         
         // Persist preferred peer on first successful pairing, on both roles
@@ -205,7 +257,6 @@ extension MPCManager: MCSessionDelegate {
                 savePreferredPeer(peerID)
                 print("Saved preferred peer: \(peerID.displayName)")
             } else if peerID != preferredPeer {
-                // Optional: handle non-preferred connections
                 print("Connected to non-preferred peer; preferred is \(preferredPeer!.displayName)")
             }
         }
@@ -251,7 +302,11 @@ extension MPCManager: MCNearbyServiceBrowserDelegate {
             if peerID == preferred {
                 print("Found preferred iPhone \(peerID.displayName)")
                 if session.connectedPeers.isEmpty {
-                    browser.invitePeer(peerID, to: session, withContext: nil, timeout: 10)
+                    // Mark inviting and use longer timeout for auto-invite as well
+                    DispatchQueue.main.async {
+                        self.invitingPeer = peerID
+                    }
+                    browser.invitePeer(peerID, to: session, withContext: nil, timeout: 60)
                 }
             } else {
                 print("Ignoring non-preferred peer \(peerID.displayName)")
@@ -270,6 +325,10 @@ extension MPCManager: MCNearbyServiceBrowserDelegate {
         guard role == .ipadHost else { return }
         DispatchQueue.main.async {
             self.discoveredPeers.removeAll { $0 == peerID }
+            // If we were inviting this peer and it disappeared, clear inviting state
+            if self.invitingPeer == peerID {
+                self.invitingPeer = nil
+            }
         }
     }
     
@@ -283,3 +342,4 @@ extension MPCManager: MCNearbyServiceBrowserDelegate {
         preferredPeer = nil
     }
 }
+

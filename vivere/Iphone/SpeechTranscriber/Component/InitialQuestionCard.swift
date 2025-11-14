@@ -16,9 +16,9 @@ struct InitialQuestionCard: View {
                 .foregroundColor(.black)
                 .padding(.horizontal)
                 .padding(.bottom, 50)
+                .lineLimit(nil)
             Spacer()
         }
-//        .padding(37.5)
         .frame(maxWidth: .infinity, maxHeight: 400)
         .background(
             RoundedRectangle(cornerRadius: 45)
