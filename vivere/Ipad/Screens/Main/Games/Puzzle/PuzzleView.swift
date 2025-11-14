@@ -262,5 +262,11 @@ struct PuzzleView: View {
 }
 
 #Preview {
-    PuzzleView()
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: ImageModel.self, configurations: config)
+    let mpc = MPCManager()
+
+    return PuzzleView()
+        .modelContainer(container)
+        .environment(mpc)
 }

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct iPadHomeView: View {
     @State private var showGamePicker = false
+    @State private var showPhotoGallery = false
 
     var body: some View {
         NavigationStack {
@@ -77,12 +78,20 @@ struct iPadHomeView: View {
 
                             // Kelola Foto Button
                             CustomIpadButton(color: .vivereSecondary) {
-                                // Action
+                                showPhotoGallery = true
                             } label: {
                                 VStack(spacing: 10) {
-                                    Text("Kelola Foto")
-                                        .font(.system(size: 28, weight: .bold))
-                                        .foregroundColor(.black)
+                                    HStack(spacing: 24) {
+                                        Image(systemName: "photo.on.rectangle")
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 42, height: 42)
+                                            .foregroundColor(.black)
+
+                                        Text("Kelola Foto")
+                                            .font(.system(size: 28, weight: .bold))
+                                            .foregroundColor(.black)
+                                    }
 
                                     Text("Tambahkan, ubah, atau hapus foto pilihanmu beserta cerita di dalamnya")
                                         .font(.system(size: 17))
@@ -118,6 +127,9 @@ struct iPadHomeView: View {
             .navigationBarBackButtonHidden(true)
             .navigationDestination(isPresented: $showGamePicker) {
                 GamePickerView()
+            }
+            .navigationDestination(isPresented: $showPhotoGallery) {
+                PhotoGalleryView()
             }
         }
     }
