@@ -11,30 +11,32 @@ import SwiftData
 
 struct InputContextView: View {
     @ObservedObject var viewModel = InputContextViewModel()
-    
+
     @State private var currContext: String = ""
     @State private var isDoneInputing: Bool = false
-    
+
     let imagesIds: [String]
-    
+
     @Environment(\.modelContext) private var modelContext
-    
+
     var body: some View {
         ZStack {
             Color.viverePrimary.ignoresSafeArea(edges: .all)
-            
+
             Button("Lewati \(Image(systemName: "chevron.right.2"))") {
                 viewModel.save(currContext: "")
-                saveToDB()
-                isDoneInputing = true
+                Task {
+                    await uploadAndSave()
+                }
             }
+            .disabled(viewModel.isUploading)
             .font(Font.title)
             .fontWeight(.bold)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             .buttonStyle(.plain)
             .foregroundColor(.white)
             .padding()
-            
+
             VStack {
                 HStack {
                     Image("progressStepper1")
@@ -49,7 +51,7 @@ struct InputContextView: View {
                 }
                 .frame(maxWidth: 400)
                 .padding()
-                
+
                 HStack {
                     VStack {
                         if let image = viewModel.currentImage {
@@ -71,7 +73,7 @@ struct InputContextView: View {
                             .fontWeight(.medium)
                             .foregroundColor(.white)
                     }
-                    
+
                     VStack {
                         Text("Ceritakan sedikit tentang foto itu")
                             .font(.title)
@@ -112,16 +114,53 @@ struct InputContextView: View {
                             }else{
                                 CustomIpadButton(label: "Selanjutnya", color: .darkBlue, style: .large) {
                                     viewModel.save(currContext: currContext)
-                                    saveToDB()
-                                    isDoneInputing = true
+                                    Task {
+                                        await uploadAndSave()
+                                    }
                                 }
+                                .disabled(viewModel.isUploading)
                             }
                         }
                         .padding(.horizontal)
                     }
                     .frame(maxWidth: 500)
-                }
             }
+        }
+
+        // Upload progress overlay
+        if viewModel.isUploading {
+            ZStack {
+                Color.black.opacity(0.6)
+                    .ignoresSafeArea()
+
+                VStack(spacing: 20) {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                        .tint(.white)
+
+                    Text("Mengunggah foto dan membuat video...")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+
+                    Text("\(viewModel.uploadProgress)%")
+                        .font(.title3)
+                        .foregroundColor(.white)
+
+                    if let error = viewModel.uploadError {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundColor(.red)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                }
+                .padding(40)
+                .background(Color.vivereSecondary)
+                .cornerRadius(20)
+                .padding(40)
+            }
+        }
 
         }
         .navigationBarBackButtonHidden(true)
@@ -134,10 +173,42 @@ struct InputContextView: View {
             }
         }
     }
-    
+
+    func uploadAndSave() async {
+        // Show upload progress
+        await MainActor.run {
+            // Upload images for video generation
+        }
+
+        // Upload all images and get job IDs
+        let jobIds = await viewModel.uploadImagesForVideoGeneration()
+
+        // Save to database with job IDs
+        await MainActor.run {
+            for i in 0..<viewModel.totalImgCount {
+                let jobId = i < jobIds.count ? jobIds[i] : nil
+                let imgData = ImageModel(
+                    assetId: viewModel.imageIdentifiers[i],
+                    context: viewModel.imageContexts[i],
+                    jobId: jobId
+                )
+                modelContext.insert(imgData)
+                try? modelContext.save()
+            }
+
+            // Navigate to next screen
+            isDoneInputing = true
+        }
+    }
+
     func saveToDB(){
         for i in 0..<viewModel.totalImgCount {
-            let imgData = ImageModel(assetId: viewModel.imageIdentifiers[i], context: viewModel.imageContexts[i])
+            let jobId = i < viewModel.jobIds.count ? viewModel.jobIds[i] : nil
+            let imgData = ImageModel(
+                assetId: viewModel.imageIdentifiers[i],
+                context: viewModel.imageContexts[i],
+                jobId: jobId
+            )
             modelContext.insert(imgData)
             try? modelContext.save()
         }
