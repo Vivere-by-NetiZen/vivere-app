@@ -14,10 +14,12 @@ class ImageModel : Identifiable {
     var id: UUID
     var assetId: String
     var context: String?
-    
-    init(id: UUID = UUID(), assetId: String, context: String? = nil) {
+    var jobId: String? // ComfyUI job ID for video generation
+
+    init(id: UUID = UUID(), assetId: String, context: String? = nil, jobId: String? = nil) {
         self.id = id
         self.assetId = assetId
         self.context = context
+        self.jobId = jobId
     }
 }

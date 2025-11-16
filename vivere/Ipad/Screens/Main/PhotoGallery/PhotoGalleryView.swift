@@ -14,6 +14,7 @@ struct PhotoGalleryView: View {
     @Namespace private var zoomNamespace
     @Query private var images: [ImageModel]
     @State private var showMediaCollection = false
+    @State private var showVideoProgress = false
 
     private let columns = [GridItem](repeating: GridItem(.flexible(), spacing: 32), count: 4)
     private let gridSpacing: CGFloat = 32
@@ -51,6 +52,9 @@ struct PhotoGalleryView: View {
         .navigationDestination(isPresented: $showMediaCollection) {
             MediaCollectionView()
         }
+        .sheet(isPresented: $showVideoProgress) {
+            VideoProgressView(images: images.filter { $0.jobId != nil })
+        }
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
     }
@@ -78,6 +82,18 @@ struct PhotoGalleryView: View {
                 .foregroundColor(.white)
 
             Spacer()
+
+            // Video progress button
+            if images.contains(where: { $0.jobId != nil }) {
+                CustomIpadButton(color: .vivereSecondary) {
+                    showVideoProgress = true
+                } label: {
+                    Image(systemName: "video.fill")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundColor(.black)
+                        .frame(width: 70, height: 70)
+                }
+            }
 
             CustomIpadButton(color: .accent) {
                 showMediaCollection = true
