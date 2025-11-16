@@ -15,6 +15,7 @@ struct HomeView: View {
     @State private var sheetHeight: CGFloat = .zero
     @Environment(Router.self) private var router
     @Environment(MPCManager.self) private var mpc
+    var mainText: String
     
     var body: some View {
         @Bindable var bindableMpc = mpc
@@ -22,25 +23,19 @@ struct HomeView: View {
         ZStack {
             Color.viverePrimary.ignoresSafeArea()
             
-            // Main content centered vertically
             VStack(alignment: .center, spacing: 12) {
                 Image("Logo")
                     .resizable()
                     .frame(width: 117, height: 117)
                     .padding(.bottom, 22)
-                Text("Hai! ini Vivere mu")
-                    .font(.title)
+                Text(mainText)
+                    .font(.title2)
+                    .fontWeight(.semibold)
                     .foregroundStyle(Color.white)
-                    .padding(.bottom, 3)
-                Text("Ciptakan obrolan bermakna dengan lansia bersama Vivere!")
-                    .font(.callout)
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(Color.white)
-                    .padding(.bottom, 220)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             
-            // Status section anchored at the bottom
             VStack(spacing: 8) {
                 if mpc.connectedPeers.isEmpty {
                     Text("Belum ada orang tersambung. Tap to connect.")
@@ -71,16 +66,13 @@ struct HomeView: View {
                 showBeforeStart = true
             }
         }
-        .sheet(isPresented: $showBeforeStart) {
+        .fullScreenCover(isPresented: $showBeforeStart) {
             OnBoardingSheetView(onStart: {
                 hasSeenBeforeStart = true
                 showBeforeStart = false
             })
             .padding()
-            .fixedSize(horizontal: false, vertical: true)
-            .modifier(GetHeightModifier(height: $sheetHeight))
             .background(.white)
-            .presentationDetents([.height(sheetHeight)])
         }
         .alert(item: $bindableMpc.pendingInvitation) { invitation in
             Alert(
@@ -94,20 +86,5 @@ struct HomeView: View {
                 }
             )
         }
-    }
-}
-
-struct GetHeightModifier: ViewModifier {
-    @Binding var height: CGFloat
-
-    func body(content: Content) -> some View {
-        content.background(
-            GeometryReader { geo -> Color in
-                DispatchQueue.main.async {
-                    height = geo.size.height
-                }
-                return Color.white
-            }
-        )
     }
 }
