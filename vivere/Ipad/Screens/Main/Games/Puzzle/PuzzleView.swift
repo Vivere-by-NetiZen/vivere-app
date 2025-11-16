@@ -21,7 +21,7 @@ struct PuzzleView: View {
 
     let col = 3
     let row = 2
-    let size: CGFloat = 300
+    let size: CGFloat = 180
 
     // Pieces area configuration (right side)
     let piecesAreaCols = 2 // 2 columns for pieces area
@@ -48,6 +48,7 @@ struct PuzzleView: View {
                                 RoundedRectangle(cornerRadius: 0)
                                     .stroke(Color.black, lineWidth: 4)
                             )
+                            .offset(x: -25, y: 0)
 
                         // Reference image (faded)
                         if let referenceImage = referenceUIImage {
@@ -55,6 +56,7 @@ struct PuzzleView: View {
                                 .resizable()
                                 .frame(width: size * CGFloat(col), height: size * CGFloat(row))
                                 .opacity(0.5)
+                                .offset(x: -25, y: 0)
                         }
                     }
                     .frame(width: size * CGFloat(col) + 40, height: size * CGFloat(row) + 40)
@@ -102,7 +104,7 @@ struct PuzzleView: View {
             }
         }
     }
-
+    
     // Ensures we have a selected image and pieces prepared
     private func preparePuzzleIfNeeded(screenSize: CGSize) async {
         // If already prepared, skip
@@ -178,6 +180,7 @@ struct PuzzleView: View {
     private func setupPuzzle(screenSize: CGSize, using uiImg: UIImage) {
         pieces.removeAll()
         let imgs = splitImageIntoPieces(img: uiImg, col: col, row: row)
+        let dents = getPuzzleDent()
 
         // Calculate puzzle board position (left side)
         let puzzleBoardX = 60 + (size * CGFloat(col) + 40) / 2 // Left side center X
@@ -196,11 +199,14 @@ struct PuzzleView: View {
         for (idx, originalIndex) in shuffledIndices.enumerated() {
             let r = originalIndex / col
             let c = originalIndex % col
+            
+            let xSizeCorrecttion = (CGFloat(dents[r * col + c][1]) * size * 0.2 - CGFloat(dents[r * col + c][3]) * size * 0.2)/2
+            let ySizeCorrecttion = (CGFloat(dents[r * col + c][2]) * size * 0.2 - CGFloat(dents[r * col + c][0]) * size * 0.2)/2
 
             // Correct position (on puzzle board)
             let correctPos = CGPoint(
-                x: puzzleBoardX - size * CGFloat(col) / 2 + CGFloat(c) * size + size / 2,
-                y: puzzleBoardY - size * CGFloat(row) / 2 + CGFloat(r) * size + size / 2
+                x: (puzzleBoardX - size * CGFloat(col) / 2 + CGFloat(c) * size + size / 2) + xSizeCorrecttion,
+                y: (puzzleBoardY - size * CGFloat(row) / 2 + CGFloat(r) * size + size / 2) + ySizeCorrecttion
             )
 
             // Current position (in pieces area, arranged in grid)
@@ -211,7 +217,7 @@ struct PuzzleView: View {
                 y: piecesAreaStartY + CGFloat(piecesAreaRow) * (size + piecesAreaSpacing)
             )
 
-            let piece = PuzzlePiece(img: imgs[originalIndex], currPos: currPos, correctPos: correctPos)
+            let piece = PuzzlePiece(img: imgs[originalIndex], dents: dents[originalIndex], currPos: currPos, correctPos: correctPos)
             pieces.append(piece)
         }
     }
@@ -221,18 +227,24 @@ struct PuzzleView: View {
         var imgs: [Image] = []
         let width = cgImage.width / col
         let height = cgImage.height / row
-
+        let paths = getCropPath()
+        let dents = getPuzzleDent()
+        
         for r in 0..<row {
             for c in 0..<col {
+                let path = paths[r * col + c]
+                let dent = dents[r * col + c]
+                
                 let rect = CGRect(
-                    x: c * width,
-                    y: r * height,
-                    width: width,
-                    height: height
+                    x: c * width - Int(CGFloat(dent[3]) * CGFloat(width) * 0.2),
+                    y: r * height - Int(CGFloat(dent[0]) * CGFloat(height) * 0.2),
+                    width: width + Int(CGFloat(dent[1]) * CGFloat(width) * 0.2) + Int(CGFloat(dent[3]) * CGFloat(width) * 0.2),
+                    height: height + Int(CGFloat(dent[2]) * CGFloat(height) * 0.2) + Int(CGFloat(dent[0]) * CGFloat(height) * 0.2)
                 )
-
+                
                 if let croppedCGImage = cgImage.cropping(to: rect) {
-                    let piece = UIImage(cgImage: croppedCGImage, scale: img.scale, orientation: .up)
+                    let piece = UIImage(cgImage: croppedCGImage).crop(with: path)
+                    
                     imgs.append(Image(uiImage: piece))
                 }
             }
