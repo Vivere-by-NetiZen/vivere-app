@@ -15,54 +15,64 @@ struct HomeView: View {
     @State private var sheetHeight: CGFloat = .zero
     @Environment(Router.self) private var router
     @Environment(MPCManager.self) private var mpc
+    var mainText: String
     
     var body: some View {
         @Bindable var bindableMpc = mpc
         
-        VStack (alignment: .center) {
-            Image("Logo")
-                .resizable()
-                .frame(width: 117, height: 117)
-                .padding(.bottom, 22)
-            Text("Hai! ini Vivere mu")
-                .font(.title)
-                .foregroundStyle(Color.white)
-                .padding(.bottom, 3)
-            Text("Ciptakan obrolan bermakna dengan lansia bersama Vivere!")
-                .font(.callout)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(Color.white)
-            if mpc.connectedPeers.isEmpty {
-                Text("Belum ada orang tersambung. Tap to connect.")
-            } else {
-                Text("Connected to:")
-                    .font(.headline)
-                ForEach(mpc.connectedPeers, id: \.self) { peer in
-                    Text(peer.displayName)
+        ZStack {
+            Color.viverePrimary.ignoresSafeArea()
+            
+            VStack(alignment: .center, spacing: 12) {
+                Image("Logo")
+                    .resizable()
+                    .frame(width: 117, height: 117)
+                    .padding(.bottom, 22)
+                Text(mainText)
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color.white)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            
+            VStack(spacing: 8) {
+                if mpc.connectedPeers.isEmpty {
+                    Text("Belum ada orang tersambung. Tap to connect.")
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                } else {
+                    VStack(spacing: 6) {
+                        Text("Connected to:")
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                        ForEach(mpc.connectedPeers, id: \.self) { peer in
+                            Text(peer.displayName)
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+                Button("Open Transcription") {
+                    router.goToTranscribe()
                 }
             }
-            Button("Open Transcription") {
-                router.goToTranscribe()
-            }
+            .padding(.bottom, 24)
+            .frame(maxHeight: .infinity, alignment: .bottom)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .ignoresSafeArea()
-        .background(Color.viverePrimary)
         .onAppear {
             if !hasSeenBeforeStart {
                 showBeforeStart = true
             }
         }
-        .sheet(isPresented: $showBeforeStart) {
+        .fullScreenCover(isPresented: $showBeforeStart) {
             OnBoardingSheetView(onStart: {
                 hasSeenBeforeStart = true
                 showBeforeStart = false
             })
             .padding()
-            .fixedSize(horizontal: false, vertical: true)
-            .modifier(GetHeightModifier(height: $sheetHeight))
             .background(.white)
-            .presentationDetents([.height(sheetHeight)])
         }
         .alert(item: $bindableMpc.pendingInvitation) { invitation in
             Alert(
@@ -76,20 +86,5 @@ struct HomeView: View {
                 }
             )
         }
-    }
-}
-
-struct GetHeightModifier: ViewModifier {
-    @Binding var height: CGFloat
-
-    func body(content: Content) -> some View {
-        content.background(
-            GeometryReader { geo -> Color in
-                DispatchQueue.main.async {
-                    height = geo.size.height
-                }
-                return Color.white
-            }
-        )
     }
 }

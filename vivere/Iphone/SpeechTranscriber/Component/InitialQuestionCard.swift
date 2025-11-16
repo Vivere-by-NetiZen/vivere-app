@@ -1,11 +1,12 @@
 import SwiftUI
 
 struct InitialQuestionCard: View {
+    var title: String = "Pertanyaan"
     var question: String = "Apakah kalian punya lagu atau film favorit bersama?"
     
     var body: some View {
         VStack() {
-            Text("Pertanyaan")
+            Text(title)
                 .font(.title3)
                 .foregroundColor(.black)
                 .padding(.top, 25)
@@ -16,9 +17,9 @@ struct InitialQuestionCard: View {
                 .foregroundColor(.black)
                 .padding(.horizontal)
                 .padding(.bottom, 50)
+                .lineLimit(nil)
             Spacer()
         }
-//        .padding(37.5)
         .frame(maxWidth: .infinity, maxHeight: 400)
         .background(
             RoundedRectangle(cornerRadius: 45)

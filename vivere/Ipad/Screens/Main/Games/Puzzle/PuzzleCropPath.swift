@@ -1,0 +1,111 @@
+//
+//  PuzzleCropPath.swift
+//  vivere
+//
+//  Created by Reinhart on 13/11/25.
+//
+
+import Foundation
+import UIKit
+
+
+public func getCropPath() -> [UIBezierPath] {
+    var paths = [UIBezierPath]()
+    
+    let topLeft = UIBezierPath()
+    topLeft.move(to: CGPoint(x: 150, y: 45))
+    topLeft.addCurve(to: CGPoint(x: 180, y: 75), controlPoint1: CGPoint(x: 166.6, y: 45), controlPoint2: CGPoint(x: 180, y: 58.4))
+    topLeft.addCurve(to: CGPoint(x: 150, y: 105), controlPoint1: CGPoint(x: 180, y: 91.6), controlPoint2: CGPoint(x: 166.6, y: 105))
+    topLeft.addLine(to: CGPoint(x: 150, y: 150))
+    topLeft.addLine(to: CGPoint(x: 105, y: 150))
+    topLeft.addCurve(to: CGPoint(x: 75, y: 180), controlPoint1: CGPoint(x: 105, y: 166.6), controlPoint2: CGPoint(x: 91.6, y: 180))
+    topLeft.addCurve(to: CGPoint(x: 45, y: 150), controlPoint1: CGPoint(x: 58.4, y: 180), controlPoint2: CGPoint(x: 45, y: 166.6))
+    topLeft.addLine(to: CGPoint(x: 0, y: 150))
+    topLeft.addLine(to: CGPoint(x: 0, y: 0))
+    topLeft.addLine(to: CGPoint(x: 150, y: 0))
+    topLeft.addLine(to: CGPoint(x: 150, y: 45))
+    topLeft.close()
+    paths.append(topLeft)
+    
+    let topMid = UIBezierPath()
+    topMid.move(to: CGPoint(x: 150, y: 45))
+    topMid.addCurve(to: CGPoint(x: 120, y: 75), controlPoint1: CGPoint(x: 133.4, y: 45), controlPoint2: CGPoint(x: 120, y: 58.4))
+    topMid.addCurve(to: CGPoint(x: 150, y: 105), controlPoint1: CGPoint(x: 120, y: 91.6), controlPoint2: CGPoint(x: 133.4, y: 105))
+    topMid.addLine(to: CGPoint(x: 150, y: 150))
+    topMid.addLine(to: CGPoint(x: 105, y: 150))
+    topMid.addCurve(to: CGPoint(x: 75, y: 120), controlPoint1: CGPoint(x: 105, y: 133.4), controlPoint2: CGPoint(x: 91.6, y: 120))
+    topMid.addCurve(to: CGPoint(x: 45, y: 150), controlPoint1: CGPoint(x: 58.4, y: 120), controlPoint2: CGPoint(x: 45, y: 133.4))
+    topMid.addLine(to: CGPoint(x: 0, y: 150))
+    topMid.addLine(to: CGPoint(x: 0, y: 105))
+    topMid.addCurve(to: CGPoint(x: 30, y: 75), controlPoint1: CGPoint(x: 16.6, y: 105), controlPoint2: CGPoint(x: 30, y: 91.6))
+    topMid.addCurve(to: CGPoint(x: 0, y: 45), controlPoint1: CGPoint(x: 30, y: 58.4), controlPoint2: CGPoint(x: 16.6, y: 45))
+    topMid.addLine(to: CGPoint(x: 0, y: 0))
+    topMid.addLine(to: CGPoint(x: 150, y: 0))
+    topMid.addLine(to: CGPoint(x: 150, y: 45))
+    paths.append(topMid)
+    
+    let topRight = UIBezierPath()
+    topRight.move(to: CGPoint(x: 180, y: 150))
+    topRight.addLine(to: CGPoint(x: 135, y: 150))
+    topRight.addCurve(to: CGPoint(x: 105, y: 180), controlPoint1: CGPoint(x: 135, y: 166.6), controlPoint2: CGPoint(x: 121.6, y: 180))
+    topRight.addCurve(to: CGPoint(x: 75, y: 150), controlPoint1: CGPoint(x: 88.4, y: 180), controlPoint2: CGPoint(x: 75, y: 166.6))
+    topRight.addLine(to: CGPoint(x: 30, y: 150))
+    topRight.addLine(to: CGPoint(x: 30, y: 105))
+    topRight.addCurve(to: CGPoint(x: 0, y: 75), controlPoint1: CGPoint(x: 13.4, y: 105), controlPoint2: CGPoint(x: 0, y: 91.6))
+    topRight.addCurve(to: CGPoint(x: 30, y: 45), controlPoint1: CGPoint(x: 0, y: 58.4), controlPoint2: CGPoint(x: 13.4, y: 45))
+    topRight.addLine(to: CGPoint(x: 30, y: 0))
+    topRight.addLine(to: CGPoint(x: 180, y: 0))
+    topRight.addLine(to: CGPoint(x: 180, y: 150))
+    topRight.close()
+    paths.append(topRight)
+    
+    let bottomLeft = UIBezierPath()
+    bottomLeft.move(to: CGPoint(x: 150, y: 45))
+    bottomLeft.addCurve(to: CGPoint(x: 120, y: 75), controlPoint1: CGPoint(x: 133.4, y: 45), controlPoint2: CGPoint(x: 120, y: 58.4))
+    bottomLeft.addCurve(to: CGPoint(x: 150, y: 105), controlPoint1: CGPoint(x: 120, y: 91.6), controlPoint2: CGPoint(x: 133.4, y: 105))
+    bottomLeft.addLine(to: CGPoint(x: 150, y: 150))
+    bottomLeft.addLine(to: CGPoint(x: 0, y: 150))
+    bottomLeft.addLine(to: CGPoint(x: 0, y: 0))
+    bottomLeft.addLine(to: CGPoint(x: 45, y: 0))
+    bottomLeft.addCurve(to: CGPoint(x: 75, y: 30), controlPoint1: CGPoint(x: 45, y: 16.6), controlPoint2: CGPoint(x: 58.4, y: 30))
+    bottomLeft.addCurve(to: CGPoint(x: 105, y: 0), controlPoint1: CGPoint(x: 91.6, y: 30), controlPoint2: CGPoint(x: 105, y: 16.6))
+    bottomLeft.addLine(to: CGPoint(x: 150, y: 0))
+    bottomLeft.addLine(to: CGPoint(x: 150, y: 45))
+    bottomLeft.close()
+    paths.append(bottomLeft)
+    
+    let bottomMid = UIBezierPath()
+    bottomMid.move(to: CGPoint(x: 105, y: 0))
+    bottomMid.addCurve(to: CGPoint(x: 135, y: 30), controlPoint1: CGPoint(x: 121.6, y: 0), controlPoint2: CGPoint(x: 135, y: 13.4))
+    bottomMid.addLine(to: CGPoint(x: 180, y: 30))
+    bottomMid.addLine(to: CGPoint(x: 180, y: 75))
+    bottomMid.addCurve(to: CGPoint(x: 210, y: 105), controlPoint1: CGPoint(x: 196.6, y: 75), controlPoint2: CGPoint(x: 210, y: 88.4))
+    bottomMid.addCurve(to: CGPoint(x: 180, y: 135), controlPoint1: CGPoint(x: 210, y: 121.6), controlPoint2: CGPoint(x: 196.6, y: 135))
+    bottomMid.addLine(to: CGPoint(x: 180, y: 180))
+    bottomMid.addLine(to: CGPoint(x: 30, y: 180))
+    bottomMid.addLine(to: CGPoint(x: 30, y: 135))
+    bottomMid.addCurve(to: CGPoint(x: 0, y: 105), controlPoint1: CGPoint(x: 13.4, y: 135), controlPoint2: CGPoint(x: 0, y: 121.6))
+    bottomMid.addCurve(to: CGPoint(x: 30, y: 75), controlPoint1: CGPoint(x: 0, y: 88.4), controlPoint2: CGPoint(x: 13.4, y: 75))
+    bottomMid.addLine(to: CGPoint(x: 30, y: 30))
+    bottomMid.addLine(to: CGPoint(x: 75, y: 30))
+    bottomMid.addCurve(to: CGPoint(x: 105, y: 0), controlPoint1: CGPoint(x: 75, y: 13.4), controlPoint2: CGPoint(x: 88.4, y: 0))
+    bottomMid.close()
+    paths.append(bottomMid)
+    
+    let bottomRight = UIBezierPath()
+    bottomRight.move(to: CGPoint(x: 45, y: 0))
+    bottomRight.addCurve(to: CGPoint(x: 75, y: 30), controlPoint1: CGPoint(x: 45, y: 16.6), controlPoint2: CGPoint(x: 58.4, y: 30))
+    bottomRight.addCurve(to: CGPoint(x: 105, y: 0), controlPoint1: CGPoint(x: 91.6, y: 30), controlPoint2: CGPoint(x: 105, y: 16.6))
+    bottomRight.addLine(to: CGPoint(x: 150, y: 0))
+    bottomRight.addLine(to: CGPoint(x: 150, y: 150))
+    bottomRight.addLine(to: CGPoint(x: 0, y: 150))
+    bottomRight.addLine(to: CGPoint(x: 0, y: 105))
+    bottomRight.addCurve(to: CGPoint(x: 30, y: 75), controlPoint1: CGPoint(x: 16.6, y: 105), controlPoint2: CGPoint(x: 30, y: 91.6))
+    bottomRight.addCurve(to: CGPoint(x: 0, y: 45), controlPoint1: CGPoint(x: 30, y: 58.4), controlPoint2: CGPoint(x: 16.6, y: 45))
+    bottomRight.addLine(to: CGPoint(x: 0, y: 0))
+    bottomRight.addLine(to: CGPoint(x: 45, y: 0))
+    bottomRight.close()
+    paths.append(bottomRight)
+    
+    return paths
+}
