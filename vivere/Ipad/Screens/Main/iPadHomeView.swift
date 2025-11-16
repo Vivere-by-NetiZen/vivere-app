@@ -9,9 +9,9 @@ import SwiftUI
 
 struct iPadHomeView: View {
     @State private var showPuzzleView = false
+    @State private var showPuzzleTutorialSheet = false
     @State private var showPhotoGallery = false
     @State private var showUsageInstructions = false
-    @State private var showDeviceConnection = false
     @State private var showPairDevice = false
     @Environment(MPCManager.self) private var mpc
 
@@ -121,7 +121,7 @@ struct iPadHomeView: View {
                                 shadowColor: Color(hex: "87622a"),
                                 shadowOffset: CGSize(width: 3, height: 4),
                                 action: {
-                                    showPuzzleView = true
+                                    showPuzzleTutorialSheet = true
                                 }
                             ) {
                                 VStack(spacing: 20) {
@@ -163,7 +163,7 @@ struct iPadHomeView: View {
             }
             .navigationBarBackButtonHidden(true)
             .navigationDestination(isPresented: $showPuzzleView) {
-                PuzzleTutorialView()
+                PuzzleView()
             }
             .navigationDestination(isPresented: $showPhotoGallery) {
                 PhotoGalleryView()
@@ -174,6 +174,15 @@ struct iPadHomeView: View {
             .sheet(isPresented: $showPairDevice) {
                 PairDeviceSheetView()
                     .environment(mpc)
+            }
+            .sheet(isPresented: $showPuzzleTutorialSheet) {
+                PuzzleTutorialSheetView(onComplete: {
+                    showPuzzleTutorialSheet = false
+                    // Small delay to ensure sheet is dismissed before navigation
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showPuzzleView = true
+                    }
+                })
             }
         }
     }
