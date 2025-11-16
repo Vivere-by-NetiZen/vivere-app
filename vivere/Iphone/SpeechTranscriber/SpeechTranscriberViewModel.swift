@@ -6,7 +6,6 @@ import AVFoundation
 @MainActor
 @Observable
 final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
-    // Shared instance so different views can observe the same state
     static let shared = SpeechTranscriberViewModel()
 
     private let config = AppConfig.shared
@@ -29,17 +28,13 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
     var initialQuestion: String = ""
     var isFetchingInitialQuestions: Bool = false
     
-    // Use the shared instance so the visualizer (which reads MicStreamer.shared) sees updates.
     private let streamer = SpeechTranscriber.shared
 
-    // Private init to enforce singleton
     private init() {
-        // Initialize ws/audio url from config
         self.urlString = config.ws("ws/audio").absoluteString
         streamer.delegate = self
     }
 
-    // MARK: - Microphone Permission (callable at app start)
     static func requestMicrophonePermissionIfNeeded() {
         let av = AVAudioSession.sharedInstance()
         if #available(iOS 17.0, *) {
@@ -67,17 +62,23 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
     }
     
     func resumeStream() {
-        do {
-            guard let url = URL(string: urlString) else {
-                print("invalid URL")
-                return
+        Task.detached { [urlString] in
+            do {
+                guard let url = URL(string: urlString) else {
+                    print("invalid URL")
+                    return
+                }
+                try await SpeechTranscriber.shared.resume(url: url)
+                await MainActor.run {
+                    self.isPaused = false
+                    self.suggested = false
+                }
+            } catch {
+                await MainActor.run {
+                    self.errorMessage = "Failed to resume: \(error.localizedDescription)"
+                    self.status = "error"
+                }
             }
-            try streamer.resume(url: url)
-            isPaused = false
-            suggested = false
-        } catch {
-            errorMessage = "Failed to resume: \(error.localizedDescription)"
-            status = "error"
         }
     }
 
@@ -97,13 +98,19 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
         isPaused = false
         suggested = false
 
-        do {
-            try streamer.start(url: url)
-            isStreaming = true
-        } catch {
-            print("start error: \(error.localizedDescription)")
-            status = "error"
-            isStreaming = false
+        Task.detached {
+            do {
+                try await SpeechTranscriber.shared.start(url: url)
+                await MainActor.run {
+                    self.isStreaming = true
+                }
+            } catch {
+                print("start error: \(error.localizedDescription)")
+                await MainActor.run {
+                    self.status = "error"
+                    self.isStreaming = false
+                }
+            }
         }
     }
 
@@ -114,7 +121,7 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
             getSuggestions()
             return
         }
-        streamer.stop()
+        SpeechTranscriber.shared.stop()
     }
     
     func getSuggestions(from urlString: String? = nil) {
@@ -128,7 +135,6 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
             errorMessage = "Transcript is empty."
             return
         }
-        // Build default suggestions URL from config if none provided
         let suggestionsURL = urlString.flatMap(URL.init(string:)) ?? config.api("suggestions")
         isFetchingSuggestion = true
         let payload = ["transcript": transcript]
@@ -204,7 +210,6 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
             errorMessage = "Failed to encode image."
             return
         }
-        // Build default initial-questions URL from config if none provided
         let endpointURL = urlString.flatMap(URL.init(string:)) ?? config.api("initial-questions")
         
         let boundary = "Boundary-\(UUID().uuidString)"

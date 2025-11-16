@@ -233,7 +233,6 @@ extension MPCManager: MCSessionDelegate {
                 
                 // If it's a navigation command, tick the counter so .onChange always fires
                 if message == "show_transcriber" {
-                    print("nambah satu")
                     self.lastCommandTick &+= 1
                 }
             }
@@ -245,13 +244,12 @@ extension MPCManager: MCSessionDelegate {
                  didChange state: MCSessionState) {
         DispatchQueue.main.async {
             self.connectedPeers = session.connectedPeers
-            // Clear inviting state if this peer finished connecting or failed
+            
             if self.invitingPeer == peerID && (state == .connected || state == .notConnected) {
                 self.invitingPeer = nil
             }
         }
         
-        // Persist preferred peer on first successful pairing, on both roles
         if state == .connected {
             if preferredPeer == nil {
                 savePreferredPeer(peerID)

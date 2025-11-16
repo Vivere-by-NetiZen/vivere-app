@@ -4,12 +4,19 @@
 <dict>
 	<key>API_BASE_URL</key>
 	<string>https://server-macro.bunny-kitchen.ts.net</string>
-	<key>WS_BASE_URL</key>
-	<string>wss://server-macro.bunny-kitchen.ts.net</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_vivere-sync._tcp</string>
 		<string>_vivere-sync._udp</string>
 	</array>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>ViverePrimary</string>
+		<key>UIImageName</key>
+		<string>launchImage</string>
+	</dict>
+	<key>WS_BASE_URL</key>
+	<string>wss://server-macro.bunny-kitchen.ts.net</string>
 </dict>
 </plist>
