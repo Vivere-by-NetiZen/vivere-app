@@ -173,38 +173,66 @@ struct InputContextView: View {
     }
 
     func uploadAndSave() async {
-        // Upload all images and get job IDs
-        // Note: Even if uploads fail, we still proceed to save photos
-        #if DEBUG
-        print("🚀 Starting upload process for \(viewModel.totalImgCount) images...")
-        #endif
+        // Save images to database immediately (without job IDs)
+        // Store asset IDs for background update
+        let assetIds = viewModel.imageIdentifiers
 
-        let jobIds = await viewModel.uploadImagesForVideoGeneration()
-
-        // Save to database with job IDs (nil if upload failed)
         await MainActor.run {
             #if DEBUG
-            print("💾 Saving \(viewModel.totalImgCount) images to database...")
+            print("💾 Saving \(viewModel.totalImgCount) images to database immediately...")
             #endif
 
             for i in 0..<viewModel.totalImgCount {
-                let jobId = i < jobIds.count ? jobIds[i] : nil
                 let imgData = ImageModel(
                     assetId: viewModel.imageIdentifiers[i],
                     context: viewModel.imageContexts[i],
-                    jobId: jobId
+                    jobId: nil // Will be updated in background
                 )
                 modelContext.insert(imgData)
-                try? modelContext.save()
             }
+            try? modelContext.save()
 
             #if DEBUG
-            print("✅ Database save complete. Navigating to next screen...")
+            print("✅ Images saved. Navigating to next screen immediately...")
             #endif
 
-            // Always navigate to next screen, even if uploads failed
-            // Videos can be generated later if needed
+            // Navigate immediately - uploads happen in background
             isDoneInputing = true
+        }
+
+        // Start background upload task (doesn't block navigation)
+        // Use Task instead of Task.detached to maintain access to view context
+        Task(priority: .background) { [weak viewModel] in
+            guard let viewModel = viewModel else { return }
+
+            #if DEBUG
+            print("🚀 Starting background upload process for \(viewModel.totalImgCount) images...")
+            #endif
+
+            let jobIds = await viewModel.uploadImagesForVideoGeneration()
+
+            // Update database with job IDs in background
+            await MainActor.run {
+                #if DEBUG
+                print("💾 Updating database with job IDs...")
+                #endif
+
+                // Fetch existing ImageModel entries and update them
+                let descriptor = FetchDescriptor<ImageModel>()
+                if let images = try? modelContext.fetch(descriptor) {
+                    for i in 0..<min(assetIds.count, jobIds.count) {
+                        let assetId = assetIds[i]
+                        if let imageModel = images.first(where: { $0.assetId == assetId }) {
+                            imageModel.jobId = jobIds[i]
+                        }
+                    }
+                    try? modelContext.save()
+
+                    #if DEBUG
+                    print("✅ Background upload complete. Job IDs updated in database.")
+                    #endif
+                }
+            }
         }
     }
 }

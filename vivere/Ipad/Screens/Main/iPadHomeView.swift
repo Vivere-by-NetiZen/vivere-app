@@ -7,16 +7,20 @@
 
 import SwiftUI
 
+enum HomeDestination: Hashable, Codable {
+    case puzzle
+    case photoGallery
+    case instructions
+}
+
 struct iPadHomeView: View {
-    @State private var showPuzzleView = false
+    @State private var path = NavigationPath()
     @State private var showPuzzleTutorialSheet = false
-    @State private var showPhotoGallery = false
-    @State private var showUsageInstructions = false
     @State private var showPairDevice = false
     @Environment(MPCManager.self) private var mpc
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ZStack {
                 Color.viverePrimary
                     .ignoresSafeArea(edges: .all)
@@ -42,13 +46,13 @@ struct iPadHomeView: View {
                         // Ellipsis Menu Button
                         Menu {
                             Button {
-                                showPhotoGallery = true
+                                path.append(HomeDestination.photoGallery)
                             } label: {
                                 Label("Kelola Foto", systemImage: "photo.on.rectangle")
                             }
 
                             Button {
-                                showUsageInstructions = true
+                                path.append(HomeDestination.instructions)
                             } label: {
                                 Label("Instruksi Penggunaan", systemImage: "book")
                             }
@@ -162,14 +166,15 @@ struct iPadHomeView: View {
                 .zIndex(0)
             }
             .navigationBarBackButtonHidden(true)
-            .navigationDestination(isPresented: $showPuzzleView) {
-                PuzzleView()
-            }
-            .navigationDestination(isPresented: $showPhotoGallery) {
-                PhotoGalleryView()
-            }
-            .navigationDestination(isPresented: $showUsageInstructions) {
-                InstruksiPenggunaanView()
+            .navigationDestination(for: HomeDestination.self) { destination in
+                switch destination {
+                case .puzzle:
+                    PuzzleView()
+                case .photoGallery:
+                    PhotoGalleryView()
+                case .instructions:
+                    InstruksiPenggunaanView()
+                }
             }
             .sheet(isPresented: $showPairDevice) {
                 PairDeviceSheetView()
@@ -180,7 +185,7 @@ struct iPadHomeView: View {
                     showPuzzleTutorialSheet = false
                     // Small delay to ensure sheet is dismissed before navigation
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        showPuzzleView = true
+                        path.append(HomeDestination.puzzle)
                     }
                 })
             }

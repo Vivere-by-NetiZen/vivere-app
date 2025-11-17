@@ -46,6 +46,7 @@ class InputContextViewModel: ObservableObject {
         for i in 0..<imagesIds.count {
             let assetId = imagesIds[i]
             let asset = assets.object(at: i)
+            let loadStartTime = CFAbsoluteTimeGetCurrent()
             if let imgWait = await withCheckedContinuation({ continuation in
                 imageManager.requestImageDataAndOrientation(for: asset, options: options) { data, _, _, _ in
                     if let data, let image = UIImage(data: data) {
@@ -55,6 +56,11 @@ class InputContextViewModel: ObservableObject {
                     }
                 }
             }) {
+                let loadDuration = CFAbsoluteTimeGetCurrent() - loadStartTime
+                #if DEBUG
+                let imageSizeMB = Double(imgWait.size.width * imgWait.size.height * 4) / (1024 * 1024) // Rough estimate
+                print("📷 Loaded image \(i + 1): \(String(format: "%.0f", imgWait.size.width))x\(String(format: "%.0f", imgWait.size.height)) (~\(String(format: "%.2f", imageSizeMB)) MB) in \(String(format: "%.3f", loadDuration))s")
+                #endif
                 // Only append to arrays if image loaded successfully
                 self.imageIdentifiers.append(assetId)
                 self.selectedImages.append(Image(uiImage: imgWait))
@@ -104,6 +110,7 @@ class InputContextViewModel: ObservableObject {
     /// Returns array of job IDs (one per image, nil if upload failed)
     /// Note: Backend queues jobs immediately and returns job_id - doesn't wait for video generation (~30 min)
     func uploadImagesForVideoGeneration() async -> [String?] {
+        let uploadStartTime = CFAbsoluteTimeGetCurrent()
         await MainActor.run {
             isUploading = true
             uploadProgress = 0
@@ -126,15 +133,21 @@ class InputContextViewModel: ObservableObject {
                 let totalCount = totalImgCount
 
                 group.addTask {
+                    let uploadStartTime = CFAbsoluteTimeGetCurrent()
                     do {
-                        let response = try await service.generateVideo(from: image, context: context)
                         #if DEBUG
-                        print("✅ Successfully uploaded image \(index + 1)/\(totalCount). Job ID: \(response.jobId)")
+                        print("📤 Starting upload for image \(index + 1)/\(totalCount)...")
+                        #endif
+                        let response = try await service.generateVideo(from: image, context: context)
+                        let uploadDuration = CFAbsoluteTimeGetCurrent() - uploadStartTime
+                        #if DEBUG
+                        print("✅ Successfully uploaded image \(index + 1)/\(totalCount) in \(String(format: "%.3f", uploadDuration))s. Job ID: \(response.jobId)")
                         #endif
                         return (index, response.jobId)
                     } catch {
+                        let uploadDuration = CFAbsoluteTimeGetCurrent() - uploadStartTime
                         #if DEBUG
-                        print("❌ Failed to upload image \(index + 1): \(error.localizedDescription)")
+                        print("❌ Failed to upload image \(index + 1) after \(String(format: "%.3f", uploadDuration))s: \(error.localizedDescription)")
                         #endif
                         return (index, nil)
                     }
@@ -159,16 +172,18 @@ class InputContextViewModel: ObservableObject {
                 }
             }
 
+            let totalUploadDuration = CFAbsoluteTimeGetCurrent() - uploadStartTime
             #if DEBUG
-            print("📊 Upload complete: \(successCount)/\(totalImgCount) images uploaded successfully")
+            print("📊 Upload complete: \(successCount)/\(totalImgCount) images uploaded successfully in \(String(format: "%.3f", totalUploadDuration))s")
             #endif
         }
 
         await MainActor.run {
             jobIds = uploadedJobIds
             isUploading = false
+            let totalDuration = CFAbsoluteTimeGetCurrent() - uploadStartTime
             #if DEBUG
-            print("✅ All uploads finished. Proceeding to save and navigate...")
+            print("✅ All uploads finished in \(String(format: "%.3f", totalDuration))s. Proceeding to save and navigate...")
             #endif
         }
 

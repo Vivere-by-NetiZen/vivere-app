@@ -11,13 +11,16 @@ import Photos
 
 struct PhotoGalleryView: View {
     @Environment(\.dismiss) private var dismiss
-    @Namespace private var zoomNamespace
     @Query private var images: [ImageModel]
     @State private var showMediaCollection = false
     @State private var showVideoProgress = false
 
     private let columns = [GridItem](repeating: GridItem(.flexible(), spacing: 32), count: 4)
     private let gridSpacing: CGFloat = 32
+
+    private var imagesWithVideoJobs: [ImageModel] {
+        images.filter { $0.jobId != nil }
+    }
 
     var body: some View {
         VStack(spacing: 40) {
@@ -31,7 +34,6 @@ struct PhotoGalleryView: View {
                         ForEach(images) { image in
                             NavigationLink(value: image.id) {
                                 PhotoThumbnailView(imageModel: image)
-                                    .matchedTransitionSource(id: image.id, in: zoomNamespace)
                             }
                             .buttonStyle(.plain)
                         }
@@ -46,14 +48,13 @@ struct PhotoGalleryView: View {
         .navigationDestination(for: UUID.self) { id in
             if let model = images.first(where: { $0.id == id }) {
                 PhotoDetailView(imageModel: model, allImages: images)
-                    .navigationTransition(.zoom(sourceID: id, in: zoomNamespace))
             }
         }
         .navigationDestination(isPresented: $showMediaCollection) {
             MediaCollectionView()
         }
         .sheet(isPresented: $showVideoProgress) {
-            VideoProgressView(images: images.filter { $0.jobId != nil })
+            VideoProgressView(images: imagesWithVideoJobs)
         }
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
@@ -84,7 +85,7 @@ struct PhotoGalleryView: View {
             Spacer()
 
             // Video progress button
-            if images.contains(where: { $0.jobId != nil }) {
+            if !imagesWithVideoJobs.isEmpty {
                 CustomIpadButton(color: .vivereSecondary) {
                     showVideoProgress = true
                 } label: {
@@ -129,33 +130,44 @@ struct PhotoGalleryView: View {
     }
 }
 
-// Simple thumbnail view component
 struct PhotoThumbnailView: View {
     let imageModel: ImageModel
     @State private var thumbnail: UIImage?
     @Environment(\.displayScale) private var displayScale
+
+    private enum Constants {
+        static let thumbnailBaseSize: CGFloat = 200
+        static let borderWidth: CGFloat = 10
+        static let borderPadding: CGFloat = 20
+        static let cornerRadius: CGFloat = 24
+        static let imageCornerRadius: CGFloat = 18
+        static let heightMultiplier: CGFloat = 1.05
+    }
 
     var body: some View {
         GeometryReader { geometry in
             let size = geometry.size.width
 
             ZStack {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .strokeBorder(.white, lineWidth: 10)
+                RoundedRectangle(cornerRadius: Constants.cornerRadius, style: .continuous)
+                    .strokeBorder(.white, lineWidth: Constants.borderWidth)
 
                 if let thumbnail {
                     Image(uiImage: thumbnail)
                         .resizable()
                         .scaledToFill()
-                        .frame(width: size - 20, height: size - 20)
+                        .frame(
+                            width: size - Constants.borderPadding,
+                            height: size - Constants.borderPadding
+                        )
                         .clipped()
-                        .cornerRadius(18)
+                        .cornerRadius(Constants.imageCornerRadius)
                 } else {
                     ProgressView()
                         .tint(.darkBlue)
                 }
             }
-            .frame(width: size, height: size * 1.05)
+            .frame(width: size, height: size * Constants.heightMultiplier)
         }
         .aspectRatio(1, contentMode: .fit)
         .task {
@@ -165,17 +177,23 @@ struct PhotoThumbnailView: View {
 
     private func loadThumbnail() async {
         guard thumbnail == nil else { return }
-        guard PHPhotoLibrary.authorizationStatus(for: .readWrite) == .authorized ||
-              PHPhotoLibrary.authorizationStatus(for: .readWrite) == .limited else { return }
+
+        let authStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+        guard authStatus == .authorized || authStatus == .limited else { return }
 
         let scale = max(displayScale, 1)
-        let targetSize = CGSize(width: 200 * scale, height: 200 * scale)
+        let targetSize = CGSize(
+            width: Constants.thumbnailBaseSize * scale,
+            height: Constants.thumbnailBaseSize * scale
+        )
 
         let assets = PHAsset.fetchAssets(withLocalIdentifiers: [imageModel.assetId], options: nil)
         guard let asset = assets.firstObject else { return }
 
         let options = PHImageRequestOptions()
-        options.deliveryMode = .opportunistic
+        // Use .fastFormat for thumbnails - ensures single completion call
+        // This prevents continuation misuse errors with async/await
+        options.deliveryMode = .fastFormat
         options.resizeMode = .fast
         options.isNetworkAccessAllowed = true
 
@@ -203,4 +221,3 @@ struct PhotoThumbnailView: View {
     return PhotoGalleryView()
         .modelContainer(container)
 }
-

@@ -319,8 +319,8 @@ struct VideoProgressRow: View {
 
                 if item.status == "completed", let videoUrl = item.videoUrl {
                     Button {
-                        // Video download functionality can be added here later
-                        // Use videoUrl to download video from backend
+                        // TODO: Implement video download functionality
+                        // videoUrl contains the download endpoint URL
                     } label: {
                         HStack {
                             Image(systemName: "arrow.down.circle.fill")
