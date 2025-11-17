@@ -10,12 +10,13 @@ import SwiftUI
 struct DeviceConnectionView: View {
     @State private var isNextPressed: Bool = false
     @State private var isPaired: Bool = false
+    @AppStorage("debugSkipDeviceConnection") private var skipDeviceConnection: Bool = false
     @Environment(MPCManager.self) private var mpc
-    
+
     var body: some View {
         ZStack {
             Color.viverePrimary.ignoresSafeArea(edges: .all)
-            
+
             VStack {
                 HStack {
                     Image("progressStepper1")
@@ -41,12 +42,12 @@ struct DeviceConnectionView: View {
                         .fontWeight(.semibold)
                         .foregroundColor(Color.red)
                 }
-                
+
                 Text("Unduh Vivere di iPhone Anda")
                     .font(Font.largeTitle.bold())
                     .foregroundColor(.white)
                     .padding(.top, 30)
-                
+
                 Text("Vivere menggunakan dua perangkat, iPad dan iPhone untuk interaksi satu sama lain. Jadi pastikan Anda sudah unduh Vivere di iPhone ya.")
                     .font(Font.title)
                     .foregroundColor(Color.white)
@@ -54,17 +55,17 @@ struct DeviceConnectionView: View {
                     .multilineTextAlignment(.center)
                     .padding(.top, 10)
                     .padding(.bottom, 30)
-                
+
                 CustomIpadButton(label: "Lanjut", color: .accent, style: .large){
                     isNextPressed = true
                 }
-                
+
             }
-            
+
             if isNextPressed {
                 PairDeviceView(isNextPressed: $isNextPressed, isPaired: $isPaired)
             }
-            
+
         }
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $isPaired) {
@@ -77,6 +78,18 @@ struct DeviceConnectionView: View {
         }
         .onChange(of: mpc.connectedPeers) { _, peers in
             if isNextPressed, !peers.isEmpty {
+                isPaired = true
+            }
+        }
+        .onAppear {
+            // Skip device connection if debug toggle is enabled
+            if skipDeviceConnection {
+                isPaired = true
+            }
+        }
+        .onChange(of: skipDeviceConnection) { _, skip in
+            // If debug toggle is enabled, skip to next step
+            if skip {
                 isPaired = true
             }
         }

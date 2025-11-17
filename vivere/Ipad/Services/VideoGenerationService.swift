@@ -9,7 +9,7 @@ import Foundation
 import UIKit
 
 struct VideoJobResponse: Codable {
-    let job_id: String
+    let jobId: String
     let prompt: String
     let status: String
     let progress: Int
@@ -105,6 +105,7 @@ class VideoGenerationService {
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.httpBody = body
+        request.timeoutInterval = 60 // 60 second timeout
 
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -113,18 +114,44 @@ class VideoGenerationService {
                 throw VideoGenerationError.invalidResponse
             }
 
+            // Check if response is empty
+            guard !data.isEmpty else {
+                #if DEBUG
+                print("Empty response from server. Status code: \(httpResponse.statusCode)")
+                #endif
+                throw VideoGenerationError.invalidResponse
+            }
+
             guard (200..<300).contains(httpResponse.statusCode) else {
+                #if DEBUG
+                if let errorString = String(data: data, encoding: .utf8) {
+                    print("Server error response: \(errorString)")
+                }
+                #endif
                 throw VideoGenerationError.serverError(httpResponse.statusCode)
             }
 
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = .convertFromSnakeCase
-            let videoJob = try decoder.decode(VideoJobResponse.self, from: data)
 
-            return videoJob
+            do {
+                let videoJob = try decoder.decode(VideoJobResponse.self, from: data)
+                return videoJob
+            } catch let decodingError {
+                #if DEBUG
+                print("Failed to decode response: \(decodingError)")
+                if let responseString = String(data: data, encoding: .utf8) {
+                    print("Response body: \(responseString)")
+                }
+                #endif
+                throw VideoGenerationError.invalidResponse
+            }
         } catch let error as VideoGenerationError {
             throw error
         } catch {
+            #if DEBUG
+            print("Network request error: \(error)")
+            #endif
             throw VideoGenerationError.networkError(error.localizedDescription)
         }
     }

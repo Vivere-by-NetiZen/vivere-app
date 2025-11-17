@@ -28,12 +28,11 @@ class InputContextViewModel: ObservableObject {
 
     func loadImages(imagesIds: [String]) async {
         idx = 0
-        imageIdentifiers = imagesIds
-        totalImgCount = imagesIds.count
-        imageContexts = Array(repeating: "", count: totalImgCount)
-        jobIds = Array(repeating: nil, count: totalImgCount)
+        imageIdentifiers.removeAll()
         selectedImages.removeAll()
         selectedUIImage.removeAll()
+        imageContexts.removeAll()
+        jobIds.removeAll()
 
         let assets = PHAsset.fetchAssets(withLocalIdentifiers: imagesIds, options: nil)
         let imageManager = PHImageManager.default()
@@ -43,38 +42,61 @@ class InputContextViewModel: ObservableObject {
         options.deliveryMode = .opportunistic
         options.isSynchronous = false
         options.resizeMode = .none
-        for i in 0..<totalImgCount {
+
+        for i in 0..<imagesIds.count {
+            let assetId = imagesIds[i]
             let asset = assets.object(at: i)
             if let imgWait = await withCheckedContinuation({ continuation in
                 imageManager.requestImageDataAndOrientation(for: asset, options: options) { data, _, _, _ in
                     if let data, let image = UIImage(data: data) {
                         continuation.resume(returning: image)
+                    } else {
+                        continuation.resume(returning: nil)
                     }
                 }
             }) {
+                // Only append to arrays if image loaded successfully
+                self.imageIdentifiers.append(assetId)
                 self.selectedImages.append(Image(uiImage: imgWait))
                 self.selectedUIImage.append(imgWait)
+                self.imageContexts.append("")
+                self.jobIds.append(nil)
             }
         }
-        currentImage = selectedImages[idx]
-        currentContext = imageContexts[idx]
+
+        // Update total count based on successfully loaded images
+        totalImgCount = selectedImages.count
+
+        // Only set current image if we have images loaded
+        if !selectedImages.isEmpty && idx < selectedImages.count {
+            currentImage = selectedImages[idx]
+            currentContext = imageContexts[idx]
+        } else {
+            currentImage = nil
+            currentContext = nil
+        }
     }
 
     func next(currContext: String) {
+        guard idx < imageContexts.count else { return }
         imageContexts[idx] = currContext
         idx += 1
+        guard idx < selectedImages.count && idx < imageContexts.count else { return }
         currentImage = selectedImages[idx]
         currentContext = imageContexts[idx]
     }
 
     func previous(currContext: String) {
+        guard idx < imageContexts.count else { return }
         imageContexts[idx] = currContext
         idx -= 1
+        guard idx >= 0 && idx < selectedImages.count && idx < imageContexts.count else { return }
         currentImage = selectedImages[idx]
         currentContext = imageContexts[idx]
     }
 
     func save(currContext: String) {
+        guard idx < imageContexts.count else { return }
         imageContexts[idx] = currContext
     }
 
@@ -101,13 +123,19 @@ class InputContextViewModel: ObservableObject {
                 let image = selectedUIImage[i]
                 let context = imageContexts[i]
                 let index = i
+                let totalCount = totalImgCount
 
                 group.addTask {
                     do {
                         let response = try await service.generateVideo(from: image, context: context)
-                        return (index, response.job_id)
+                        #if DEBUG
+                        print("✅ Successfully uploaded image \(index + 1)/\(totalCount). Job ID: \(response.jobId)")
+                        #endif
+                        return (index, response.jobId)
                     } catch {
-                        print("Failed to upload image \(index): \(error.localizedDescription)")
+                        #if DEBUG
+                        print("❌ Failed to upload image \(index + 1): \(error.localizedDescription)")
+                        #endif
                         return (index, nil)
                     }
                 }
@@ -115,9 +143,13 @@ class InputContextViewModel: ObservableObject {
 
             // Collect results as they complete
             var completedCount = 0
+            var successCount = 0
             for await (index, jobId) in group {
                 uploadedJobIds[index] = jobId
                 completedCount += 1
+                if jobId != nil {
+                    successCount += 1
+                }
 
                 await MainActor.run {
                     uploadProgress = Int((Double(completedCount) / Double(totalImgCount)) * 100)
@@ -126,11 +158,18 @@ class InputContextViewModel: ObservableObject {
                     }
                 }
             }
+
+            #if DEBUG
+            print("📊 Upload complete: \(successCount)/\(totalImgCount) images uploaded successfully")
+            #endif
         }
 
         await MainActor.run {
             jobIds = uploadedJobIds
             isUploading = false
+            #if DEBUG
+            print("✅ All uploads finished. Proceeding to save and navigate...")
+            #endif
         }
 
         return uploadedJobIds

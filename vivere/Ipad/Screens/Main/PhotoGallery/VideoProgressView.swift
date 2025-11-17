@@ -34,7 +34,8 @@ final class VideoProgressViewModel {
     var items: [VideoProgressItem] = []
     var isLoading = true
 
-    private var webSocketServices: [UUID: VideoStatusWebSocketService] = [:]
+    // WebSocket services can be accessed from nonisolated context for cleanup
+    nonisolated(unsafe) private var webSocketServices: [UUID: VideoStatusWebSocketService] = [:]
 
     init(images: [ImageModel]) {
         self.items = images.map { VideoProgressItem(imageModel: $0) }
@@ -93,7 +94,9 @@ final class VideoProgressViewModel {
                 }
             }
         } catch {
+            #if DEBUG
             print("Failed to check status for \(jobId): \(error)")
+            #endif
         }
     }
 
@@ -128,7 +131,8 @@ final class VideoProgressViewModel {
         }
     }
 
-    func disconnectAll() {
+    nonisolated func disconnectAll() {
+        // WebSocket cleanup doesn't require main actor isolation
         webSocketServices.values.forEach { $0.disconnect() }
         webSocketServices.removeAll()
     }
@@ -214,10 +218,14 @@ struct VideoProgressView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Tutup") {
+                        viewModel.disconnectAll()
                         dismiss()
                     }
                     .foregroundColor(.white)
                 }
+            }
+            .onDisappear {
+                viewModel.disconnectAll()
             }
         }
     }
@@ -311,7 +319,8 @@ struct VideoProgressRow: View {
 
                 if item.status == "completed", let videoUrl = item.videoUrl {
                     Button {
-                        // TODO: Download or play video
+                        // Video download functionality can be added here later
+                        // Use videoUrl to download video from backend
                     } label: {
                         HStack {
                             Image(systemName: "arrow.down.circle.fill")

@@ -27,6 +27,10 @@ struct IpadView: View {
                 Text("Please use landscape mode")
                     .font(Font.largeTitle.bold())
             }
+
+            // Debug menu - always visible
+            DebugMenuView()
+                .zIndex(1000)
         }
         .background {
             GeometryReader { geo in

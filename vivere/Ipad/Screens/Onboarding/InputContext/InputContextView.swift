@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import Combine
 import SwiftData
 
 struct InputContextView: View {
@@ -95,10 +94,10 @@ struct InputContextView: View {
                             .padding(.horizontal)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         HStack {
-                            if viewModel.idx != 0 {
+                            if viewModel.idx > 0 {
                                 Button("Kembali") {
                                     viewModel.previous(currContext: currContext)
-                                    currContext = viewModel.imageContexts[viewModel.idx]
+                                    currContext = viewModel.currentContext ?? ""
                                 }
                                 .font(Font.title2)
                                 .fontWeight(.semibold)
@@ -106,12 +105,12 @@ struct InputContextView: View {
                                 .foregroundColor(.white)
                                 Spacer()
                             }
-                            if viewModel.idx != viewModel.totalImgCount - 1 {
+                            if viewModel.idx < viewModel.totalImgCount - 1 {
                                 CustomIpadButton(label: "Selanjutnya", color: .darkBlue, style: .large) {
                                     viewModel.next(currContext: currContext)
-                                    currContext = viewModel.imageContexts[viewModel.idx]
+                                    currContext = viewModel.currentContext ?? ""
                                 }
-                            }else{
+                            } else {
                                 CustomIpadButton(label: "Selanjutnya", color: .darkBlue, style: .large) {
                                     viewModel.save(currContext: currContext)
                                     Task {
@@ -167,24 +166,27 @@ struct InputContextView: View {
         .navigationDestination(isPresented: $isDoneInputing) {
             FinishOnboardingView()
         }
-        .onAppear() {
-            Task {
-                await viewModel.loadImages(imagesIds: imagesIds)
-            }
+        .task {
+            await viewModel.loadImages(imagesIds: imagesIds)
+            currContext = viewModel.currentContext ?? ""
         }
     }
 
     func uploadAndSave() async {
-        // Show upload progress
-        await MainActor.run {
-            // Upload images for video generation
-        }
-
         // Upload all images and get job IDs
+        // Note: Even if uploads fail, we still proceed to save photos
+        #if DEBUG
+        print("🚀 Starting upload process for \(viewModel.totalImgCount) images...")
+        #endif
+
         let jobIds = await viewModel.uploadImagesForVideoGeneration()
 
-        // Save to database with job IDs
+        // Save to database with job IDs (nil if upload failed)
         await MainActor.run {
+            #if DEBUG
+            print("💾 Saving \(viewModel.totalImgCount) images to database...")
+            #endif
+
             for i in 0..<viewModel.totalImgCount {
                 let jobId = i < jobIds.count ? jobIds[i] : nil
                 let imgData = ImageModel(
@@ -196,21 +198,13 @@ struct InputContextView: View {
                 try? modelContext.save()
             }
 
-            // Navigate to next screen
-            isDoneInputing = true
-        }
-    }
+            #if DEBUG
+            print("✅ Database save complete. Navigating to next screen...")
+            #endif
 
-    func saveToDB(){
-        for i in 0..<viewModel.totalImgCount {
-            let jobId = i < viewModel.jobIds.count ? viewModel.jobIds[i] : nil
-            let imgData = ImageModel(
-                assetId: viewModel.imageIdentifiers[i],
-                context: viewModel.imageContexts[i],
-                jobId: jobId
-            )
-            modelContext.insert(imgData)
-            try? modelContext.save()
+            // Always navigate to next screen, even if uploads failed
+            // Videos can be generated later if needed
+            isDoneInputing = true
         }
     }
 }

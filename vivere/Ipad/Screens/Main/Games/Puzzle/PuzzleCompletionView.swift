@@ -10,11 +10,11 @@ import SwiftUI
 import ConfettiSwiftUI
 
 struct PuzzleCompletionView: View {
-    @Environment(\.dismiss) var dismiss
     @State private var confettiTrigger: Int = 0
+    @State private var showReminiscenceTherapy = false
 
     var body: some View {
-        GeometryReader { geometry in
+        NavigationStack {
             ZStack {
                 Color.viverePrimary
                     .ignoresSafeArea()
@@ -40,6 +40,11 @@ struct PuzzleCompletionView: View {
                             .tracking(0.1064)
                             .lineSpacing(6)
                             .frame(maxWidth: 750)
+                    }
+
+                    // Button to navigate to Reminiscence Therapy
+                    CustomIpadButton(label: "Lihat Hadiah", color: .accent, style: .large) {
+                        showReminiscenceTherapy = true
                     }
                 }
                 .padding(41)
@@ -84,6 +89,10 @@ struct PuzzleCompletionView: View {
                 // Trigger confetti when view appears
                 confettiTrigger += 1
             }
+            .navigationDestination(isPresented: $showReminiscenceTherapy) {
+                ReminiscenceTherapyView()
+            }
+            .navigationBarBackButtonHidden(true)
         }
     }
 }

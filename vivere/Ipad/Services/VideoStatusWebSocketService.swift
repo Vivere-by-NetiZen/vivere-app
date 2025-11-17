@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Combine
 
 struct VideoStatusMessage: Codable {
     let type: String
@@ -69,13 +68,11 @@ class VideoStatusWebSocketService {
 
             switch result {
             case .failure(let error):
+                #if DEBUG
                 print("WebSocket receive error: \(error.localizedDescription)")
-                // Try to reconnect or notify delegate
-                DispatchQueue.main.async {
-                    if let jobId = self.delegate as? VideoProgressItem {
-                        // Handle error
-                    }
-                }
+                #endif
+                // Disconnect on error
+                self.disconnect()
 
             case .success(let message):
                 switch message {
@@ -86,7 +83,9 @@ class VideoStatusWebSocketService {
                         self.handleMessage(text)
                     }
                 @unknown default:
+                    #if DEBUG
                     print("Unknown WebSocket message type")
+                    #endif
                 }
             }
 
@@ -136,7 +135,9 @@ class VideoStatusWebSocketService {
                 }
             }
         } catch {
+            #if DEBUG
             print("Failed to decode WebSocket message: \(error)")
+            #endif
         }
     }
 }
