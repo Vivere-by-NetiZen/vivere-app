@@ -33,22 +33,15 @@ struct MediaCollectionView: View {
                 .frame(maxWidth: 400)
                 .padding()
                 
-                //placeholder
-                ZStack {
-                    Color.vivereSecondary.frame(width: 300, height: 300)
-                        .clipShape(Circle())
-                    Text("ASET")
-                        .font(.largeTitle)
-                        .fontWeight(.semibold)
-                        .foregroundColor(Color.red)
-                }
+                Image("addMemories")
+                    .frame(width: 300, height: 300)
                 
                 Text("Tambahkan Kenanganmu")
                     .font(Font.largeTitle.bold())
                     .foregroundColor(.white)
                     .padding(.top, 30)
                 
-                Text("Pilih beberapa foto yang memiliki cerita bagi Anda, tidak perlu banyak, cukup yang ingin dibagikan bersama eyang.")
+                Text("Pilih beberapa foto yang memiliki cerita bagimu, tidak perlu banyak, cukup yang ingin dibagikan bersama.")
                     .font(Font.title)
                     .foregroundColor(Color.white)
                     .frame(width: 800)
@@ -57,7 +50,8 @@ struct MediaCollectionView: View {
                     .padding(.bottom, 30)
                 
                 PhotosPicker(selection: $pickerItems, matching: .images, photoLibrary: .shared()) {
-                    CustomIpadButtonAsView(label: "\(Image(systemName: "square.and.arrow.up")) Tambahkan Foto", color: .accent, style: .large)
+                    CustomIpadButtonAsView(label: "\(Image(systemName: "square.and.arrow.up")) Tambahkan Foto", color: .accent, style: .icon)
+                        .frame(width: 350, height: 100)
                 }
                 .buttonStyle(.plain)
                 .onAppear() {

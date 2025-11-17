@@ -34,16 +34,10 @@ struct DeviceConnectionView: View {
                 .frame(maxWidth: 400)
                 .padding()
 
-                ZStack {
-                    Color.vivereSecondary.frame(width: 300, height: 300)
-                        .clipShape(Circle())
-                    Text("ASET")
-                        .font(.largeTitle)
-                        .fontWeight(.semibold)
-                        .foregroundColor(Color.red)
-                }
+                Image("downloadVivere")
+                    .frame(width: 300, height: 300)
 
-                Text("Unduh Vivere di iPhone Anda")
+                Text("Install Vivere di iPhonemu")
                     .font(Font.largeTitle.bold())
                     .foregroundColor(.white)
                     .padding(.top, 30)
@@ -56,9 +50,10 @@ struct DeviceConnectionView: View {
                     .padding(.top, 10)
                     .padding(.bottom, 30)
 
-                CustomIpadButton(label: "Lanjut", color: .accent, style: .large){
+                CustomIpadButton(label: "Sudah Install", color: .accent, style: .large){
                     isNextPressed = true
                 }
+                .font(Font.title.bold())
 
             }
 

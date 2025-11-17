@@ -12,9 +12,10 @@ struct CustomIpadButtonAsView: View {
     var icon:Image? = nil
     let color:Color
     let style:CustomIpadButtonStyle
-    
+
     var body: some View {
         Text(label)
+            .padding(30)
             .font(style == .large ? .largeTitle : .title)
             .fontWeight(.semibold)
             .foregroundColor(Color(.black))

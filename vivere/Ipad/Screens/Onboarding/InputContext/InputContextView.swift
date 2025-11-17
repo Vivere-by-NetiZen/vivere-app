@@ -56,8 +56,8 @@ struct InputContextView: View {
                         if let image = viewModel.currentImage {
                             image
                                 .resizable()
-                                .scaledToFit()
-                                .frame(width: 300, height: 300)
+//                                .scaledToFit()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .padding()
                                 .background(Color.white)
                                 .overlay(
@@ -106,12 +106,12 @@ struct InputContextView: View {
                                 Spacer()
                             }
                             if viewModel.idx < viewModel.totalImgCount - 1 {
-                                CustomIpadButton(label: "Selanjutnya", color: .darkBlue, style: .large) {
+                                CustomIpadButton(label: "Selanjutnya", color: .accent, style: .large) {
                                     viewModel.next(currContext: currContext)
                                     currContext = viewModel.currentContext ?? ""
                                 }
                             } else {
-                                CustomIpadButton(label: "Selanjutnya", color: .darkBlue, style: .large) {
+                                CustomIpadButton(label: "Selanjutnya", color: .accent, style: .large) {
                                     viewModel.save(currContext: currContext)
                                     Task {
                                         await uploadAndSave()
@@ -124,6 +124,7 @@ struct InputContextView: View {
                     }
                     .frame(maxWidth: 500)
             }
+                .padding(50)
         }
 
         // Upload progress overlay

@@ -16,22 +16,15 @@ struct FinishOnboardingView: View {
             Color.viverePrimary.ignoresSafeArea(edges: .all)
 
             VStack {
-                //placeholder
-                ZStack {
-                    Color.vivereSecondary.frame(width: 300, height: 300)
-                        .clipShape(Circle())
-                    Text("ASET")
-                        .font(.largeTitle)
-                        .fontWeight(.semibold)
-                        .foregroundColor(Color.red)
-                }
+                Image("setupDone")
+                    .frame(width: 300, height: 300)
 
                 Text("Semua sudah siap ⭐️")
                     .font(Font.largeTitle.bold())
                     .foregroundColor(.white)
                     .padding(.top, 30)
 
-                Text("Pengaturan telah selesai, sekarang Anda bisa memulai percakapan hangat dengan Eyang.")
+                Text("Setup telah selesai, namun kamu masih bisa mengeditnya lagi kapan pun. Yuk pilih sesi permainan bersama.")
                     .font(Font.title)
                     .foregroundColor(Color.white)
                     .frame(width: 800)
