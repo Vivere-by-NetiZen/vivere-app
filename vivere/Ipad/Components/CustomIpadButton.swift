@@ -20,7 +20,7 @@ struct CustomIpadButton<Label: View>: View {
     let showDashedBorder: Bool
     let shadowColor: Color?
     let shadowOffset: CGSize
-
+    
     // Backward compatible initializer for string-based API
     init(
         label: String,
@@ -30,7 +30,7 @@ struct CustomIpadButton<Label: View>: View {
         showDashedBorder: Bool = true,
         shadowColor: Color? = nil,
         shadowOffset: CGSize = CGSize(width: 3, height: 3),
-        action: @escaping () -> Void
+        action: @escaping () -> Void,
     ) where Label == AnyView {
         self.color = color
         self.action = action
@@ -67,7 +67,8 @@ struct CustomIpadButton<Label: View>: View {
         shadowColor: Color? = nil,
         shadowOffset: CGSize = CGSize(width: 3, height: 3),
         action: @escaping () -> Void,
-        @ViewBuilder label: () -> Label
+        @ViewBuilder label: () -> Label,
+        customFont: Font? = nil
     ) {
         self.color = color
         self.action = action

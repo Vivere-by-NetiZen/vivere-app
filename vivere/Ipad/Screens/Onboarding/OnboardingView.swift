@@ -9,7 +9,6 @@ import SwiftUI
 
 struct OnboardingView: View {
     @State private var isNextPressed: Bool = false
-    @State private var isAccepted: Bool = false
     
     var body: some View {
         NavigationStack {
@@ -20,7 +19,7 @@ struct OnboardingView: View {
                     Image("Logo")
                         .resizable()
                         .frame(width: 42, height: 44)
-                    Text("Logo")
+                    Text("Vivere")
                         .font(.largeTitle)
                         .fontWeight(.semibold)
                         .foregroundColor(Color.white)
@@ -29,32 +28,15 @@ struct OnboardingView: View {
                 .padding()
                 
                 VStack {
-                    //                Image("")
-                    //                    .frame(width: 300, height: 300)
-                    //                    .clipShape(Circle())
+                    Image("welcomeToVivere")
+                        .frame(width: 300, height: 300)
                     
-                    //placeholder
-                    ZStack {
-                        Color.vivereSecondary.frame(width: 300, height: 300)
-                            .clipShape(Circle())
-                        Text("ASET")
-                            .font(.largeTitle)
-                            .fontWeight(.semibold)
-                            .foregroundColor(Color.red)
-                    }
-                    
-                    Text("Hai, selamat datang")
+                    Text("Hai, selamat datang. Sebelum mulai, akan ada beberapa langkah setup dulu ya")
                         .font(Font.largeTitle.bold())
                         .foregroundColor(.white)
                         .padding(.top, 30)
-                    
-                    Text("Sebelum memulai, akan ada beberapa langkah ringan yang perlu dilakukan untuk menyiapkan pengalaman terbaik.")
-                        .font(Font.title)
-                        .foregroundColor(Color.white)
-                        .frame(width: 800)
-                        .multilineTextAlignment(.center)
-                        .padding(.top, 10)
-                        .padding(.bottom, 30)
+                        .frame(width: 700)
+                        .multilineTextAlignment(TextAlignment.center)
                     
                     CustomIpadButton(label: "Lanjut", color: .accent, style: .large){
                         isNextPressed = true
@@ -62,13 +44,9 @@ struct OnboardingView: View {
                     
                 }
                 
-                if isNextPressed {
-                    PrivacyStatementView(isNextPressed: $isNextPressed, isAccepted: $isAccepted)
-                }
-                
             }
-            .navigationDestination(isPresented: $isAccepted) {
-                DeviceConnectionView()
+            .navigationDestination(isPresented: $isNextPressed) {
+                PrivacyPolicyView()
             }
         }
     }

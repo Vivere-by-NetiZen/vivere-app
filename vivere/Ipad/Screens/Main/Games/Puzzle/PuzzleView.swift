@@ -48,7 +48,7 @@ struct PuzzleView: View {
                                 RoundedRectangle(cornerRadius: 0)
                                     .stroke(Color.black, lineWidth: 4)
                             )
-                            .offset(x: -25, y: 0)
+                            .offset(x: -25, y: 5)
 
                         // Reference image (faded)
                         if let referenceImage = referenceUIImage {
@@ -56,7 +56,7 @@ struct PuzzleView: View {
                                 .resizable()
                                 .frame(width: size * CGFloat(col), height: size * CGFloat(row))
                                 .opacity(0.5)
-                                .offset(x: -25, y: 0)
+                                .offset(x: -25, y: 5)
                         }
                     }
                     .frame(width: size * CGFloat(col) + 40, height: size * CGFloat(row) + 40)
@@ -184,7 +184,7 @@ struct PuzzleView: View {
 
         // Calculate puzzle board position (left side)
         let puzzleBoardX = 60 + (size * CGFloat(col) + 40) / 2 // Left side center X
-        let puzzleBoardY = screenSize.height / 2 // Center Y
+        let puzzleBoardY = (screenSize.height - size/2) / 2 // Center Y
 
         // Calculate pieces area position (right side)
         let piecesAreaX = screenSize.width - 60 - (CGFloat(piecesAreaCols) * size + CGFloat(piecesAreaCols - 1) * piecesAreaSpacing) / 2 // Right side center X

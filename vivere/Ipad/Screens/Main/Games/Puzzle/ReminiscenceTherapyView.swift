@@ -11,16 +11,19 @@ import SwiftUI
 struct ReminiscenceTherapyView: View {
     var body: some View {
         ZStack {
-            // Frame image centered
+            // Frame image extending from top
             Image("frame")
                 .resizable()
                 .scaledToFit()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding()
+                .ignoresSafeArea(.container, edges: .top)
+                .padding(.horizontal)
+                .padding(.bottom)
                 .shadow(radius: 10, y: 10)
         }
         .navigationBarBackButtonHidden(true)
         .background(.viverePrimary)
+        .ignoresSafeArea(.container, edges: .top)
     }
 }
 
