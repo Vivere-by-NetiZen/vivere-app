@@ -20,13 +20,11 @@ struct PuzzleCompletionView: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: 42) {
-                    // Medal Image
                     Image("medal")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 498, height: 357)
 
-                    // Text Section
                     VStack(spacing: 16) {
                         Text("Kamu Hebat!")
                             .font(.system(size: 34, weight: .bold))
@@ -45,11 +43,9 @@ struct PuzzleCompletionView: View {
                 .padding(41)
                 .frame(minWidth: 600, maxWidth: 750)
 
-                // Confetti cannon positioned at bottom center
                 VStack {
                     Spacer()
                     HStack {
-                        // Left cannon (bottom-left corner)
                         Color.clear
                             .frame(width: 10, height: 10)
                             .confettiCannon(
