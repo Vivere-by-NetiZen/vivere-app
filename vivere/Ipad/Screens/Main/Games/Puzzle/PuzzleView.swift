@@ -63,9 +63,9 @@ struct PuzzleView: View {
 
                     // Right side: Pieces area placeholder (visual guide)
                     VStack(spacing: piecesAreaSpacing) {
-                        ForEach(0..<piecesAreaRows, id: \.self) { r in
+                        ForEach(0..<piecesAreaRows, id: \.self) { _ in
                             HStack(spacing: piecesAreaSpacing) {
-                                ForEach(0..<piecesAreaCols, id: \.self) { c in
+                                ForEach(0..<piecesAreaCols, id: \.self) { _ in
                                     // Empty placeholder
                                     Color.clear
                                         .frame(width: size, height: size)
@@ -90,7 +90,7 @@ struct PuzzleView: View {
                 }
             }
             .onChange(of: pieces) {
-                let completed = pieces.allSatisfy{$0.currPos == $0.correctPos}
+                let completed = pieces.allSatisfy { $0.currPos == $0.correctPos }
                 if completed && !isCompleted {
                     isCompleted = true
                     // Show completion view after a brief delay
@@ -133,8 +133,8 @@ struct PuzzleView: View {
             let normalized = normalize(image: uiImg)
             referenceUIImage = normalized
             setupPuzzle(screenSize: screenSize, using: normalized)
-            // Send to iPhone via MPC
-            sendImageForInitialQuestion(normalized)
+            // Let MPC manager handle sending (targeting/queueing)
+            mpc.sendInitialQuestionImage(normalized)
         } else {
             print("Failed to load UIImage for assetId: \(randomItem.assetId)")
         }
@@ -251,28 +251,9 @@ struct PuzzleView: View {
         }
         return imgs
     }
-
-    // MARK: - MPC send
-    private func sendImageForInitialQuestion(_ image: UIImage) {
-        // Prefer JPEG to keep payload smaller; adjust quality as needed
-        guard let data = image.jpegData(compressionQuality: 0.8) ?? image.pngData() else {
-            return
-        }
-        // Simple envelope: 4 bytes length of "type" + utf8 type + payload
-        let type = "initial_question_image"
-        guard let typeData = type.data(using: .utf8) else { return }
-
-        var envelope = Data()
-        var typeLen = UInt32(typeData.count).bigEndian
-        withUnsafeBytes(of: &typeLen) { envelope.append(contentsOf: $0) }
-        envelope.append(typeData)
-        envelope.append(data)
-
-        mpc.send(data: envelope)
-        print("Sent image to iphone")
-    }
 }
 
 #Preview {
     PuzzleView()
 }
+

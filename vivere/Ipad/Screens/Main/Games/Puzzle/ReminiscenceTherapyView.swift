@@ -9,6 +9,7 @@ import Foundation
 import SwiftUI
 
 struct ReminiscenceTherapyView: View {
+    @Environment(MPCManager.self) var mpcManager
     var body: some View {
         ZStack {
             // Frame image extending from top
@@ -24,6 +25,9 @@ struct ReminiscenceTherapyView: View {
         .navigationBarBackButtonHidden(true)
         .background(.viverePrimary)
         .ignoresSafeArea(.container, edges: .top)
+        .onAppear {
+            mpcManager.send(message: "show_transcriber")
+        }
     }
 }
 
