@@ -10,6 +10,8 @@ import SwiftUI
 
 struct ReminiscenceTherapyView: View {
     @Environment(MPCManager.self) var mpcManager
+    @State private var showGoodbye = false
+    
     var body: some View {
         ZStack {
             // Frame image extending from top
@@ -28,9 +30,17 @@ struct ReminiscenceTherapyView: View {
         .onAppear {
             mpcManager.send(message: "show_transcriber")
         }
+        .onChange(of: mpcManager.lastEndSessionTick) { _, _ in
+            showGoodbye = true
+        }
+        .navigationDestination(isPresented: $showGoodbye) {
+            GoodbyeView()
+        }
+        .navigationBarHidden(true)
     }
 }
 
 #Preview {
     ReminiscenceTherapyView()
 }
+

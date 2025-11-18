@@ -219,6 +219,7 @@ struct SpeechTranscriberView: View {
                                     withAnimation(.easeInOut) {
                                         showEndSessionAlert = false
                                     }
+                                    mpc.send(message: "end_session")
                                     viewModel.toggle(resume: false)
                                     router.popToRoot()
                                 } label: {

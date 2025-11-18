@@ -134,7 +134,7 @@ struct PuzzleView: View {
             referenceUIImage = normalized
             setupPuzzle(screenSize: screenSize, using: normalized)
             // Let MPC manager handle sending (targeting/queueing)
-            mpc.sendInitialQuestionImage(normalized)
+            sendImageForInitialQuestion(normalized)
         } else {
             print("Failed to load UIImage for assetId: \(randomItem.assetId)")
         }
@@ -251,6 +251,26 @@ struct PuzzleView: View {
         }
         return imgs
     }
+    
+    // MARK: - MPC send
+        private func sendImageForInitialQuestion(_ image: UIImage) {
+            // Prefer JPEG to keep payload smaller; adjust quality as needed
+            guard let data = image.jpegData(compressionQuality: 0.8) ?? image.pngData() else {
+                return
+            }
+            // Simple envelope: 4 bytes length of "type" + utf8 type + payload
+            let type = "initial_question_image"
+            guard let typeData = type.data(using: .utf8) else { return }
+
+            var envelope = Data()
+            var typeLen = UInt32(typeData.count).bigEndian
+            withUnsafeBytes(of: &typeLen) { envelope.append(contentsOf: $0) }
+            envelope.append(typeData)
+            envelope.append(data)
+
+            mpc.send(data: envelope)
+            print("Sent image to iphone")
+        }
 }
 
 #Preview {
