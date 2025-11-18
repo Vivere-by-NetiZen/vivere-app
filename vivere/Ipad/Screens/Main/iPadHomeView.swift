@@ -11,12 +11,13 @@ enum HomeDestination: Hashable, Codable {
     case puzzle
     case photoGallery
     case instructions
+    case puzzleTutorial
 }
 
 struct iPadHomeView: View {
     @State private var path = NavigationPath()
-    @State private var showPuzzleTutorialSheet = false
     @State private var showPairDevice = false
+    @State private var showInstructionsSheet = false
     @Environment(MPCManager.self) private var mpc
 
     var body: some View {
@@ -36,7 +37,8 @@ struct iPadHomeView: View {
                                 .frame(width: 60, height: 60)
 
                             Text("Vivere")
-                                .font(.system(size: 48, weight: .semibold))
+                                .font(.largeTitle)
+                                .fontWeight(.semibold)
                                 .foregroundColor(.white)
                                 .tracking(0.192)
                         }
@@ -52,7 +54,7 @@ struct iPadHomeView: View {
                             }
 
                             Button {
-                                path.append(HomeDestination.instructions)
+                                showInstructionsSheet = true
                             } label: {
                                 Label("Instruksi Penggunaan", systemImage: "book")
                             }
@@ -74,7 +76,7 @@ struct iPadHomeView: View {
                                     )
 
                                 Image(systemName: "ellipsis")
-                                    .font(.system(size: 40))
+                                    .font(.title)
                                     .foregroundColor(.black)
                             }
                             .frame(width: 64, height: 64)
@@ -87,7 +89,8 @@ struct iPadHomeView: View {
                     // Title Section
                     VStack(alignment: .center, spacing: 40) {
                         Text("Mau main apa hari ini?")
-                            .font(.system(size: 48, weight: .semibold))
+                            .font(.largeTitle)
+                            .fontWeight(.semibold)
                             .foregroundColor(.white)
                             .tracking(0.192)
                             .padding(.top, 40)
@@ -96,7 +99,7 @@ struct iPadHomeView: View {
                         HStack(alignment: .center, spacing: 120) {
                             // Cocokkan Gambar Card
                             CustomIpadButton(
-                                color: Color(hex: "F9FAFB"),
+                                color: .gray50,
                                 showDashedBorder: false,
                                 shadowColor: Color(hex: "87622a"),
                                 shadowOffset: CGSize(width: 3, height: 4),
@@ -111,7 +114,8 @@ struct iPadHomeView: View {
                                         .frame(width: 340, height: 350)
 
                                     Text("Cocokkan Gambar")
-                                        .font(.system(size: 32, weight: .semibold))
+                                        .font(.title2)
+                                        .fontWeight(.semibold)
                                         .foregroundColor(.black)
                                 }
                                 .padding(30)
@@ -119,28 +123,31 @@ struct iPadHomeView: View {
                             }
 
                             // Puzzle Card
-                            CustomIpadButton(
-                                color: Color(hex: "F9FAFB"),
-                                showDashedBorder: false,
-                                shadowColor: Color(hex: "87622a"),
-                                shadowOffset: CGSize(width: 3, height: 4),
-                                action: {
-                                    showPuzzleTutorialSheet = true
-                                }
-                            ) {
-                                VStack(spacing: 20) {
-                                    Image("puzzle")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 340, height: 350)
+                            NavigationLink(value: HomeDestination.puzzleTutorial) {
+                                CustomIpadButton(
+                                    color: Color(hex: "F9FAFB"),
+                                    showDashedBorder: false,
+                                    shadowColor: Color(hex: "87622a"),
+                                    shadowOffset: CGSize(width: 3, height: 4),
+                                    action: {}
+                                ) {
+                                    VStack(spacing: 20) {
+                                        Image("puzzle")
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 340, height: 350)
 
-                                    Text("Puzzle")
-                                        .font(.system(size: 32, weight: .semibold))
-                                        .foregroundColor(.black)
+                                        Text("Puzzle")
+                                            .font(.title2)
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(.black)
+                                    }
+                                    .padding(30)
+                                    .frame(minWidth: 400, minHeight: 470)
                                 }
-                                .padding(30)
-                                .frame(minWidth: 400, minHeight: 470)
+                                .styledContent
                             }
+                            .buttonStyle(.plain)
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -173,21 +180,21 @@ struct iPadHomeView: View {
                 case .photoGallery:
                     PhotoGalleryView()
                 case .instructions:
-                    InstruksiPenggunaanView()
+                    EmptyView() // No longer used - InstructionSheetView is now a sheet
+                case .puzzleTutorial:
+                    PuzzleTutorialView()
                 }
             }
             .sheet(isPresented: $showPairDevice) {
                 PairDeviceSheetView()
                     .environment(mpc)
             }
-            .sheet(isPresented: $showPuzzleTutorialSheet) {
-                PuzzleTutorialSheetView(onComplete: {
-                    showPuzzleTutorialSheet = false
-                    // Small delay to ensure sheet is dismissed before navigation
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        path.append(HomeDestination.puzzle)
-                    }
-                })
+            .sheet(isPresented: $showInstructionsSheet) {
+                InstructionSheetView()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .navigateToHome)) { _ in
+                // Pop to root (home) when navigateToHome notification is received
+                path.removeLast(path.count)
             }
         }
     }
@@ -212,7 +219,7 @@ struct PairDeviceSheetView: View {
                             dismiss()
                         } label: {
                             Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 32))
+                                .font(.title2)
                                 .foregroundColor(.white)
                         }
                         .padding()

@@ -195,10 +195,12 @@ struct VideoProgressView: View {
                 } else if viewModel.items.isEmpty {
                     VStack(spacing: 16) {
                         Image(systemName: "video.slash")
-                            .font(.system(size: 64))
+                            .font(.largeTitle)
+                            .imageScale(.large)
                             .foregroundColor(.white.opacity(0.7))
                         Text("Tidak ada video yang sedang dibuat")
-                            .font(.system(size: 24, weight: .semibold))
+                            .font(.title3)
+                            .fontWeight(.semibold)
                             .foregroundColor(.white)
                     }
                 } else {
@@ -287,7 +289,8 @@ struct VideoProgressRow: View {
             // Info
             VStack(alignment: .leading, spacing: 12) {
                 Text(item.imageModel.context?.isEmpty == false ? item.imageModel.context! : "Foto tanpa konteks")
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.body)
+                    .fontWeight(.semibold)
                     .foregroundColor(.white)
                     .lineLimit(2)
 
@@ -297,7 +300,7 @@ struct VideoProgressRow: View {
                         .frame(width: 12, height: 12)
 
                     Text(statusText)
-                        .font(.system(size: 18))
+                        .font(.body)
                         .foregroundColor(.white.opacity(0.9))
                 }
 
@@ -306,13 +309,13 @@ struct VideoProgressRow: View {
                         .tint(.white)
 
                     Text("\(item.progress)%")
-                        .font(.system(size: 16))
+                        .font(.body)
                         .foregroundColor(.white.opacity(0.8))
                 }
 
                 if let error = item.error {
                     Text(error)
-                        .font(.system(size: 14))
+                        .font(.callout)
                         .foregroundColor(.red.opacity(0.9))
                         .lineLimit(2)
                 }
@@ -326,7 +329,8 @@ struct VideoProgressRow: View {
                             Image(systemName: "arrow.down.circle.fill")
                             Text("Unduh Video")
                         }
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.body)
+                        .fontWeight(.semibold)
                         .foregroundColor(.white)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)

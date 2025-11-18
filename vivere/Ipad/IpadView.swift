@@ -6,10 +6,12 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct IpadView: View {
     @State private var isLandscape: Bool = false
     @AppStorage("hasCompletedIpadOnboarding") private var hasCompletedIpadOnboarding: Bool = false
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         ZStack {
@@ -17,6 +19,8 @@ struct IpadView: View {
                 iPadHomeView()
                     .onAppear {
                         hasCompletedIpadOnboarding = true
+                        // Start background video monitoring when home view appears
+                        VideoDownloadService.shared.startMonitoringAll(modelContext: modelContext)
                     }
             } else {
                 OnboardingView()

@@ -8,11 +8,14 @@
 import SwiftUI
 import SwiftData
 import Photos
+import PhotosUI
 
 struct PhotoGalleryView: View {
     @Environment(\.dismiss) private var dismiss
     @Query private var images: [ImageModel]
-    @State private var showMediaCollection = false
+    @State private var pickerItems = [PhotosPickerItem]()
+    @State private var selectedImageIdentifiers: [String] = []
+    @State private var showInputContext = false
     @State private var showVideoProgress = false
 
     private let columns = [GridItem](repeating: GridItem(.flexible(), spacing: 32), count: 4)
@@ -50,11 +53,33 @@ struct PhotoGalleryView: View {
                 PhotoDetailView(imageModel: model, allImages: images)
             }
         }
-        .navigationDestination(isPresented: $showMediaCollection) {
-            MediaCollectionView()
+        .navigationDestination(isPresented: $showInputContext) {
+            InputContextView(imagesIds: selectedImageIdentifiers)
         }
         .sheet(isPresented: $showVideoProgress) {
             VideoProgressView(images: imagesWithVideoJobs)
+        }
+        .onAppear {
+            Task {
+                await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+            }
+        }
+        .onChange(of: pickerItems) {
+            Task {
+                selectedImageIdentifiers.removeAll()
+
+                for item in pickerItems {
+                    if let _ = try await item.loadTransferable(type: Data.self) {
+                        if let itemId = item.itemIdentifier {
+                            selectedImageIdentifiers.append(itemId)
+                        }
+                    }
+                }
+
+                if !selectedImageIdentifiers.isEmpty {
+                    showInputContext = true
+                }
+            }
         }
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
@@ -96,19 +121,32 @@ struct PhotoGalleryView: View {
                 }
             }
 
-            CustomIpadButton(color: .accent) {
-                showMediaCollection = true
-            } label: {
+            PhotosPicker(selection: $pickerItems, matching: .images, photoLibrary: .shared()) {
                 HStack(spacing: 12) {
                     Image(systemName: "plus")
                         .font(.system(size: 28, weight: .bold))
-                    Text("Tambahkan Foto")
-                        .font(.system(size: 22, weight: .semibold))
                 }
                 .foregroundColor(.black)
                 .padding(.horizontal, 40)
                 .frame(height: 70)
+                .background(
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 20)
+                            .foregroundColor(.accent)
+                            .shadow(
+                                color: .accent.tint(0.2),
+                                radius: 0,
+                                x: 3,
+                                y: 3
+                            )
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [15]))
+                            .padding(10)
+                            .foregroundStyle(.black)
+                    }
+                )
             }
+            .buttonStyle(.plain)
         }
     }
 

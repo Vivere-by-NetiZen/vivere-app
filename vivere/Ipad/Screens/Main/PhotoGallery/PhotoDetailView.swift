@@ -70,9 +70,11 @@ struct PhotoDetailView: View {
             } label: {
                 HStack(spacing: 12) {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 22, weight: .semibold))
+                        .font(.headline)
+                        .fontWeight(.semibold)
                     Text("Kembali")
-                        .font(.system(size: 24, weight: .semibold))
+                        .font(.title3)
+                        .fontWeight(.semibold)
                 }
                 .foregroundColor(.black)
                 .padding(.horizontal, 12)
@@ -86,7 +88,8 @@ struct PhotoDetailView: View {
                 // Placeholder for future menu actions
             } label: {
                 Image(systemName: "ellipsis")
-                    .font(.system(size: 34, weight: .bold))
+                    .font(.title)
+                    .fontWeight(.bold)
                     .foregroundColor(.black)
                     .frame(width: 64, height: 64)
             }
@@ -117,12 +120,13 @@ struct PhotoDetailView: View {
 
             VStack(alignment: .leading, spacing: 20) {
                 Text("Tentang Foto Ini")
-                    .font(.system(size: 28, weight: .bold))
+                    .font(.title3)
+                    .fontWeight(.bold)
                     .foregroundColor(.white)
 
                 ScrollView {
                     Text(contextText)
-                        .font(.system(size: 20))
+                        .font(.body)
                         .foregroundColor(.white.opacity(0.9))
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -140,7 +144,8 @@ struct PhotoDetailView: View {
                 goToPrevious()
             } label: {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 34, weight: .bold))
+                    .font(.title)
+                    .fontWeight(.bold)
                     .foregroundColor(.white)
                     .frame(width: 60, height: 60)
             }
@@ -153,7 +158,8 @@ struct PhotoDetailView: View {
                 goToNext()
             } label: {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 34, weight: .bold))
+                    .font(.title)
+                    .fontWeight(.bold)
                     .foregroundColor(.white)
                     .frame(width: 60, height: 60)
             }
