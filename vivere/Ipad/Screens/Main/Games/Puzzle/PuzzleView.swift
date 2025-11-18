@@ -14,6 +14,7 @@ struct PuzzleView: View {
 
     @State var isCompleted: Bool = false
     @State var showCompletionView: Bool = false
+    @State var isTutorialShown: Bool = false
 
     @Environment(MPCManager.self) private var mpc
     @Environment(\.dismiss) private var dismiss
@@ -50,7 +51,7 @@ struct PuzzleView: View {
                             .fontWeight(.semibold)
                         .foregroundColor(.accent)
                         .onTapGesture {
-                            // show tutorial here
+                            isTutorialShown = true
                         }
                         .padding()
                     }
@@ -67,7 +68,7 @@ struct PuzzleView: View {
                                     RoundedRectangle(cornerRadius: 0)
                                         .stroke(Color.black, lineWidth: 4)
                                 )
-                                .offset(x: -25, y: 6)
+                                .offset(x: -25, y: -17)
 
                             // Reference image (faded)
                             if let referenceImage = viewModel.referenceUIImage {
@@ -75,7 +76,7 @@ struct PuzzleView: View {
                                     .resizable()
                                     .frame(width: viewModel.size * CGFloat(viewModel.col), height: viewModel.size * CGFloat(viewModel.row))
                                     .opacity(0.5)
-                                    .offset(x: -25, y: 6)
+                                    .offset(x: -25, y: -17)
                             }
                         }
                         .frame(width: viewModel.size * CGFloat(viewModel.col) + 40, height: viewModel.size * CGFloat(viewModel.row) + 40)
@@ -102,6 +103,10 @@ struct PuzzleView: View {
                 // All puzzle pieces (positioned absolutely)
                 ForEach($viewModel.pieces) { $piece in
                     PuzzlePieceView(piece: $piece, size: viewModel.size)
+                }
+                
+                if isTutorialShown {
+                    PuzzleTutorialView(isPresented: $isTutorialShown)
                 }
             }
             .onAppear {

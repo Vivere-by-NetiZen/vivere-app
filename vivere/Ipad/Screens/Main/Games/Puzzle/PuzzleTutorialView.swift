@@ -8,13 +8,16 @@
 import SwiftUI
 
 struct PuzzleTutorialView: View {
-    @Environment(\.dismiss) private var dismiss
-
+    @Binding var isPresented: Bool
+    
     var body: some View {
         ZStack {
-            Color.viverePrimary
+            Color.black.opacity(0.4)
                 .ignoresSafeArea(.all)
-
+                .onTapGesture {_ in
+                    isPresented = false
+                }
+            
             VStack(spacing: 40) {
                 // Top Part
                 VStack(alignment: .leading, spacing: 30) {
@@ -24,7 +27,7 @@ struct PuzzleTutorialView: View {
                         .fontWeight(.semibold)
                         .foregroundColor(.darkBlue)
                         .tracking(0.136)
-
+                    
                     // Instructions - Two steps side by side
                     HStack(spacing: 40) {
                         // Step 1
@@ -33,7 +36,7 @@ struct PuzzleTutorialView: View {
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 300, height: 300)
-
+                            
                             Text("Pindahkan setiap potongan gambar ke tempatnya")
                                 .font(.body)
                                 .foregroundColor(.black)
@@ -42,14 +45,14 @@ struct PuzzleTutorialView: View {
                                 .lineSpacing(5)
                         }
                         .frame(width: 300)
-
+                        
                         // Step 2
                         VStack(spacing: 20) {
                             Image("step2")
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 300, height: 300)
-
+                            
                             Text("Kalau cocok, potongan gambar akan menempel otomatis")
                                 .font(.body)
                                 .foregroundColor(.black)
@@ -60,25 +63,23 @@ struct PuzzleTutorialView: View {
                         .frame(width: 300)
                     }
                 }
-
+                
                 // Button
-                NavigationLink(value: HomeDestination.puzzle) {
-                    CustomIpadButton(
-                        color: .darkBlue,
-                        showDashedBorder: true,
-                        shadowColor: Color(hex: "182238"),
-                        shadowOffset: CGSize(width: 2, height: 3),
-                        action: {}
-                    ) {
-                        Text("Oke")
-                            .font(.headline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                            .frame(width: 200, height: 70)
+                CustomIpadButton(
+                    color: .darkBlue,
+                    showDashedBorder: true,
+                    shadowColor: Color(hex: "182238"),
+                    shadowOffset: CGSize(width: 2, height: 3),
+                    action: {
+                        isPresented = false
                     }
-                    .styledContent
+                ) {
+                    Text("Oke")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .frame(width: 200, height: 70)
                 }
-                .buttonStyle(.plain)
             }
             .padding(.horizontal, 40)
             .padding(.vertical, 30)
@@ -102,7 +103,7 @@ struct PuzzleTutorialView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                         .padding(.bottom, 17)
                         .padding(.trailing, 20)
-
+                    
                     // Bottom left accessory
                     Image("buttonLeft")
                         .resizable()
@@ -114,13 +115,11 @@ struct PuzzleTutorialView: View {
                 }
             )
         }
-        .navigationBarBackButtonHidden(true)
     }
 }
 
 #Preview {
-    NavigationStack {
-        PuzzleTutorialView()
-    }
+    @Previewable @State var isPresented: Bool = true
+    PuzzleTutorialView(isPresented: $isPresented)
 }
 

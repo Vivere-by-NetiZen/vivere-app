@@ -11,7 +11,6 @@ enum HomeDestination: Hashable, Codable {
     case puzzle
     case photoGallery
     case instructions
-    case puzzleTutorial
 }
 
 struct iPadHomeView: View {
@@ -19,13 +18,13 @@ struct iPadHomeView: View {
     @State private var showPairDevice = false
     @State private var showInstructionsSheet = false
     @Environment(MPCManager.self) private var mpc
-
+    
     var body: some View {
         NavigationStack(path: $path) {
             ZStack {
                 Color.viverePrimary
                     .ignoresSafeArea(edges: .all)
-
+                
                 VStack(spacing: 0) {
                     // Header Section
                     HStack(alignment: .center) {
@@ -35,16 +34,16 @@ struct iPadHomeView: View {
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 60, height: 60)
-
+                            
                             Text("Vivere")
                                 .font(.largeTitle)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.white)
                                 .tracking(0.192)
                         }
-
+                        
                         Spacer()
-
+                        
                         // Ellipsis Menu Button
                         Menu {
                             Button {
@@ -52,13 +51,13 @@ struct iPadHomeView: View {
                             } label: {
                                 Label("Kelola Foto", systemImage: "photo.on.rectangle")
                             }
-
+                            
                             Button {
                                 showInstructionsSheet = true
                             } label: {
                                 Label("Instruksi Penggunaan", systemImage: "book")
                             }
-
+                            
                             Button {
                                 showPairDevice = true
                             } label: {
@@ -74,7 +73,7 @@ struct iPadHomeView: View {
                                         x: 2,
                                         y: 4
                                     )
-
+                                
                                 Image(systemName: "ellipsis")
                                     .font(.title)
                                     .foregroundColor(.black)
@@ -85,7 +84,7 @@ struct iPadHomeView: View {
                     }
                     .padding(.horizontal, 40)
                     .padding(.top, 40)
-
+                    
                     // Title Section
                     VStack(alignment: .center, spacing: 40) {
                         Text("Mau main apa hari ini?")
@@ -94,7 +93,7 @@ struct iPadHomeView: View {
                             .foregroundColor(.white)
                             .tracking(0.192)
                             .padding(.top, 40)
-
+                        
                         // Game Cards Section
                         HStack(alignment: .center, spacing: 120) {
                             // Cocokkan Gambar Card
@@ -104,7 +103,6 @@ struct iPadHomeView: View {
                                 shadowColor: Color(hex: "87622a"),
                                 shadowOffset: CGSize(width: 3, height: 4),
                                 action: {
-                                    MatchCardView()
                                 }
                             ) {
                                 VStack(spacing: 20) {
@@ -112,7 +110,7 @@ struct iPadHomeView: View {
                                         .resizable()
                                         .scaledToFit()
                                         .frame(width: 340, height: 350)
-
+                                    
                                     Text("Cocokkan Gambar")
                                         .font(.title2)
                                         .fontWeight(.semibold)
@@ -121,9 +119,9 @@ struct iPadHomeView: View {
                                 .padding(30)
                                 .frame(minWidth: 400, minHeight: 470)
                             }
-
+                            
                             // Puzzle Card
-                            NavigationLink(value: HomeDestination.puzzleTutorial) {
+                            NavigationLink(value: HomeDestination.puzzle) {
                                 CustomIpadButton(
                                     color: Color(hex: "F9FAFB"),
                                     showDashedBorder: false,
@@ -136,7 +134,7 @@ struct iPadHomeView: View {
                                             .resizable()
                                             .scaledToFit()
                                             .frame(width: 340, height: 350)
-
+                                        
                                         Text("Puzzle")
                                             .font(.title2)
                                             .fontWeight(.semibold)
@@ -152,11 +150,11 @@ struct iPadHomeView: View {
                         .frame(maxWidth: .infinity)
                     }
                     .padding(.horizontal, 40)
-
+                    
                     Spacer()
                 }
                 .zIndex(1)
-
+                
                 // Decorative image at bottom left
                 VStack {
                     Spacer()
@@ -181,8 +179,6 @@ struct iPadHomeView: View {
                     PhotoGalleryView()
                 case .instructions:
                     EmptyView() // No longer used - InstructionSheetView is now a sheet
-                case .puzzleTutorial:
-                    PuzzleTutorialView()
                 }
             }
             .sheet(isPresented: $showPairDevice) {
@@ -206,12 +202,12 @@ struct PairDeviceSheetView: View {
     @State private var isNextPressed: Bool = false
     @State private var isPaired: Bool = false
     @Environment(MPCManager.self) private var mpc
-
+    
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.viverePrimary.ignoresSafeArea(edges: .all)
-
+                
                 VStack(spacing: 30) {
                     HStack {
                         Spacer()
@@ -224,14 +220,14 @@ struct PairDeviceSheetView: View {
                         }
                         .padding()
                     }
-
+                    
                     if !isNextPressed {
                         VStack(spacing: 16) {
                             Text("Hubungkan Perangkat Anda")
                                 .font(.largeTitle)
                                 .fontWeight(.bold)
                                 .foregroundColor(.white)
-
+                            
                             Text("Tekan tombol \"hubungkan\" di bawah lalu dekatkan iPad dengan iPhone, perangkat akan otomatis terhubung satu sama lain.")
                                 .font(.body)
                                 .foregroundColor(.white)
@@ -239,7 +235,7 @@ struct PairDeviceSheetView: View {
                                 .lineLimit(nil)
                                 .padding(.horizontal, 40)
                         }
-
+                        
                         CustomIpadButton(label: "Mulai Pencarian", color: .accent, style: .large) {
                             isNextPressed = true
                         }
@@ -251,7 +247,7 @@ struct PairDeviceSheetView: View {
                                 }
                             }
                     }
-
+                    
                     Spacer()
                 }
             }
