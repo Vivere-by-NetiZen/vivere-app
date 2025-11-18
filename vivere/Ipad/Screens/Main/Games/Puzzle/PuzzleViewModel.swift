@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import SwiftData
 import Combine
 import Photos
 
@@ -15,20 +16,21 @@ class PuzzleViewModel: ObservableObject {
     @Published var referenceUIImage: UIImage?
     @Published var normalizedImage: UIImage?
     @Published var triggerSendToIphone: Bool = false
-    
+    @Published var selectedImageModel: ImageModel?
+
     let col = 3
     let row = 2
     let size: CGFloat = 180
     let piecesAreaCols = 2 // 2 columns for pieces area
     let piecesAreaSpacing: CGFloat = 24 // Spacing between pieces
-    
+
     var images: [ImageModel] = []
-    
+
     var piecesAreaRows: Int {
         (col * row + piecesAreaCols - 1) / piecesAreaCols // Ceiling division
     }
-    
-    
+
+
     // Ensures we have a selected image and pieces prepared
     func preparePuzzleIfNeeded(screenSize: CGSize) async {
         // If already prepared, skip
@@ -50,6 +52,9 @@ class PuzzleViewModel: ObservableObject {
             print("No ImageModel items found in SwiftData.")
             return
         }
+
+        // Store selected ImageModel for passing to completion view
+        selectedImageModel = randomItem
 
         // Resolve UIImage from Photos assetId
         if let uiImg = await loadUIImage(fromLocalIdentifier: randomItem.assetId) {
@@ -124,7 +129,7 @@ class PuzzleViewModel: ObservableObject {
         for (idx, originalIndex) in shuffledIndices.enumerated() {
             let r = originalIndex / col
             let c = originalIndex % col
-            
+
             let xSizeCorrecttion = (CGFloat(dents[r * col + c][1]) * size * 0.2 - CGFloat(dents[r * col + c][3]) * size * 0.2)/2
             let ySizeCorrecttion = (CGFloat(dents[r * col + c][2]) * size * 0.2 - CGFloat(dents[r * col + c][0]) * size * 0.2)/2
 
@@ -154,22 +159,22 @@ class PuzzleViewModel: ObservableObject {
         let height = cgImage.height / row
         let paths = getCropPath()
         let dents = getPuzzleDent()
-        
+
         for r in 0..<row {
             for c in 0..<col {
                 let path = paths[r * col + c]
                 let dent = dents[r * col + c]
-                
+
                 let rect = CGRect(
                     x: c * width - Int(CGFloat(dent[3]) * CGFloat(width) * 0.2),
                     y: r * height - Int(CGFloat(dent[0]) * CGFloat(height) * 0.2),
                     width: width + Int(CGFloat(dent[1]) * CGFloat(width) * 0.2) + Int(CGFloat(dent[3]) * CGFloat(width) * 0.2),
                     height: height + Int(CGFloat(dent[2]) * CGFloat(height) * 0.2) + Int(CGFloat(dent[0]) * CGFloat(height) * 0.2)
                 )
-                
+
                 if let croppedCGImage = cgImage.cropping(to: rect) {
                     let piece = UIImage(cgImage: croppedCGImage).crop(with: path)
-                    
+
                     imgs.append(Image(uiImage: piece))
                 }
             }

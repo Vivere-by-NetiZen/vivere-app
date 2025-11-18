@@ -12,11 +12,11 @@ struct MediaCollectionView: View {
     @State var pickerItems = [PhotosPickerItem]()
     @State private var localIdentifier = [String]()
     @State private var isSelected: Bool = false
-    
+
     var body: some View {
         ZStack {
             Color.viverePrimary.ignoresSafeArea(edges: .all)
-            
+
             VStack {
                 HStack {
                     Image("progressStepper1")
@@ -32,15 +32,15 @@ struct MediaCollectionView: View {
                 }
                 .frame(maxWidth: 400)
                 .padding()
-                
+
                 Image("addMemories")
                     .frame(width: 300, height: 300)
-                
+
                 Text("Tambahkan Kenanganmu")
                     .font(Font.largeTitle.bold())
                     .foregroundColor(.white)
                     .padding(.top, 30)
-                
+
                 Text("Pilih beberapa foto yang memiliki cerita bagimu, tidak perlu banyak, cukup yang ingin dibagikan bersama.")
                     .font(Font.title)
                     .foregroundColor(Color.white)
@@ -48,7 +48,7 @@ struct MediaCollectionView: View {
                     .multilineTextAlignment(.center)
                     .padding(.top, 10)
                     .padding(.bottom, 30)
-                
+
                 PhotosPicker(selection: $pickerItems, matching: .images, photoLibrary: .shared()) {
                     CustomIpadButtonAsView(label: "\(Image(systemName: "square.and.arrow.up")) Tambahkan Foto", color: .accent, style: .icon)
                         .frame(width: 350, height: 100)
@@ -62,21 +62,21 @@ struct MediaCollectionView: View {
                 .onChange(of: pickerItems) {
                     Task {
                         localIdentifier.removeAll()
-                        
+
                         for item in pickerItems {
                             if let _ = try await item.loadTransferable(type: Data.self) {
-                                
+
                                 if let itemId = item.itemIdentifier {
                                     localIdentifier.append(itemId)
                                 }
-                                
+
                             }
                         }
                         isSelected = true
                     }
                 }
             }
-            
+
         }
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $isSelected) {

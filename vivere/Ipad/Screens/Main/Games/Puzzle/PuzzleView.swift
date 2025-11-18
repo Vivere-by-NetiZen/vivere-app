@@ -11,7 +11,7 @@ import Photos
 
 struct PuzzleView: View {
     @ObservedObject var viewModel = PuzzleViewModel()
-    
+
     @State var isCompleted: Bool = false
     @State var showCompletionView: Bool = false
 
@@ -55,7 +55,7 @@ struct PuzzleView: View {
                         .padding()
                     }
                     .frame(maxWidth: .infinity)
-                    
+
                     HStack(spacing: 60) {
                         // Left side: Puzzle board
                         ZStack {
@@ -68,7 +68,7 @@ struct PuzzleView: View {
                                         .stroke(Color.black, lineWidth: 4)
                                 )
                                 .offset(x: -25, y: 6)
-                            
+
                             // Reference image (faded)
                             if let referenceImage = viewModel.referenceUIImage {
                                 Image(uiImage: referenceImage)
@@ -79,7 +79,7 @@ struct PuzzleView: View {
                             }
                         }
                         .frame(width: viewModel.size * CGFloat(viewModel.col) + 40, height: viewModel.size * CGFloat(viewModel.row) + 40)
-                        
+
                         // Right side: Pieces area placeholder (visual guide)
                         VStack(spacing: viewModel.piecesAreaSpacing) {
                             ForEach(0..<viewModel.piecesAreaRows, id: \.self) { r in
@@ -130,11 +130,11 @@ struct PuzzleView: View {
             }
             .navigationBarBackButtonHidden(true)
             .fullScreenCover(isPresented: $showCompletionView) {
-                PuzzleCompletionView()
+                PuzzleCompletionView(imageModel: viewModel.selectedImageModel)
             }
         }
     }
-    
+
     // MARK: - MPC send
     func sendImageForInitialQuestion(_ image: UIImage) {
         // Prefer JPEG to keep payload smaller; adjust quality as needed

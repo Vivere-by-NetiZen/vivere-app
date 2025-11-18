@@ -1,19 +1,8 @@
 {
   "images" : [
     {
-      "filename" : "Frame 9.svg",
-      "idiom" : "universal",
-      "scale" : "1x"
-    },
-    {
-      "filename" : "Frame 10.svg",
-      "idiom" : "universal",
-      "scale" : "2x"
-    },
-    {
-      "filename" : "Frame 11.svg",
-      "idiom" : "universal",
-      "scale" : "3x"
+      "filename" : "puzle.svg",
+      "idiom" : "universal"
     }
   ],
   "info" : {

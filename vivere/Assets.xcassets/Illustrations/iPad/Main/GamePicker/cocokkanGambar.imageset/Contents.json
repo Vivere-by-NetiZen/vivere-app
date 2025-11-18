@@ -1,19 +1,8 @@
 {
   "images" : [
     {
-      "filename" : "Frame 6.svg",
-      "idiom" : "universal",
-      "scale" : "1x"
-    },
-    {
-      "filename" : "Frame 7.svg",
-      "idiom" : "universal",
-      "scale" : "2x"
-    },
-    {
-      "filename" : "Frame 8.svg",
-      "idiom" : "universal",
-      "scale" : "3x"
+      "filename" : "cocokkanGambar.svg",
+      "idiom" : "universal"
     }
   ],
   "info" : {
