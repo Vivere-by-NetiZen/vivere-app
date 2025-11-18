@@ -16,6 +16,7 @@ struct PuzzleView: View {
     @State var showCompletionView: Bool = false
 
     @Environment(MPCManager.self) private var mpc
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query private var images: [ImageModel]
 
@@ -25,47 +26,78 @@ struct PuzzleView: View {
                 Color.viverePrimary
                     .ignoresSafeArea()
 
-                HStack(spacing: 60) {
-                    // Left side: Puzzle board
-                    ZStack {
-                        // Puzzle board background
-                        RoundedRectangle(cornerRadius: 0)
-                            .fill(Color.white)
-                            .frame(width: viewModel.size * CGFloat(viewModel.col) + 40, height: viewModel.size * CGFloat(viewModel.row) + 40)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 0)
-                                    .stroke(Color.black, lineWidth: 4)
-                            )
-                            .offset(x: -25, y: 5)
-
-                        // Reference image (faded)
-                        if let referenceImage = viewModel.referenceUIImage {
-                            Image(uiImage: referenceImage)
-                                .resizable()
-                                .frame(width: viewModel.size * CGFloat(viewModel.col), height: viewModel.size * CGFloat(viewModel.row))
-                                .opacity(0.5)
-                                .offset(x: -25, y: 5)
+                VStack {
+                    HStack {
+                        Image(systemName: "chevron.left")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(.black)
+                        .padding()
+                        .background(Color.white)
+                        .clipShape(Circle())
+                        .onTapGesture {
+                            dismiss()
                         }
+                        .padding()
+                        Spacer()
+                        Text("Rangkai kepingan puzzle sesuai gambarnya ya")
+                            .font(Font.largeTitle)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                        Spacer()
+                        Image(systemName: "questionmark.circle")
+                            .font(.system(size: 50))
+                            .fontWeight(.semibold)
+                        .foregroundColor(.accent)
+                        .onTapGesture {
+                            // show tutorial here
+                        }
+                        .padding()
                     }
-                    .frame(width: viewModel.size * CGFloat(viewModel.col) + 40, height: viewModel.size * CGFloat(viewModel.row) + 40)
-
-                    // Right side: Pieces area placeholder (visual guide)
-                    VStack(spacing: viewModel.piecesAreaSpacing) {
-                        ForEach(0..<viewModel.piecesAreaRows, id: \.self) { r in
-                            HStack(spacing: viewModel.piecesAreaSpacing) {
-                                ForEach(0..<viewModel.piecesAreaCols, id: \.self) { c in
-                                    // Empty placeholder
-                                    Color.clear
-                                        .frame(width: viewModel.size, height: viewModel.size)
+                    .frame(maxWidth: .infinity)
+                    
+                    HStack(spacing: 60) {
+                        // Left side: Puzzle board
+                        ZStack {
+                            // Puzzle board background
+                            RoundedRectangle(cornerRadius: 0)
+                                .fill(Color.white)
+                                .frame(width: viewModel.size * CGFloat(viewModel.col) + 40, height: viewModel.size * CGFloat(viewModel.row) + 40)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 0)
+                                        .stroke(Color.black, lineWidth: 4)
+                                )
+                                .offset(x: -25, y: 6)
+                            
+                            // Reference image (faded)
+                            if let referenceImage = viewModel.referenceUIImage {
+                                Image(uiImage: referenceImage)
+                                    .resizable()
+                                    .frame(width: viewModel.size * CGFloat(viewModel.col), height: viewModel.size * CGFloat(viewModel.row))
+                                    .opacity(0.5)
+                                    .offset(x: -25, y: 6)
+                            }
+                        }
+                        .frame(width: viewModel.size * CGFloat(viewModel.col) + 40, height: viewModel.size * CGFloat(viewModel.row) + 40)
+                        
+                        // Right side: Pieces area placeholder (visual guide)
+                        VStack(spacing: viewModel.piecesAreaSpacing) {
+                            ForEach(0..<viewModel.piecesAreaRows, id: \.self) { r in
+                                HStack(spacing: viewModel.piecesAreaSpacing) {
+                                    ForEach(0..<viewModel.piecesAreaCols, id: \.self) { c in
+                                        // Empty placeholder
+                                        Color.clear
+                                            .frame(width: viewModel.size, height: viewModel.size)
+                                    }
                                 }
                             }
                         }
+                        .frame(width: CGFloat(viewModel.piecesAreaCols) * viewModel.size + CGFloat(viewModel.piecesAreaCols - 1) * viewModel.piecesAreaSpacing)
                     }
-                    .frame(width: CGFloat(viewModel.piecesAreaCols) * viewModel.size + CGFloat(viewModel.piecesAreaCols - 1) * viewModel.piecesAreaSpacing)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.horizontal, 60)
+                    .padding(.vertical, 40)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.horizontal, 60)
-                .padding(.vertical, 40)
 
                 // All puzzle pieces (positioned absolutely)
                 ForEach($viewModel.pieces) { $piece in
@@ -96,6 +128,7 @@ struct PuzzleView: View {
                     viewModel.triggerSendToIphone = false
                 }
             }
+            .navigationBarBackButtonHidden(true)
             .fullScreenCover(isPresented: $showCompletionView) {
                 PuzzleCompletionView()
             }

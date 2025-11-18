@@ -109,7 +109,7 @@ class PuzzleViewModel: ObservableObject {
 
         // Calculate puzzle board position (left side)
         let puzzleBoardX = 60 + (size * CGFloat(col) + 40) / 2 // Left side center X
-        let puzzleBoardY = (screenSize.height - size/2) / 2 // Center Y
+        let puzzleBoardY = (screenSize.height + size/2) / 2 // Center Y
 
         // Calculate pieces area position (right side)
         let piecesAreaX = screenSize.width - 60 - (CGFloat(piecesAreaCols) * size + CGFloat(piecesAreaCols - 1) * piecesAreaSpacing) / 2 // Right side center X
