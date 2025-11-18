@@ -101,7 +101,7 @@ struct iPadHomeView: View {
                                 shadowColor: Color(hex: "87622a"),
                                 shadowOffset: CGSize(width: 3, height: 4),
                                 action: {
-                                    // Action for Cocokkan Gambar
+                                    MatchCardView()
                                 }
                             ) {
                                 VStack(spacing: 20) {
