@@ -11,6 +11,7 @@ enum HomeDestination: Hashable, Codable {
     case puzzle
     case photoGallery
     case instructions
+    case matchCard
 }
 
 struct iPadHomeView: View {
@@ -97,27 +98,30 @@ struct iPadHomeView: View {
                         // Game Cards Section
                         HStack(alignment: .center, spacing: 120) {
                             // Cocokkan Gambar Card
-                            CustomIpadButton(
-                                color: .gray50,
-                                showDashedBorder: false,
-                                shadowColor: Color(hex: "87622a"),
-                                shadowOffset: CGSize(width: 3, height: 4),
-                                action: {
+                            NavigationLink(value: HomeDestination.matchCard) {
+                                CustomIpadButton(
+                                    color: .gray50,
+                                    showDashedBorder: false,
+                                    shadowColor: Color(hex: "87622a"),
+                                    shadowOffset: CGSize(width: 3, height: 4),
+                                    action: {
+                                    }
+                                ) {
+                                    VStack(spacing: 20) {
+                                        Image("cocokkanGambar")
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 340, height: 350)
+                                        
+                                        Text("Cocokkan Gambar")
+                                            .font(.title2)
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(.black)
+                                    }
+                                    .padding(30)
+                                    .frame(minWidth: 400, minHeight: 470)
                                 }
-                            ) {
-                                VStack(spacing: 20) {
-                                    Image("cocokkanGambar")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 340, height: 350)
-
-                                    Text("Cocokkan Gambar")
-                                        .font(.title2)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(.black)
-                                }
-                                .padding(30)
-                                .frame(minWidth: 400, minHeight: 470)
+                                .styledContent
                             }
 
                             // Puzzle Card
@@ -179,6 +183,8 @@ struct iPadHomeView: View {
                     PhotoGalleryView()
                 case .instructions:
                     EmptyView() // No longer used - InstructionSheetView is now a sheet
+                case .matchCard:
+                    MatchCardView()
                 }
             }
             .sheet(isPresented: $showPairDevice) {

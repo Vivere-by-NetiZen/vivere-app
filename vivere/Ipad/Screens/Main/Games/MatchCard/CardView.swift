@@ -13,12 +13,10 @@ struct CardView: View {
     var body: some View {
         ZStack {
             if card.isFaceUp || card.isMatched {
-                if let uiImg = UIImage(named: card.imgName) {
-                    Image(uiImage: uiImg)
-                        .border(Color.white)
-                        .frame(width: 180, height: 320)
-                        .cornerRadius(10)
-                }
+                Image(uiImage: card.img)
+                    .border(Color.white)
+                    .frame(width: 180, height: 320)
+                    .cornerRadius(10)
             } else {
                 if let uiImg = UIImage(named: "cardBack") {
                     Image(uiImage: uiImg)
