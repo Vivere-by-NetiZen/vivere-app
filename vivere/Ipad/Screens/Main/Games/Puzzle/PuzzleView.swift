@@ -135,7 +135,7 @@ struct PuzzleView: View {
             }
             .navigationBarBackButtonHidden(true)
             .fullScreenCover(isPresented: $showCompletionView) {
-                PuzzleCompletionView(imageModel: viewModel.selectedImageModel)
+                CompletionView(imageModel: viewModel.selectedImageModel)
             }
         }
     }
