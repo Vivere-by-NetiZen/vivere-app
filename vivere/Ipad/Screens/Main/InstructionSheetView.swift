@@ -1,5 +1,5 @@
 //
-//  PuzzleTutorialSheetView.swift
+//  InstructionSheetView.swift
 //  vivere
 //
 //  Created on 11/14/25.
@@ -7,9 +7,8 @@
 
 import SwiftUI
 
-struct PuzzleTutorialSheetView: View {
+struct InstructionSheetView: View {
     @Environment(\.dismiss) private var dismiss
-    let onComplete: () -> Void
     @State private var currentStep: Int = 1
 
     private let steps: [(image: String, text: String)] = [
@@ -35,7 +34,8 @@ struct PuzzleTutorialSheetView: View {
                         // Header with title and close button
                         HStack {
                             Text("Instruksi Cara Penggunaan")
-                                .font(.system(size: 34, weight: .semibold))
+                                .font(.title)
+                                .fontWeight(.semibold)
                                 .foregroundColor(.darkBlue)
                                 .tracking(0.136)
 
@@ -46,7 +46,7 @@ struct PuzzleTutorialSheetView: View {
                                 // Don't navigate if closed early
                             } label: {
                                 Image(systemName: "xmark")
-                                    .font(.system(size: 28))
+                                    .font(.title3)
                                     .foregroundColor(.black)
                             }
                         }
@@ -59,13 +59,14 @@ struct PuzzleTutorialSheetView: View {
                                 .frame(height: 300)
                                 .overlay(
                                     Text("ASET")
-                                        .font(.system(size: 32, weight: .semibold))
+                                        .font(.title2)
+                                        .fontWeight(.semibold)
                                         .foregroundColor(.black.opacity(0.95))
                                 )
 
                             // Instruction text
                             Text(steps[currentStep - 1].text)
-                                .font(.system(size: 17, weight: .regular))
+                                .font(.body)
                                 .foregroundColor(.black)
                                 .multilineTextAlignment(.center)
                                 .tracking(-0.0731)
@@ -124,12 +125,12 @@ struct PuzzleTutorialSheetView: View {
                                 currentStep += 1
                             } else {
                                 dismiss()
-                                onComplete()
                             }
                         }
                     ) {
                         Text(currentStep < 3 ? "Selanjutnya" : "Saya Mengerti")
-                            .font(.system(size: 22, weight: .semibold))
+                            .font(.headline)
+                            .fontWeight(.semibold)
                             .foregroundColor(.white)
                             .frame(width: 200, height: 70)
                     }
@@ -174,6 +175,6 @@ struct PuzzleTutorialSheetView: View {
 }
 
 #Preview {
-    PuzzleTutorialSheetView(onComplete: {})
+    InstructionSheetView()
 }
 

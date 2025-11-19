@@ -20,7 +20,7 @@ struct CustomIpadButton<Label: View>: View {
     let showDashedBorder: Bool
     let shadowColor: Color?
     let shadowOffset: CGSize
-    
+
     // Backward compatible initializer for string-based API
     init(
         label: String,
@@ -80,27 +80,32 @@ struct CustomIpadButton<Label: View>: View {
 
     var body: some View {
         Button(action: action) {
-            label
-                .background(
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 20)
-                            .foregroundColor(color)
-                            .shadow(
-                                color: shadowColor ?? color.tint(0.2),
-                                radius: 0,
-                                x: shadowOffset.width,
-                                y: shadowOffset.height
-                            )
-                        if showDashedBorder {
-                            RoundedRectangle(cornerRadius: 20)
-                                .stroke(style: StrokeStyle(lineWidth: 2, dash: [15]))
-                                .padding(10)
-                                .foregroundStyle(color == .deny || color == .darkBlue ? .white : .black)
-                        }
-                    }
-                )
+            styledContent
         }
         .buttonStyle(.plain)
+    }
+
+    // Styled content that can be used outside of Button (e.g., in NavigationLink)
+    var styledContent: some View {
+        label
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: 20)
+                        .foregroundColor(color)
+                        .shadow(
+                            color: shadowColor ?? color.tint(0.2),
+                            radius: 0,
+                            x: shadowOffset.width,
+                            y: shadowOffset.height
+                        )
+                    if showDashedBorder {
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [15]))
+                            .padding(10)
+                            .foregroundStyle(color == .deny || color == .darkBlue ? .white : .black)
+                    }
+                }
+            )
     }
 
     private static func minWidth(for style: CustomIpadButtonStyle) -> CGFloat {

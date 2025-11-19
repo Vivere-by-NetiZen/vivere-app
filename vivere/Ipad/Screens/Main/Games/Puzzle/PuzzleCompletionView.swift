@@ -7,11 +7,18 @@
 
 import Foundation
 import SwiftUI
-import ConfettiSwiftUI
+import SwiftData
 
 struct PuzzleCompletionView: View {
+    let imageModel: ImageModel?
+
     @State private var confettiTrigger: Int = 0
     @State private var showReminiscenceTherapy = false
+    @Environment(\.dismiss) private var dismiss
+
+    init(imageModel: ImageModel? = nil) {
+        self.imageModel = imageModel
+    }
 
     var body: some View {
         NavigationStack {
@@ -27,12 +34,13 @@ struct PuzzleCompletionView: View {
 
                     VStack(spacing: 16) {
                         Text("Kamu Hebat!")
-                            .font(.system(size: 34, weight: .bold))
+                            .font(.title)
+                            .fontWeight(.bold)
                             .foregroundColor(.white)
                             .tracking(0.136)
 
                         Text("Anda berhasil merangkainya, kami punya hadiah untukmu!")
-                            .font(.system(size: 28, weight: .regular))
+                            .font(.title3)
                             .foregroundColor(.white)
                             .multilineTextAlignment(.center)
                             .tracking(0.1064)
@@ -80,12 +88,20 @@ struct PuzzleCompletionView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+
+                // Debug menu - always visible
+                DebugMenuView()
+                    .zIndex(1000)
             }
             .onAppear {
                 confettiTrigger += 1
             }
+            .onReceive(NotificationCenter.default.publisher(for: .navigateToHome)) { _ in
+                // Dismiss this view to go back to home
+                dismiss()
+            }
             .navigationDestination(isPresented: $showReminiscenceTherapy) {
-                ReminiscenceTherapyView()
+                ReminiscenceTherapyView(jobId: imageModel?.jobId)
                     .navigationBarBackButtonHidden(true)
             }
         }

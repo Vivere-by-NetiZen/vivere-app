@@ -11,9 +11,10 @@ import Photos
 
 struct PuzzleView: View {
     @ObservedObject var viewModel = PuzzleViewModel()
-    
+
     @State var isCompleted: Bool = false
     @State var showCompletionView: Bool = false
+    @State var isTutorialShown: Bool = false
 
     @Environment(MPCManager.self) private var mpc
     @Environment(\.dismiss) private var dismiss
@@ -50,12 +51,12 @@ struct PuzzleView: View {
                             .fontWeight(.semibold)
                         .foregroundColor(.accent)
                         .onTapGesture {
-                            // show tutorial here
+                            isTutorialShown = true
                         }
                         .padding()
                     }
                     .frame(maxWidth: .infinity)
-                    
+
                     HStack(spacing: 60) {
                         // Left side: Puzzle board
                         ZStack {
@@ -67,19 +68,19 @@ struct PuzzleView: View {
                                     RoundedRectangle(cornerRadius: 0)
                                         .stroke(Color.black, lineWidth: 4)
                                 )
-                                .offset(x: -25, y: 6)
-                            
+                                .offset(x: -25, y: -17)
+
                             // Reference image (faded)
                             if let referenceImage = viewModel.referenceUIImage {
                                 Image(uiImage: referenceImage)
                                     .resizable()
                                     .frame(width: viewModel.size * CGFloat(viewModel.col), height: viewModel.size * CGFloat(viewModel.row))
                                     .opacity(0.5)
-                                    .offset(x: -25, y: 6)
+                                    .offset(x: -25, y: -17)
                             }
                         }
                         .frame(width: viewModel.size * CGFloat(viewModel.col) + 40, height: viewModel.size * CGFloat(viewModel.row) + 40)
-                        
+
                         // Right side: Pieces area placeholder (visual guide)
                         VStack(spacing: viewModel.piecesAreaSpacing) {
                             ForEach(0..<viewModel.piecesAreaRows, id: \.self) { r in
@@ -102,6 +103,10 @@ struct PuzzleView: View {
                 // All puzzle pieces (positioned absolutely)
                 ForEach($viewModel.pieces) { $piece in
                     PuzzlePieceView(piece: $piece, size: viewModel.size)
+                }
+
+                if isTutorialShown {
+                    PuzzleTutorialView(isPresented: $isTutorialShown)
                 }
             }
             .onAppear {
@@ -130,11 +135,11 @@ struct PuzzleView: View {
             }
             .navigationBarBackButtonHidden(true)
             .fullScreenCover(isPresented: $showCompletionView) {
-                PuzzleCompletionView()
+                PuzzleCompletionView(imageModel: viewModel.selectedImageModel)
             }
         }
     }
-    
+
     // MARK: - MPC send
     func sendImageForInitialQuestion(_ image: UIImage) {
         // Prefer JPEG to keep payload smaller; adjust quality as needed

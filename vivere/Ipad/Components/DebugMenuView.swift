@@ -13,9 +13,17 @@ struct DebugMenuView: View {
     var body: some View {
         Menu {
             Toggle("Skip Device Connection", isOn: $skipDeviceConnection)
+
+            Divider()
+
+            Button(action: {
+                NotificationCenter.default.post(name: .navigateToHome, object: nil)
+            }) {
+                Label("Go to Home", systemImage: "house.fill")
+            }
         } label: {
             Image(systemName: "ladybug.fill")
-                .font(.system(size: 24))
+                .font(.title3)
                 .foregroundColor(.white)
                 .frame(width: 44, height: 44)
                 .background(
@@ -26,6 +34,10 @@ struct DebugMenuView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
         .padding(20)
     }
+}
+
+extension Notification.Name {
+    static let navigateToHome = Notification.Name("navigateToHome")
 }
 
 #Preview {

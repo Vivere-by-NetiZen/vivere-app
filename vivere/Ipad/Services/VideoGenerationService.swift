@@ -8,11 +8,18 @@
 import Foundation
 import UIKit
 
+// Response from generate endpoint
 struct VideoJobResponse: Codable {
     let jobId: String
     let prompt: String
     let status: String
     let progress: Int
+}
+
+// Response from status endpoint
+struct VideoGenerationStatus: Codable {
+    let status: String
+    let operationId: String
 }
 
 enum VideoGenerationError: Error, LocalizedError {
@@ -61,7 +68,7 @@ class VideoGenerationService {
     /// Upload an image and generate a video job
     /// - Parameters:
     ///   - image: The UIImage to upload
-    ///   - context: Optional context/prompt text (currently not used by backend, but may be useful in future)
+    ///   - context: Optional context/prompt text
     /// - Returns: VideoJobResponse containing job_id, prompt, status, and progress
     func generateVideo(from image: UIImage, context: String? = nil) async throws -> VideoJobResponse {
         let startTime = CFAbsoluteTimeGetCurrent()
@@ -110,7 +117,8 @@ class VideoGenerationService {
         print("  📦 Image size: \(String(format: "%.2f", imageSizeMB)) MB (\(imageData.count) bytes)")
         #endif
 
-        let endpointURL = config.api("generate_video")
+        // New endpoint: /video/generate
+        let endpointURL = config.api("video/generate")
 
         // Create multipart form data
         let boundary = "Boundary-\(UUID().uuidString)"
@@ -122,6 +130,12 @@ class VideoGenerationService {
         body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
         body.append(imageData)
         body.append("\r\n".data(using: .utf8)!)
+
+        // Add duration field (4 seconds)
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"duration\"\r\n\r\n".data(using: .utf8)!)
+        body.append("4\r\n".data(using: .utf8)!)
+
         body.append("--\(boundary)--\r\n".data(using: .utf8)!)
 
         var request = URLRequest(url: endpointURL)
@@ -141,35 +155,16 @@ class VideoGenerationService {
             let (data, response) = try await uploadSession.data(for: request)
             let totalNetworkDuration = CFAbsoluteTimeGetCurrent() - networkStartTime
 
-            // Try to estimate upload vs backend processing time
-            // Note: This is approximate - actual upload time is hard to measure separately
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw VideoGenerationError.invalidResponse
             }
 
             #if DEBUG
-            // Estimate: If response is small (<10KB), most time was backend processing
-            // If response is large, some time was downloading
-            let responseSizeKB = Double(data.count) / 1024
-            let estimatedBackendTime = totalNetworkDuration * 0.85 // Rough estimate: ~85% is backend processing
-            let estimatedUploadTime = totalNetworkDuration - estimatedBackendTime
-
             print("  ⏱️ Total network time: \(String(format: "%.3f", totalNetworkDuration))s")
-            print("  ⏱️ Estimated upload time: ~\(String(format: "%.3f", estimatedUploadTime))s")
-            print("  ⏱️ Estimated backend processing: ~\(String(format: "%.3f", estimatedBackendTime))s")
-            print("  📥 Response size: \(String(format: "%.2f", responseSizeKB)) KB")
-
-            if estimatedUploadTime > 0 {
-                let uploadSpeedMBps = Double(imageData.count) / (1024 * 1024) / estimatedUploadTime
-                print("  📊 Estimated upload speed: \(String(format: "%.2f", uploadSpeedMBps)) MB/s")
-            }
+            print("  📥 Response status: \(httpResponse.statusCode)")
             #endif
 
-            // Check if response is empty
             guard !data.isEmpty else {
-                #if DEBUG
-                print("Empty response from server. Status code: \(httpResponse.statusCode)")
-                #endif
                 throw VideoGenerationError.invalidResponse
             }
 
@@ -187,7 +182,8 @@ class VideoGenerationService {
             decoder.keyDecodingStrategy = .convertFromSnakeCase
 
             do {
-                let videoJob = try decoder.decode(VideoJobResponse.self, from: data)
+                // Decode new response format
+                let statusResponse = try decoder.decode(VideoGenerationStatus.self, from: data)
 
                 let decodeDuration = CFAbsoluteTimeGetCurrent() - decodeStartTime
                 let totalDuration = CFAbsoluteTimeGetCurrent() - startTime
@@ -196,7 +192,13 @@ class VideoGenerationService {
                 print("  ⏱️ Total upload time: \(String(format: "%.3f", totalDuration))s")
                 #endif
 
-                return videoJob
+                // Map to VideoJobResponse for compatibility
+                return VideoJobResponse(
+                    jobId: statusResponse.operationId,
+                    prompt: context ?? "",
+                    status: statusResponse.status,
+                    progress: 0
+                )
             } catch let decodingError {
                 #if DEBUG
                 print("Failed to decode response: \(decodingError)")
@@ -215,5 +217,27 @@ class VideoGenerationService {
             throw VideoGenerationError.networkError(error.localizedDescription)
         }
     }
-}
 
+    /// Check status of a video generation job
+    func checkStatus(jobId: String) async throws -> VideoGenerationStatus {
+        // Endpoint: /video/status/{operation_id}
+        let url = config.api("video/status/\(jobId)")
+
+        let (data, response) = try await URLSession.shared.data(from: url)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200..<300).contains(httpResponse.statusCode) else {
+            throw VideoGenerationError.serverError((response as? HTTPURLResponse)?.statusCode ?? 500)
+        }
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return try decoder.decode(VideoGenerationStatus.self, from: data)
+    }
+
+    /// Get download URL for a video job
+    func getVideoDownloadURL(jobId: String) -> URL {
+        // Endpoint: /video/file/{operation_id}
+        return config.api("video/file/\(jobId)")
+    }
+}
