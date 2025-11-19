@@ -101,14 +101,19 @@ struct PuzzleCompletionView: View {
                 dismiss()
             }
             .navigationDestination(isPresented: $showReminiscenceTherapy) {
-                ReminiscenceTherapyView(jobId: imageModel?.jobId)
-                    .navigationBarBackButtonHidden(true)
+                ReminiscenceTherapyView(operationId: imageModel?.operationId)
             }
         }
     }
 }
 
 #Preview {
-    PuzzleCompletionView()
+    // Create a mock ImageModel for preview
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: ImageModel.self, configurations: config)
+    let mockImage = ImageModel(assetId: "mock", context: "Mock Context", operationId: "mock-op-id")
+
+    return PuzzleCompletionView(imageModel: mockImage)
+        .modelContainer(container)
 }
 

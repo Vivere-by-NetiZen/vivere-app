@@ -10,7 +10,7 @@ import UIKit
 
 // Response from generate endpoint
 struct VideoJobResponse: Codable {
-    let jobId: String
+    let operationId: String
     let prompt: String
     let status: String
     let progress: Int
@@ -69,7 +69,7 @@ class VideoGenerationService {
     /// - Parameters:
     ///   - image: The UIImage to upload
     ///   - context: Optional context/prompt text
-    /// - Returns: VideoJobResponse containing job_id, prompt, status, and progress
+    /// - Returns: VideoJobResponse containing operation_id, prompt, status, and progress
     func generateVideo(from image: UIImage, context: String? = nil) async throws -> VideoJobResponse {
         let startTime = CFAbsoluteTimeGetCurrent()
 
@@ -194,7 +194,7 @@ class VideoGenerationService {
 
                 // Map to VideoJobResponse for compatibility
                 return VideoJobResponse(
-                    jobId: statusResponse.operationId,
+                    operationId: statusResponse.operationId,
                     prompt: context ?? "",
                     status: statusResponse.status,
                     progress: 0
@@ -219,9 +219,9 @@ class VideoGenerationService {
     }
 
     /// Check status of a video generation job
-    func checkStatus(jobId: String) async throws -> VideoGenerationStatus {
+    func checkStatus(operationId: String) async throws -> VideoGenerationStatus {
         // Endpoint: /video/status/{operation_id}
-        let url = config.api("video/status/\(jobId)")
+        let url = config.api("video/status/\(operationId)")
 
         let (data, response) = try await URLSession.shared.data(from: url)
 
@@ -236,8 +236,8 @@ class VideoGenerationService {
     }
 
     /// Get download URL for a video job
-    func getVideoDownloadURL(jobId: String) -> URL {
+    func getVideoDownloadURL(operationId: String) -> URL {
         // Endpoint: /video/file/{operation_id}
-        return config.api("video/file/\(jobId)")
+        return config.api("video/file/\(operationId)")
     }
 }

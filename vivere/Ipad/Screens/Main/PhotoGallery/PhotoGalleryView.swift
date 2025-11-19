@@ -22,7 +22,7 @@ struct PhotoGalleryView: View {
     private let gridSpacing: CGFloat = 32
 
     private var imagesWithVideoJobs: [ImageModel] {
-        images.filter { $0.jobId != nil }
+        images.filter { $0.operationId != nil }
     }
 
     var body: some View {
@@ -54,7 +54,7 @@ struct PhotoGalleryView: View {
             }
         }
         .navigationDestination(isPresented: $showInputContext) {
-            InputContextView(imagesIds: selectedImageIdentifiers)
+            GalleryInputContextView(imagesIds: selectedImageIdentifiers)
         }
         .sheet(isPresented: $showVideoProgress) {
             VideoProgressView(images: imagesWithVideoJobs)
@@ -66,6 +66,8 @@ struct PhotoGalleryView: View {
         }
         .onChange(of: pickerItems) {
             Task {
+                guard !pickerItems.isEmpty else { return }
+
                 selectedImageIdentifiers.removeAll()
 
                 for item in pickerItems {
@@ -78,6 +80,7 @@ struct PhotoGalleryView: View {
 
                 if !selectedImageIdentifiers.isEmpty {
                     showInputContext = true
+                    pickerItems = []
                 }
             }
         }

@@ -50,47 +50,47 @@ class VideoDownloadService {
 
     private init() {}
 
-    /// Get the local file path for a video by job ID
-    func videoFilePath(for jobId: String) -> URL {
-        return videosDirectory.appendingPathComponent("\(jobId).mp4")
+    /// Get the local file path for a video by operation ID
+    func videoFilePath(for operationId: String) -> URL {
+        return videosDirectory.appendingPathComponent("\(operationId).mp4")
     }
 
     /// Check if video is downloaded locally
-    func isVideoDownloaded(jobId: String) -> Bool {
-        let filePath = videoFilePath(for: jobId)
+    func isVideoDownloaded(operationId: String) -> Bool {
+        let filePath = videoFilePath(for: operationId)
         return fileManager.fileExists(atPath: filePath.path)
     }
 
     /// Get local video URL if downloaded
-    func getLocalVideoURL(jobId: String) -> URL? {
-        guard isVideoDownloaded(jobId: jobId) else { return nil }
-        return videoFilePath(for: jobId)
+    func getLocalVideoURL(operationId: String) -> URL? {
+        guard isVideoDownloaded(operationId: operationId) else { return nil }
+        return videoFilePath(for: operationId)
     }
 
-    /// Start monitoring and downloading video for a job ID
-    func startMonitoring(jobId: String) {
+    /// Start monitoring and downloading video for a operation ID
+    func startMonitoring(operationId: String) {
         // Skip if already monitoring or already downloaded
-        guard downloadTasks[jobId] == nil,
-              !isVideoDownloaded(jobId: jobId) else {
+        guard downloadTasks[operationId] == nil,
+              !isVideoDownloaded(operationId: operationId) else {
             return
         }
 
         let task = Task<Void, Never> { [weak self] in
             guard let self = self else { return }
-            await self.monitorAndDownload(jobId: jobId)
+            await self.monitorAndDownload(operationId: operationId)
         }
 
-        downloadTasks[jobId] = task
+        downloadTasks[operationId] = task
     }
 
     /// Stop monitoring a specific job
-    func stopMonitoring(jobId: String) {
-        downloadTasks[jobId]?.cancel()
-        downloadTasks.removeValue(forKey: jobId)
+    func stopMonitoring(operationId: String) {
+        downloadTasks[operationId]?.cancel()
+        downloadTasks.removeValue(forKey: operationId)
     }
 
     /// Monitor video status via polling and download when ready
-    private func monitorAndDownload(jobId: String) async {
+    private func monitorAndDownload(operationId: String) async {
         let maxRetries = 60 // 5 minutes (assuming 5s interval)
         var retryCount = 0
 
@@ -98,28 +98,28 @@ class VideoDownloadService {
             if Task.isCancelled { return }
 
             do {
-                let status = try await VideoGenerationService.shared.checkStatus(jobId: jobId)
+                let status = try await VideoGenerationService.shared.checkStatus(operationId: operationId)
                 let statusLower = status.status.lowercased()
 
                 if statusLower == "completed" {
-                    await downloadVideo(jobId: jobId)
-                    stopMonitoring(jobId: jobId)
+                    await downloadVideo(operationId: operationId)
+                    stopMonitoring(operationId: operationId)
                     return
                 } else if statusLower == "failed" || statusLower == "error" {
                     #if DEBUG
-                    print("Video generation failed for job \(jobId)")
+                    print("Video generation failed for operation \(operationId)")
                     #endif
-                    stopMonitoring(jobId: jobId)
+                    stopMonitoring(operationId: operationId)
                     return
                 }
 
                 // Wait before next poll
-                try await Task.sleep(nanoseconds: 5 * 1_000_000_000) // 5 seconds
+                try await Task.sleep(nanoseconds: 15 * 1_000_000_000)
                 retryCount += 1
 
             } catch {
                 #if DEBUG
-                print("Error checking status for \(jobId): \(error)")
+                print("Error checking status for \(operationId): \(error)")
                 #endif
                 // Wait a bit longer on error
                 try? await Task.sleep(nanoseconds: 10 * 1_000_000_000)
@@ -128,24 +128,24 @@ class VideoDownloadService {
         }
 
         // Timeout
-        stopMonitoring(jobId: jobId)
+        stopMonitoring(operationId: operationId)
     }
 
     /// Download video from server
-    func downloadVideo(jobId: String) async {
+    func downloadVideo(operationId: String) async {
         // Skip if already downloaded
-        guard !isVideoDownloaded(jobId: jobId) else {
+        guard !isVideoDownloaded(operationId: operationId) else {
             #if DEBUG
-            print("Video already downloaded for job \(jobId)")
+            print("Video already downloaded for operation \(operationId)")
             #endif
             return
         }
 
-        let downloadURL = VideoGenerationService.shared.getVideoDownloadURL(jobId: jobId)
-        let filePath = videoFilePath(for: jobId)
+        let downloadURL = VideoGenerationService.shared.getVideoDownloadURL(operationId: operationId)
+        let filePath = videoFilePath(for: operationId)
 
         #if DEBUG
-        print("📥 Starting download for job \(jobId)...")
+        print("📥 Starting download for operation \(operationId)...")
         #endif
 
         do {
@@ -164,25 +164,25 @@ class VideoDownloadService {
 
             #if DEBUG
             let fileSizeMB = Double(data.count) / (1024 * 1024)
-            print("✅ Video downloaded successfully for job \(jobId) (\(String(format: "%.2f", fileSizeMB)) MB)")
+            print("✅ Video downloaded successfully for operation \(operationId) (\(String(format: "%.2f", fileSizeMB)) MB)")
             #endif
 
             // Notify that download completed
             NotificationCenter.default.post(
                 name: .videoDownloadCompleted,
                 object: nil,
-                userInfo: ["jobId": jobId]
+                userInfo: ["operationId": operationId]
             )
 
         } catch {
             #if DEBUG
-            print("❌ Failed to download video for job \(jobId): \(error)")
+            print("❌ Failed to download video for operation \(operationId): \(error)")
             #endif
 
             NotificationCenter.default.post(
                 name: .videoDownloadFailed,
                 object: nil,
-                userInfo: ["jobId": jobId, "error": error.localizedDescription]
+                userInfo: ["operationId": operationId, "error": error.localizedDescription]
             )
         }
     }
@@ -194,8 +194,8 @@ class VideoDownloadService {
         do {
             let images = try modelContext.fetch(descriptor)
             for image in images {
-                if let jobId = image.jobId {
-                    startMonitoring(jobId: jobId)
+                if let operationId = image.operationId {
+                    startMonitoring(operationId: operationId)
                 }
             }
         } catch {
