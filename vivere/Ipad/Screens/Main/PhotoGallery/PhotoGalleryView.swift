@@ -22,7 +22,7 @@ struct PhotoGalleryView: View {
     private let gridSpacing: CGFloat = 32
 
     private var imagesWithVideoJobs: [ImageModel] {
-        images.filter { $0.operationId != nil || $0.jobId != nil }
+        images.filter { $0.operationId != nil }
     }
 
     var body: some View {

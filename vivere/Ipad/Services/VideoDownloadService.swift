@@ -171,7 +171,7 @@ class VideoDownloadService {
             NotificationCenter.default.post(
                 name: .videoDownloadCompleted,
                 object: nil,
-                userInfo: ["jobId": operationId] // Keeping key as "jobId" for now to avoid breaking listeners in this step, will update next
+                userInfo: ["operationId": operationId]
             )
 
         } catch {
@@ -182,7 +182,7 @@ class VideoDownloadService {
             NotificationCenter.default.post(
                 name: .videoDownloadFailed,
                 object: nil,
-                userInfo: ["jobId": operationId, "error": error.localizedDescription]
+                userInfo: ["operationId": operationId, "error": error.localizedDescription]
             )
         }
     }
@@ -196,8 +196,6 @@ class VideoDownloadService {
             for image in images {
                 if let operationId = image.operationId {
                     startMonitoring(operationId: operationId)
-                } else if let jobId = image.jobId {
-                    startMonitoring(operationId: jobId)
                 }
             }
         } catch {

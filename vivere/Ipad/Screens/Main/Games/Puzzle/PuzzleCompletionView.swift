@@ -106,7 +106,7 @@ struct PuzzleCompletionView: View {
                 dismiss()
             }
             .navigationDestination(isPresented: $showReminiscenceTherapy) {
-                ReminiscenceTherapyView(operationId: imageModel?.operationId ?? imageModel?.jobId)
+                ReminiscenceTherapyView(operationId: imageModel?.operationId)
             }
             .navigationBarBackButtonHidden(true)
         }

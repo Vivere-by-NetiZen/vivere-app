@@ -49,9 +49,7 @@ final class VideoProgressViewModel {
 
             await withTaskGroup(of: Void.self) { group in
                 for index in items.indices {
-                    // Check operationId first, fallback to jobId
-                    let opId = items[index].imageModel.operationId ?? items[index].imageModel.jobId
-                    guard let operationId = opId else { continue }
+                    guard let operationId = items[index].imageModel.operationId else { continue }
 
                     group.addTask { [weak self] in
                         await self?.monitorJob(index: index, operationId: operationId)
@@ -259,8 +257,7 @@ struct VideoProgressRow: View {
                 if item.status == "completed" {
                     Button {
                         Task {
-                            let opId = item.imageModel.operationId ?? item.imageModel.jobId
-                            guard let operationId = opId else { return }
+                            guard let operationId = item.imageModel.operationId else { return }
                             await VideoDownloadService.shared.downloadVideo(operationId: operationId)
                         }
                     } label: {
