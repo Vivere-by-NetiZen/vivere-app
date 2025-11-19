@@ -12,7 +12,7 @@ import SwiftUI
 import Photos
 
 struct ReminiscenceTherapyView: View {
-    let jobId: String?
+    let operationId: String?
 
     @State private var videoURL: URL?
     @State private var player: AVQueuePlayer?
@@ -24,8 +24,13 @@ struct ReminiscenceTherapyView: View {
     @Environment(\.dismiss) private var dismiss
     @Query private var images: [ImageModel]
 
-    init(jobId: String? = nil) {
-        self.jobId = jobId
+    // Add debugging info
+    private var debugInfo: String {
+        "OperationId: \(operationId ?? "nil")"
+    }
+
+    init(operationId: String? = nil) {
+        self.operationId = operationId
     }
 
     var body: some View {
@@ -167,18 +172,18 @@ struct ReminiscenceTherapyView: View {
             player = nil
         }
         .onReceive(NotificationCenter.default.publisher(for: .videoDownloadCompleted)) { notification in
-            print("DEBUG: Received videoDownloadCompleted notification for job: \(notification.userInfo?["jobId"] ?? "nil")")
-            if let completedJobId = notification.userInfo?["jobId"] as? String,
-               completedJobId == jobId
+            print("DEBUG: Received videoDownloadCompleted notification for operation: \(notification.userInfo?["operationId"] ?? "nil")")
+            if let completedOpId = notification.userInfo?["operationId"] as? String,
+               completedOpId == operationId
             {
-                print("DEBUG: Job ID matches, loading video")
+                print("DEBUG: Operation ID matches, loading video")
                 loadVideo()
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .videoDownloadFailed)) { notification in
-            print("DEBUG: Received videoDownloadFailed notification for job: \(notification.userInfo?["jobId"] ?? "nil")")
-            if let failedJobId = notification.userInfo?["jobId"] as? String,
-               failedJobId == jobId
+            print("DEBUG: Received videoDownloadFailed notification for operation: \(notification.userInfo?["operationId"] ?? "nil")")
+            if let failedOpId = notification.userInfo?["operationId"] as? String,
+               failedOpId == operationId
             {
                 isLoading = false
                 errorMessage = notification.userInfo?["error"] as? String ?? "Video generation failed"
@@ -192,15 +197,15 @@ struct ReminiscenceTherapyView: View {
     }
 
     private func loadVideo() {
-        print("DEBUG: loadVideo called for jobId: \(jobId ?? "nil")")
-        guard let jobId = jobId else {
+        print("DEBUG: loadVideo called for operationId: \(operationId ?? "nil")")
+        guard let operationId = operationId else {
             isLoading = false
-            errorMessage = "No job ID provided"
+            errorMessage = "No operation ID provided"
             return
         }
 
         // Check if video is already downloaded
-        if let localURL = VideoDownloadService.shared.getLocalVideoURL(jobId: jobId) {
+        if let localURL = VideoDownloadService.shared.getLocalVideoURL(operationId: operationId) {
             print("DEBUG: Video found locally at \(localURL)")
             videoURL = localURL
             setupLoopingPlayer(url: localURL)
@@ -213,15 +218,15 @@ struct ReminiscenceTherapyView: View {
 
         Task {
             do {
-                let status = try await VideoGenerationService.shared.checkStatus(jobId: jobId)
+                let status = try await VideoGenerationService.shared.checkStatus(operationId: operationId)
                 print("DEBUG: Status check result: \(status.status)")
 
                 let statusLower = status.status.lowercased()
                 if statusLower == "completed" {
                     print("DEBUG: Video is completed, downloading...")
-                    await VideoDownloadService.shared.downloadVideo(jobId: jobId)
+                    await VideoDownloadService.shared.downloadVideo(operationId: operationId)
 
-                    if let localURL = VideoDownloadService.shared.getLocalVideoURL(jobId: jobId) {
+                    if let localURL = VideoDownloadService.shared.getLocalVideoURL(operationId: operationId) {
                         await MainActor.run {
                             videoURL = localURL
                             setupLoopingPlayer(url: localURL)
@@ -240,7 +245,7 @@ struct ReminiscenceTherapyView: View {
                     }
                 } else {
                     print("DEBUG: Video status is \(status.status), starting monitoring")
-                    VideoDownloadService.shared.startMonitoring(jobId: jobId)
+                    VideoDownloadService.shared.startMonitoring(operationId: operationId)
                 }
             } catch {
                 print("DEBUG: Error checking status: \(error)")
@@ -253,8 +258,8 @@ struct ReminiscenceTherapyView: View {
     }
 
     private func loadFallbackImage() {
-        guard let jobId = jobId else { return }
-        guard let imageModel = images.first(where: { $0.jobId == jobId }) else { return }
+        guard let operationId = operationId else { return }
+        guard let imageModel = images.first(where: { $0.operationId == operationId }) else { return }
 
         Task {
             let assets = PHAsset.fetchAssets(withLocalIdentifiers: [imageModel.assetId], options: nil)

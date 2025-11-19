@@ -49,10 +49,12 @@ final class VideoProgressViewModel {
 
             await withTaskGroup(of: Void.self) { group in
                 for index in items.indices {
-                    guard let jobId = items[index].imageModel.jobId else { continue }
+                    // Check operationId first, fallback to jobId
+                    let opId = items[index].imageModel.operationId ?? items[index].imageModel.jobId
+                    guard let operationId = opId else { continue }
 
                     group.addTask { [weak self] in
-                        await self?.monitorJob(index: index, jobId: jobId)
+                        await self?.monitorJob(index: index, operationId: operationId)
                     }
                 }
             }
@@ -62,10 +64,10 @@ final class VideoProgressViewModel {
         monitoringTasks.append(task)
     }
 
-    private func monitorJob(index: Int, jobId: String) async {
+    private func monitorJob(index: Int, operationId: String) async {
         while !Task.isCancelled {
             do {
-                let status = try await VideoGenerationService.shared.checkStatus(jobId: jobId)
+                let status = try await VideoGenerationService.shared.checkStatus(operationId: operationId)
                 let statusLower = status.status.lowercased()
 
                 await MainActor.run {
@@ -74,7 +76,7 @@ final class VideoProgressViewModel {
 
                         if statusLower == "completed" {
                             items[index].progress = 100
-                            items[index].videoUrl = VideoGenerationService.shared.getVideoDownloadURL(jobId: jobId).absoluteString
+                            items[index].videoUrl = VideoGenerationService.shared.getVideoDownloadURL(operationId: operationId).absoluteString
                         } else if statusLower == "failed" || statusLower == "error" {
                             items[index].error = "Video generation failed"
                         }
@@ -89,7 +91,7 @@ final class VideoProgressViewModel {
 
             } catch {
                 #if DEBUG
-                print("Failed to check status for \(jobId): \(error)")
+                print("Failed to check status for \(operationId): \(error)")
                 #endif
                 try? await Task.sleep(nanoseconds: 10 * 1_000_000_000)
             }
@@ -257,8 +259,9 @@ struct VideoProgressRow: View {
                 if item.status == "completed" {
                     Button {
                         Task {
-                            guard let jobId = item.imageModel.jobId else { return }
-                            await VideoDownloadService.shared.downloadVideo(jobId: jobId)
+                            let opId = item.imageModel.operationId ?? item.imageModel.jobId
+                            guard let operationId = opId else { return }
+                            await VideoDownloadService.shared.downloadVideo(operationId: operationId)
                         }
                     } label: {
                         HStack {

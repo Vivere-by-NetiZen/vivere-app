@@ -1,55 +1,33 @@
 //
-//  InputContextView.swift
+//  GalleryInputContextView.swift
 //  vivere
 //
-//  Created by Reinhart on 10/11/25.
+//  Created by Imo Madjid on 19/11/25.
 //
 
 import SwiftUI
 import SwiftData
 
-struct InputContextView: View {
+struct GalleryInputContextView: View {
     @ObservedObject var viewModel = InputContextViewModel()
 
     @State private var currContext: String = ""
-    @State private var isDoneInputing: Bool = false
 
     let imagesIds: [String]
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         ZStack {
             Color.viverePrimary.ignoresSafeArea(edges: .all)
 
-            Button("Lewati \(Image(systemName: "chevron.right.2"))") {
-                viewModel.save(currContext: "")
-                Task {
-                    await uploadAndSave()
-                }
-            }
-            .disabled(viewModel.isUploading)
-            .font(Font.title)
-            .fontWeight(.bold)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-            .buttonStyle(.plain)
-            .foregroundColor(.white)
-            .padding()
-
             VStack {
-                HStack {
-                    Image("progressStepper1")
-                    Line()
-                        .stroke(style: StrokeStyle(lineWidth: 4, dash: [15]))
-                        .frame(height: 1)
-                    Image("progressStepper2")
-                    Line()
-                        .stroke(style: StrokeStyle(lineWidth: 4, dash: [15]))
-                        .frame(height: 1)
-                    Image("progressStepper3")
-                }
-                .frame(maxWidth: 400)
-                .padding()
+                // Header
+                Text("Ceritakan sedikit tentang foto itu")
+                    .font(Font.largeTitle.bold())
+                    .foregroundColor(.white)
+                    .padding(.top, 30)
 
                 HStack {
                     VStack {
@@ -78,6 +56,8 @@ struct InputContextView: View {
                             .font(.title)
                             .fontWeight(.semibold)
                             .foregroundColor(.white)
+                            .hidden() // Maintain spacing structure of original view
+
                         TextEditor(text: $currContext)
                             .frame(maxHeight: 300)
                             .padding()
@@ -111,7 +91,7 @@ struct InputContextView: View {
                                     currContext = viewModel.currentContext ?? ""
                                 }
                             } else {
-                                CustomIpadButton(label: "Selanjutnya", color: .accent, style: .large) {
+                                CustomIpadButton(label: "Simpan", color: .accent, style: .large) {
                                     viewModel.save(currContext: currContext)
                                     Task {
                                         await uploadAndSave()
@@ -164,9 +144,6 @@ struct InputContextView: View {
 
         }
         .navigationBarBackButtonHidden(true)
-        .navigationDestination(isPresented: $isDoneInputing) {
-            FinishOnboardingView()
-        }
         .task {
             await viewModel.loadImages(imagesIds: imagesIds)
             currContext = viewModel.currentContext ?? ""
@@ -197,8 +174,8 @@ struct InputContextView: View {
             print("✅ Images saved. Navigating to next screen immediately...")
             #endif
 
-            // Navigate immediately - uploads happen in background
-            isDoneInputing = true
+            // Dismiss immediately - uploads happen in background
+            dismiss()
         }
 
         // Start background upload task (doesn't block navigation)
@@ -238,6 +215,3 @@ struct InputContextView: View {
     }
 }
 
-//#Preview {
-//    InputContextView()
-//}
