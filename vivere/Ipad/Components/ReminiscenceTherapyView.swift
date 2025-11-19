@@ -13,6 +13,7 @@ import Photos
 
 struct ReminiscenceTherapyView: View {
     let operationId: String?
+    let inputImageModel: ImageModel?
 
     @State private var videoURL: URL?
     @State private var player: AVQueuePlayer?
@@ -29,13 +30,15 @@ struct ReminiscenceTherapyView: View {
         "OperationId: \(operationId ?? "nil")"
     }
 
-    init(operationId: String? = nil) {
+    init(operationId: String? = nil, imageModel: ImageModel? = nil) {
         self.operationId = operationId
+        self.inputImageModel = imageModel
     }
 
     @Environment(MPCManager.self) var mpcManager
     @State private var showGoodbye = false
-    
+    @State private var showErrorDetails = false
+
     var body: some View {
         ZStack {
             Color.viverePrimary
@@ -148,28 +151,25 @@ struct ReminiscenceTherapyView: View {
                                 )
                         }
 
-                        // Error overlay
-                        VStack(spacing: 24) {
-                            Image(systemName: "exclamationmark.triangle")
-                                .font(.largeTitle)
-                                .foregroundColor(.white)
-
-                            Text("Unable to load video")
-                                .font(.title3)
-                                .fontWeight(.medium)
-                                .foregroundColor(.white)
-
-                            if !error.isEmpty {
-                                Text(error)
-                                    .font(.body)
-                                    .foregroundColor(.white.opacity(0.8))
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal)
+                        // Toolbar button for error details (top trailing)
+                        VStack {
+                            HStack {
+                                Spacer()
+                                Button(action: {
+                                    showErrorDetails = true
+                                }) {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .font(.title)
+                                        .foregroundColor(.yellow)
+                                        .padding()
+                                        .background(Color.black.opacity(0.6))
+                                        .clipShape(Circle())
+                                }
+                                .padding(.top, 40)
+                                .padding(.trailing, 40)
                             }
+                            Spacer()
                         }
-                        .padding(20)
-                        .background(Color.black.opacity(0.5))
-                        .cornerRadius(16)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
@@ -236,9 +236,15 @@ struct ReminiscenceTherapyView: View {
                 .zIndex(1000)
         }
         .navigationBarBackButtonHidden(true)
+        .alert("Unable to Load Video", isPresented: $showErrorDetails) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(errorMessage ?? "An unknown error occurred.")
+        }
         .onAppear {
             loadVideo()
             loadFallbackImage()
+            mpcManager.send(message: "show_transcriber")
         }
         .onDisappear {
             // Clean up player looper when view disappears
@@ -269,6 +275,12 @@ struct ReminiscenceTherapyView: View {
         .onReceive(NotificationCenter.default.publisher(for: .navigateToHome)) { _ in
             // Dismiss this view to go back
             dismiss()
+        }
+        .onChange(of: mpcManager.lastEndSessionTick) { _, _ in
+            showGoodbye = true
+        }
+        .navigationDestination(isPresented: $showGoodbye) {
+            GoodbyeView()
         }
     }
 
@@ -337,9 +349,9 @@ struct ReminiscenceTherapyView: View {
 
     private func loadFallbackImage() {
         // Try to find image model by operationId first
-        var imageModel: ImageModel?
+        var imageModel: ImageModel? = inputImageModel
 
-        if let operationId = operationId {
+        if imageModel == nil, let operationId = operationId {
             imageModel = images.first(where: { $0.operationId == operationId })
         }
 
@@ -405,18 +417,6 @@ struct ReminiscenceTherapyView: View {
 
         // Start playing
         queuePlayer.play()
-        .background(.viverePrimary)
-        .ignoresSafeArea(.container, edges: .top)
-        .onAppear {
-            mpcManager.send(message: "show_transcriber")
-        }
-        .onChange(of: mpcManager.lastEndSessionTick) { _, _ in
-            showGoodbye = true
-        }
-        .navigationDestination(isPresented: $showGoodbye) {
-            GoodbyeView()
-        }
-        .navigationBarHidden(true)
     }
 }
 

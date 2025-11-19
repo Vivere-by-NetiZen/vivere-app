@@ -101,7 +101,7 @@ struct PuzzleCompletionView: View {
                 dismiss()
             }
             .navigationDestination(isPresented: $showReminiscenceTherapy) {
-                ReminiscenceTherapyView(operationId: imageModel?.operationId)
+                ReminiscenceTherapyView(operationId: imageModel?.operationId, imageModel: imageModel)
             }
         }
     }

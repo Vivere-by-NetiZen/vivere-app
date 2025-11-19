@@ -225,6 +225,11 @@ struct InputContextView: View {
                         let assetId = assetIds[i]
                         if let imageModel = images.first(where: { $0.assetId == assetId }) {
                             imageModel.operationId = operationIds[i]
+
+                            // Start monitoring this video immediately
+                            if let operationId = operationIds[i] {
+                                VideoDownloadService.shared.startMonitoring(operationId: operationId)
+                            }
                         }
                     }
                     try? modelContext.save()
