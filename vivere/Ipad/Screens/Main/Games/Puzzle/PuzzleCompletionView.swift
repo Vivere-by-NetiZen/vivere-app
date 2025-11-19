@@ -82,13 +82,12 @@ struct PuzzleCompletionView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
             .onAppear {
-                // Trigger confetti when view appears
                 confettiTrigger += 1
             }
             .navigationDestination(isPresented: $showReminiscenceTherapy) {
                 ReminiscenceTherapyView()
+                    .navigationBarBackButtonHidden(true)
             }
-            .navigationBarBackButtonHidden(true)
         }
     }
 }
