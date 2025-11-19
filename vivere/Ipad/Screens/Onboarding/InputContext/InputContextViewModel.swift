@@ -7,18 +7,19 @@
 
 import Foundation
 import SwiftUI
-import Combine
 import PhotosUI
 import UIKit
 
-class InputContextViewModel: ObservableObject {
-    @Published var currentImage: Image?
-    @Published var currentContext: String?
-    @Published var idx: Int = 0
-    @Published var totalImgCount: Int = 0
-    @Published var isUploading: Bool = false
-    @Published var uploadProgress: Int = 0
-    @Published var uploadError: String?
+@Observable
+@MainActor
+class InputContextViewModel {
+    var currentImage: Image?
+    var currentContext: String?
+    var idx: Int = 0
+    var totalImgCount: Int = 0
+    var isUploading: Bool = false
+    var uploadProgress: Int = 0
+    var uploadError: String?
 
     var selectedImages: [Image] = []
     var selectedUIImage: [UIImage] = [] // Store UIImage for upload

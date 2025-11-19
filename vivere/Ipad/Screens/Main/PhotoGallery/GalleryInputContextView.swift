@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 
 struct GalleryInputContextView: View {
-    @ObservedObject var viewModel = InputContextViewModel()
+    @State var viewModel = InputContextViewModel()
 
     @State private var currContext: String = ""
 

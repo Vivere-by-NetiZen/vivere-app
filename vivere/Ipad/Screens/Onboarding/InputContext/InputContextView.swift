@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 
 struct InputContextView: View {
-    @ObservedObject var viewModel = InputContextViewModel()
+    @State var viewModel = InputContextViewModel()
 
     @State private var currContext: String = ""
     @State private var isDoneInputing: Bool = false

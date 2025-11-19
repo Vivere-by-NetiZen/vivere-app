@@ -114,7 +114,7 @@ class VideoDownloadService {
                 }
 
                 // Wait before next poll
-                try await Task.sleep(nanoseconds: 5 * 1_000_000_000) // 5 seconds
+                try await Task.sleep(nanoseconds: 15 * 1_000_000_000)
                 retryCount += 1
 
             } catch {
