@@ -39,6 +39,10 @@ class MPCManager: NSObject {
     
     // New: a monotonically increasing tick for command events (e.g., "show_transcriber")
     var lastCommandTick: Int = 0
+    var lastEndSessionTick: Int = 0
+
+    // New: parsed emotion from "mood_<value>" messages (iPad listens for this)
+    var receivedEmotion: Emotion? = nil
     
     var pendingInvitation: PendingInvitation?
     private var pendingInvitationHandler: ((Bool, MCSession?) -> Void)?
@@ -176,6 +180,7 @@ class MPCManager: NSObject {
         guard !session.connectedPeers.isEmpty else { return }
         guard let data = message.data(using: .utf8) else { return }
         try? session.send(data, toPeers: session.connectedPeers, with: .reliable)
+        print("sent data: \(message)")
     }
     
     // New generic data send
@@ -220,6 +225,7 @@ extension MPCManager: MCSessionDelegate {
                     DispatchQueue.main.async {
                         self.receivedInitialQuestionImage = image
                     }
+                    SpeechTranscriberViewModel.shared.getInitialQuestion(image: image)
                     return
                 }
             }
@@ -234,9 +240,21 @@ extension MPCManager: MCSessionDelegate {
                 // If it's a navigation command, tick the counter so .onChange always fires
                 if message == "show_transcriber" {
                     self.lastCommandTick &+= 1
+                } else if message == "end_session" {
+                    self.lastEndSessionTick &+= 1
+                } else if message.hasPrefix("mood_") {
+                    // Parse mood_<value> -> <value> and convert to Emotion
+                    let value = String(message.dropFirst("mood_".count)).lowercased()
+                    if let emotion = Emotion(rawValue: value) {
+                        self.receivedEmotion = emotion
+                        print("Parsed emotion from message: \(emotion)")
+                    } else {
+                        print("Unknown emotion value received: \(value)")
+                    }
                 }
             }
         }
+        print("received data: \(data)")
     }
     
     func session(_ session: MCSession,

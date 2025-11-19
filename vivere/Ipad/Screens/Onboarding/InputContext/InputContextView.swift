@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 
 struct InputContextView: View {
-    @ObservedObject var viewModel = InputContextViewModel()
+    @State var viewModel = InputContextViewModel()
 
     @State private var currContext: String = ""
     @State private var isDoneInputing: Bool = false
@@ -187,7 +187,7 @@ struct InputContextView: View {
                 let imgData = ImageModel(
                     assetId: viewModel.imageIdentifiers[i],
                     context: viewModel.imageContexts[i],
-                    jobId: nil // Will be updated in background
+                    operationId: nil // Will be updated in background
                 )
                 modelContext.insert(imgData)
             }
@@ -210,27 +210,27 @@ struct InputContextView: View {
             print("🚀 Starting background upload process for \(viewModel.totalImgCount) images...")
             #endif
 
-            let jobIds = await viewModel.uploadImagesForVideoGeneration()
+            let operationIds = await viewModel.uploadImagesForVideoGeneration()
 
-            // Update database with job IDs in background
+            // Update database with operation IDs in background
             await MainActor.run {
                 #if DEBUG
-                print("💾 Updating database with job IDs...")
+                print("💾 Updating database with operation IDs...")
                 #endif
 
                 // Fetch existing ImageModel entries and update them
                 let descriptor = FetchDescriptor<ImageModel>()
                 if let images = try? modelContext.fetch(descriptor) {
-                    for i in 0..<min(assetIds.count, jobIds.count) {
+                    for i in 0..<min(assetIds.count, operationIds.count) {
                         let assetId = assetIds[i]
                         if let imageModel = images.first(where: { $0.assetId == assetId }) {
-                            imageModel.jobId = jobIds[i]
+                            imageModel.operationId = operationIds[i]
                         }
                     }
                     try? modelContext.save()
 
                     #if DEBUG
-                    print("✅ Background upload complete. Job IDs updated in database.")
+                    print("✅ Background upload complete. Operation IDs updated in database.")
                     #endif
                 }
             }

@@ -8,13 +8,12 @@
 import SwiftUI
 
 struct GoodbyeView: View {
+    @State private var autoReturnTask: Task<Void, Never>?
+
     var body: some View {
         ZStack {
             Color.black.opacity(0.4)
                 .ignoresSafeArea(.all)
-//                .onTapGesture {_ in
-//                    isPresented = false
-//                }
             
             HStack {
                 VStack(alignment: .leading) {
@@ -54,6 +53,18 @@ struct GoodbyeView: View {
                 RoundedRectangle(cornerRadius: 20)
                     .foregroundColor(.accent)
             )
+        }
+        .onAppear {
+            autoReturnTask = Task {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                await MainActor.run {
+                    NotificationCenter.default.post(name: .navigateToHome, object: nil)
+                }
+            }
+        }
+        .onDisappear {
+            autoReturnTask?.cancel()
+            autoReturnTask = nil
         }
     }
 }

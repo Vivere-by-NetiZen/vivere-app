@@ -6,6 +6,8 @@ struct SpeechTranscriberView: View {
     @State private var hasRequestSuggestion: Bool = false
     @State private var suggestionIndex: Int = 0
     @State private var showEndSessionAlert: Bool = false
+    @State private var showMoodAlert: Bool = false
+    @State private var selectedMood: Mood? = nil
     private var viewModel = SpeechTranscriberViewModel.shared
     @Environment(MPCManager.self) private var mpc
     @Environment(Router.self) private var router
@@ -41,7 +43,8 @@ struct SpeechTranscriberView: View {
                             title: "Pertanyaan",
                             question: viewModel.isFetchingInitialQuestions ? "Loading..." : viewModel.initialQuestion
                         )
-                        .padding(.top, 80)
+                        //                        .padding(.top, 80)
+                        //                        .padding(.horizontal, 26)
                         .multilineTextAlignment(.center)
                         .lineLimit(nil)
                         .frame(minHeight: 410)
@@ -52,7 +55,6 @@ struct SpeechTranscriberView: View {
                                     title: "Saran Tanggapan",
                                     question: ""
                                 )
-                                .padding(.top, 64)
                                 .frame(minHeight: 410)
                             }
                         } else if !viewModel.suggestions.isEmpty {
@@ -61,9 +63,8 @@ struct SpeechTranscriberView: View {
                                     title: "Saran Tanggapan",
                                     question: currentSuggestion
                                 )
-                                .padding(.top, 64)
-                                .lineLimit(nil)
                                 .frame(minHeight: 410)
+                                .lineLimit(nil)
                                 
                                 if hasPrevious {
                                     Button {
@@ -138,7 +139,6 @@ struct SpeechTranscriberView: View {
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(.accentColor)
-                            .padding(.horizontal, 28)
                             .disabled(viewModel.isFetchingSuggestion)
                         } else {
                             Button(action: {
@@ -159,7 +159,6 @@ struct SpeechTranscriberView: View {
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(.accentColor)
-                            .padding(.horizontal, 28)
                             .disabled(viewModel.isFetchingSuggestion || (viewModel.partialTranscript.isEmpty && viewModel.finalTranscripts.isEmpty))
                         }
                         
@@ -174,11 +173,11 @@ struct SpeechTranscriberView: View {
                         .buttonStyle(.borderedProminent)
                         .tint(.red)
                         .font(.headline)
-                        .padding(.horizontal, 28)
                         .disabled(!hasRequestSuggestion || viewModel.isFetchingSuggestion)
                     }
-                    .padding(.bottom, 16)
                 }
+                .padding(.vertical, 74)
+                .padding(.horizontal, 33)
             }
             .background(Color(hex: "#4A6FA5"))
             
@@ -222,8 +221,10 @@ struct SpeechTranscriberView: View {
                                     withAnimation(.easeInOut) {
                                         showEndSessionAlert = false
                                     }
+                                    mpc.send(message: "end_session")
                                     viewModel.toggle(resume: false)
-                                    router.popToRoot()
+                                    showMoodAlert = true
+                                    //                                    router.popToRoot()
                                 } label: {
                                     Text("Ya")
                                         .frame(maxWidth: .infinity)
@@ -243,6 +244,27 @@ struct SpeechTranscriberView: View {
                         .transition(.scale.combined(with: .opacity))
                     }
                     .animation(.easeInOut, value: showEndSessionAlert)
+                }
+                
+                if showMoodAlert {
+                    Color.black.opacity(0.4)
+                        .ignoresSafeArea()
+                        .transition(.opacity)
+                    
+                    MoodCard(
+                        questionText: "Bagaimana suasana hati ODD-mu setelah sesi?",
+                        selectedMood: $selectedMood,
+                    )
+                    .transition(.scale.combined(with: .opacity))
+                    .onChange(of: selectedMood) {
+                        if selectedMood != nil {
+                            withAnimation(.easeInOut) {
+                                showMoodAlert = false
+                            }
+                            mpc.send(message: "mood_\(selectedMood!)")
+                            router.popToRoot()
+                        }
+                    }
                 }
             }
         }

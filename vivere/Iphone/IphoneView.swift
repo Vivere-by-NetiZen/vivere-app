@@ -9,6 +9,9 @@ import SwiftUI
 import AVFoundation
 
 struct IphoneView: View {
+    init() {
+        SpeechTranscriberViewModel.requestMicrophonePermissionIfNeeded()
+    }
     @State private var router = Router()
     @Environment(MPCManager.self) private var mpc
     @State private var mainText = "Pastikan iPhone Terhubung dengan Ipad-mu"
@@ -29,9 +32,6 @@ struct IphoneView: View {
                     router.goToTranscribe()
                 }
                 .onChange(of: mpc.receivedInitialQuestionImage) { _, newImage in
-                    if let img = newImage {
-                        SpeechTranscriberViewModel.shared.getInitialQuestion(image: img)
-                    }
                     mainText = "iPad sedang memulai sesi game, tunggu hingga selesai"
                 }
                 .onChange(of: mpc.connectedPeers) {

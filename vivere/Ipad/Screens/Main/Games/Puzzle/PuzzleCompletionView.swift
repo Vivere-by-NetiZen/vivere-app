@@ -27,13 +27,11 @@ struct PuzzleCompletionView: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: 42) {
-                    // Medal Image
                     Image("medal")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 498, height: 357)
 
-                    // Text Section
                     VStack(spacing: 16) {
                         Text("Kamu Hebat!")
                             .font(.title)
@@ -58,11 +56,9 @@ struct PuzzleCompletionView: View {
                 .padding(41)
                 .frame(minWidth: 600, maxWidth: 750)
 
-                // Confetti cannon positioned at bottom center
                 VStack {
                     Spacer()
                     HStack {
-                        // Left cannon (bottom-left corner)
                         Color.clear
                             .frame(width: 10, height: 10)
                             .confettiCannon(
@@ -98,7 +94,6 @@ struct PuzzleCompletionView: View {
                     .zIndex(1000)
             }
             .onAppear {
-                // Trigger confetti when view appears
                 confettiTrigger += 1
             }
             .onReceive(NotificationCenter.default.publisher(for: .navigateToHome)) { _ in
@@ -106,14 +101,19 @@ struct PuzzleCompletionView: View {
                 dismiss()
             }
             .navigationDestination(isPresented: $showReminiscenceTherapy) {
-                ReminiscenceTherapyView(jobId: imageModel?.jobId)
+                ReminiscenceTherapyView(operationId: imageModel?.operationId)
             }
-            .navigationBarBackButtonHidden(true)
         }
     }
 }
 
 #Preview {
-    PuzzleCompletionView()
+    // Create a mock ImageModel for preview
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: ImageModel.self, configurations: config)
+    let mockImage = ImageModel(assetId: "mock", context: "Mock Context", operationId: "mock-op-id")
+
+    return PuzzleCompletionView(imageModel: mockImage)
+        .modelContainer(container)
 }
 

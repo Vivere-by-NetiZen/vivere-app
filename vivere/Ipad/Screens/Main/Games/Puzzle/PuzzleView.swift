@@ -150,17 +150,18 @@ struct PuzzleView: View {
         let type = "initial_question_image"
         guard let typeData = type.data(using: .utf8) else { return }
 
-        var envelope = Data()
-        var typeLen = UInt32(typeData.count).bigEndian
-        withUnsafeBytes(of: &typeLen) { envelope.append(contentsOf: $0) }
-        envelope.append(typeData)
-        envelope.append(data)
+            var envelope = Data()
+            var typeLen = UInt32(typeData.count).bigEndian
+            withUnsafeBytes(of: &typeLen) { envelope.append(contentsOf: $0) }
+            envelope.append(typeData)
+            envelope.append(data)
 
-        mpc.send(data: envelope)
-        print("Sent image to iphone")
-    }
+            mpc.send(data: envelope)
+            print("Sent image to iphone")
+        }
 }
 
 #Preview {
     PuzzleView()
 }
+
