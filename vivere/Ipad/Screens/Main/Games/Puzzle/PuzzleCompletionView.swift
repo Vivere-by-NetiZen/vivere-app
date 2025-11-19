@@ -7,7 +7,6 @@
 
 import Foundation
 import SwiftUI
-import ConfettiSwiftUI
 import SwiftData
 
 struct PuzzleCompletionView: View {

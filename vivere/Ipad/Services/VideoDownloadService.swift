@@ -99,12 +99,13 @@ class VideoDownloadService {
 
             do {
                 let status = try await VideoGenerationService.shared.checkStatus(jobId: jobId)
+                let statusLower = status.status.lowercased()
 
-                if status.status == "completed" {
+                if statusLower == "completed" {
                     await downloadVideo(jobId: jobId)
                     stopMonitoring(jobId: jobId)
                     return
-                } else if status.status == "failed" || status.status == "error" {
+                } else if statusLower == "failed" || statusLower == "error" {
                     #if DEBUG
                     print("Video generation failed for job \(jobId)")
                     #endif

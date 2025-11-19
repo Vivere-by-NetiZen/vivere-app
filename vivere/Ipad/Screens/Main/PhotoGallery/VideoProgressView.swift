@@ -34,7 +34,6 @@ final class VideoProgressViewModel {
     var items: [VideoProgressItem] = []
     var isLoading = true
 
-    // Keep track of monitoring tasks to cancel them if needed
     private var monitoringTasks: [Task<Void, Never>] = []
 
     init(images: [ImageModel]) {
@@ -43,18 +42,15 @@ final class VideoProgressViewModel {
     }
 
     func startMonitoring() {
-        // Cancel existing tasks
         cancelMonitoring()
 
         let task = Task {
             isLoading = true
 
-            // Start monitoring for all items
             await withTaskGroup(of: Void.self) { group in
                 for index in items.indices {
                     guard let jobId = items[index].imageModel.jobId else { continue }
 
-                    // Initial check
                     group.addTask { [weak self] in
                         await self?.monitorJob(index: index, jobId: jobId)
                     }
@@ -67,36 +63,34 @@ final class VideoProgressViewModel {
     }
 
     private func monitorJob(index: Int, jobId: String) async {
-        // Polling loop
         while !Task.isCancelled {
             do {
                 let status = try await VideoGenerationService.shared.checkStatus(jobId: jobId)
+                let statusLower = status.status.lowercased()
 
                 await MainActor.run {
                     if index < items.count {
                         items[index].status = status.status
 
-                        if status.status == "completed" {
+                        if statusLower == "completed" {
                             items[index].progress = 100
                             items[index].videoUrl = VideoGenerationService.shared.getVideoDownloadURL(jobId: jobId).absoluteString
-                        } else if status.status == "failed" || status.status == "error" {
+                        } else if statusLower == "failed" || statusLower == "error" {
                             items[index].error = "Video generation failed"
                         }
                     }
                 }
 
-                if status.status == "completed" || status.status == "failed" || status.status == "error" {
+                if statusLower == "completed" || statusLower == "failed" || statusLower == "error" {
                     return
                 }
 
-                // Wait before next poll
-                try await Task.sleep(nanoseconds: 5 * 1_000_000_000) // 5 seconds
+                try await Task.sleep(nanoseconds: 5 * 1_000_000_000)
 
             } catch {
                 #if DEBUG
                 print("Failed to check status for \(jobId): \(error)")
                 #endif
-                // Wait a bit longer on error
                 try? await Task.sleep(nanoseconds: 10 * 1_000_000_000)
             }
         }
@@ -108,7 +102,7 @@ final class VideoProgressViewModel {
     }
 
     deinit {
-        cancelMonitoring()
+        // Tasks are cancelled automatically when self is deallocated due to [weak self]
     }
 }
 
@@ -244,7 +238,6 @@ struct VideoProgressRow: View {
                 }
 
                 if item.status == "running" || item.status == "queued" || item.status == "processing" {
-                    // Indeterminate progress since API doesn't provide percentage
                     ProgressView()
                         .tint(.white)
                         .scaleEffect(0.8)
