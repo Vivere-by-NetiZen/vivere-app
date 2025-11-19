@@ -104,7 +104,7 @@ struct PuzzleView: View {
                 ForEach($viewModel.pieces) { $piece in
                     PuzzlePieceView(piece: $piece, size: viewModel.size)
                 }
-                
+
                 if isTutorialShown {
                     PuzzleTutorialView(isPresented: $isTutorialShown)
                 }
