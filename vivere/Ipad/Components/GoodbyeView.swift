@@ -12,9 +12,6 @@ struct GoodbyeView: View {
         ZStack {
             Color.black.opacity(0.4)
                 .ignoresSafeArea(.all)
-//                .onTapGesture {_ in
-//                    isPresented = false
-//                }
             
             HStack {
                 VStack(alignment: .leading) {

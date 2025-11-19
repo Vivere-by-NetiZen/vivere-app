@@ -39,6 +39,7 @@ class MPCManager: NSObject {
     
     // New: a monotonically increasing tick for command events (e.g., "show_transcriber")
     var lastCommandTick: Int = 0
+    var lastEndSessionTick: Int = 0
     
     var pendingInvitation: PendingInvitation?
     private var pendingInvitationHandler: ((Bool, MCSession?) -> Void)?
@@ -234,6 +235,8 @@ extension MPCManager: MCSessionDelegate {
                 // If it's a navigation command, tick the counter so .onChange always fires
                 if message == "show_transcriber" {
                     self.lastCommandTick &+= 1
+                } else if message == "end_session" {
+                    self.lastEndSessionTick &+= 1
                 }
             }
         }
@@ -340,4 +343,3 @@ extension MPCManager: MCNearbyServiceBrowserDelegate {
         preferredPeer = nil
     }
 }
-

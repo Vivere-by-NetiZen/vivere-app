@@ -28,6 +28,9 @@ struct ReminiscenceTherapyView: View {
         self.jobId = jobId
     }
 
+    @Environment(MPCManager.self) var mpcManager
+    @State private var showGoodbye = false
+    
     var body: some View {
         ZStack {
             Color.viverePrimary
@@ -303,9 +306,22 @@ struct ReminiscenceTherapyView: View {
 
         // Start playing
         queuePlayer.play()
+        .background(.viverePrimary)
+        .ignoresSafeArea(.container, edges: .top)
+        .onAppear {
+            mpcManager.send(message: "show_transcriber")
+        }
+        .onChange(of: mpcManager.lastEndSessionTick) { _, _ in
+            showGoodbye = true
+        }
+        .navigationDestination(isPresented: $showGoodbye) {
+            GoodbyeView()
+        }
+        .navigationBarHidden(true)
     }
 }
 
 #Preview {
     ReminiscenceTherapyView()
 }
+
