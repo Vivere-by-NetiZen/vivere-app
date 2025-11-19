@@ -32,9 +32,6 @@ struct IphoneView: View {
                     router.goToTranscribe()
                 }
                 .onChange(of: mpc.receivedInitialQuestionImage) { _, newImage in
-                    if let img = newImage {
-                        SpeechTranscriberViewModel.shared.getInitialQuestion(image: img)
-                    }
                     mainText = "iPad sedang memulai sesi game, tunggu hingga selesai"
                 }
                 .onChange(of: mpc.connectedPeers) {

@@ -6,10 +6,12 @@
 //
 
 import Foundation
+import SwiftUI
 
 struct MatchCard: Identifiable, Equatable {
     var id: UUID = UUID()
     var imgName: String
+    var img: UIImage
     var isFaceUp: Bool = false
     var isMatched: Bool = false
 }

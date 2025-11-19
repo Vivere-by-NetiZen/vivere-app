@@ -1,3 +1,4 @@
+
 //
 //  PuzzleCompletionView.swift
 //  vivere
@@ -9,7 +10,7 @@ import Foundation
 import SwiftUI
 import SwiftData
 
-struct PuzzleCompletionView: View {
+struct CompletionView: View {
     let imageModel: ImageModel?
 
     @State private var confettiTrigger: Int = 0
@@ -113,7 +114,7 @@ struct PuzzleCompletionView: View {
     let container = try! ModelContainer(for: ImageModel.self, configurations: config)
     let mockImage = ImageModel(assetId: "mock", context: "Mock Context", operationId: "mock-op-id")
 
-    return PuzzleCompletionView(imageModel: mockImage)
+    return CompletionView(imageModel: mockImage)
         .modelContainer(container)
 }
 

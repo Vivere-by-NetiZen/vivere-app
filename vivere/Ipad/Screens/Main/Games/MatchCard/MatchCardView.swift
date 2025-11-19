@@ -6,66 +6,145 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct MatchCardView: View {
-    @State private var cards: [MatchCard] = []
+    @StateObject private var viewModel = MatchCardViewModel()
+    
     @State private var isCompleted: Bool = false
-    @State private var firstSelectedCard: Int?
+    @State var showCompletionView: Bool = false
+    @State var isTutorialShown: Bool = false
+    @State var isMatchedImageShown: Bool = false
+    
+    @Environment(MPCManager.self) private var mpc
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @Query private var images: [ImageModel]
     
     let col = 3
     
     var body: some View {
-        VStack {
-            Button("Restart"){
-                setupCards()
+        ZStack {
+            Color.viverePrimary
+                .ignoresSafeArea()
+            
+            VStack {
+                HStack {
+                    Image(systemName: "chevron.left")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(.black)
+                        .padding()
+                        .background(Color.white)
+                        .clipShape(Circle())
+                        .onTapGesture {
+                            dismiss()
+                        }
+                        .padding()
+                    Spacer()
+                    Text("Cocokkan 2 kartu dengan gambar yang sama")
+                        .font(Font.largeTitle)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                    Spacer()
+                    Image(systemName: "questionmark.circle")
+                        .font(.system(size: 50))
+                        .fontWeight(.semibold)
+                        .foregroundColor(.accent)
+                        .onTapGesture {
+                            isTutorialShown = true
+                        }
+                        .padding()
+                }
+                .frame(maxWidth: .infinity)
+                
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: col)) {
+                    ForEach(viewModel.cards) { card in
+                        CardView(card: card)
+                            .onTapGesture {
+                                viewModel.flipCard(card: card)
+                            }
+                    }
+                }
+                
+            }
+            if isMatchedImageShown {
+                ZStack {
+                    Color.black.opacity(0.4)
+                        .ignoresSafeArea(.all)
+                    if let lastMatchedImage = viewModel.lastMatchedImage {
+                        Image(uiImage: lastMatchedImage)
+                            .resizable()
+                            .scaledToFit()
+                            .padding(40)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(Color.white)
+                            .cornerRadius(20)
+                            .padding(80)
+                    }
+                }
+                .onTapGesture {_ in
+                    isMatchedImageShown = false
+                }
             }
             
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: col)) {
-                ForEach(cards) { card in
-                    CardView(card: card)
-                        .onTapGesture {
-                            flipCard(card: card)
-                        }
+            if isTutorialShown {
+                MatchCardTutorialSheetView(isPresented: $isTutorialShown)
+            }
+            
+        }
+        .onAppear {
+            Task {
+                viewModel.images = self.images
+                await viewModel.prepareCardsIfNeeded()
+            }
+        }
+        .onChange(of: viewModel.cards) {
+            let completed = viewModel.cards.allSatisfy{$0.isMatched == true}
+            if completed && !isCompleted {
+                isCompleted = true
+                // Show completion view after a brief delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    showCompletionView = true
                 }
             }
         }
-        .onAppear {
-            setupCards()
+        .onChange(of: viewModel.lastMatchedImage) {
+            isMatchedImageShown = true
+        }
+        .onChange(of: viewModel.triggerSendToIphone) {
+            if viewModel.triggerSendToIphone {
+                if let normalizedImage = viewModel.normalizedImage {
+                    sendImageForInitialQuestion(normalizedImage)
+                }
+                viewModel.triggerSendToIphone = false
+            }
+        }
+        .navigationBarBackButtonHidden(true)
+        .fullScreenCover(isPresented: $showCompletionView) {
+            CompletionView(imageModel: viewModel.completionImage)
         }
     }
     
-    func setupCards() {
-        cards = []
-        let images = ["card1", "card2", "card3"]
-        let shuffled = (images + images).shuffled()
+    func sendImageForInitialQuestion(_ image: UIImage) {
+        // Prefer JPEG to keep payload smaller; adjust quality as needed
+        guard let data = image.jpegData(compressionQuality: 0.8) ?? image.pngData() else {
+            return
+        }
+        // Simple envelope: 4 bytes length of "type" + utf8 type + payload
+        let type = "initial_question_image"
+        guard let typeData = type.data(using: .utf8) else { return }
         
-        cards = shuffled.map { MatchCard(imgName: $0, isFaceUp: false, isMatched: false) }
+        var envelope = Data()
+        var typeLen = UInt32(typeData.count).bigEndian
+        withUnsafeBytes(of: &typeLen) { envelope.append(contentsOf: $0) }
+        envelope.append(typeData)
+        envelope.append(data)
+        
+        mpc.send(data: envelope)
+        print("Sent image to iphone")
     }
     
-    func flipCard(card: MatchCard) {
-        //BUG: after first match
-        //TODO: add flip animation
-        guard let idx = cards.firstIndex(where: {$0.id == card.id}), !cards[idx].isMatched else { return }
-        
-        cards[idx].isFaceUp.toggle()
-        
-        if let firstSelectedCardIdx = firstSelectedCard {
-            checkMatch(firstCardIdx: firstSelectedCardIdx, secondCardIdx: idx)
-            self.firstSelectedCard = nil
-        } else {
-            self.firstSelectedCard = idx
-        }
-    }
-    
-    func checkMatch(firstCardIdx: Int, secondCardIdx: Int){
-        if cards[firstCardIdx].imgName == cards[secondCardIdx].imgName {
-            cards[firstCardIdx].isMatched = true
-            cards[secondCardIdx].isMatched = true
-        } else {
-            cards[firstCardIdx].isFaceUp = false
-            cards[secondCardIdx].isFaceUp = false
-        }
-    }
 }
 
 //#Preview {

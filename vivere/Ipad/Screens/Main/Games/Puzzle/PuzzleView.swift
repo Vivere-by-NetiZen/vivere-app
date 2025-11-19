@@ -71,7 +71,7 @@ struct PuzzleView: View {
                                 .offset(x: -25, y: -17)
 
                             // Reference image (faded)
-                            if let referenceImage = viewModel.referenceUIImage {
+                            if let referenceImage = viewModel.normalizedImage {
                                 Image(uiImage: referenceImage)
                                     .resizable()
                                     .frame(width: viewModel.size * CGFloat(viewModel.col), height: viewModel.size * CGFloat(viewModel.row))
@@ -135,7 +135,7 @@ struct PuzzleView: View {
             }
             .navigationBarBackButtonHidden(true)
             .fullScreenCover(isPresented: $showCompletionView) {
-                PuzzleCompletionView(imageModel: viewModel.selectedImageModel)
+                CompletionView(imageModel: viewModel.selectedImageModel)
             }
         }
     }
