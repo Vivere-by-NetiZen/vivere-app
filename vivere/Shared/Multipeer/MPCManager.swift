@@ -40,6 +40,9 @@ class MPCManager: NSObject {
     // New: a monotonically increasing tick for command events (e.g., "show_transcriber")
     var lastCommandTick: Int = 0
     var lastEndSessionTick: Int = 0
+
+    // New: parsed emotion from "mood_<value>" messages (iPad listens for this)
+    var receivedEmotion: Emotion? = nil
     
     var pendingInvitation: PendingInvitation?
     private var pendingInvitationHandler: ((Bool, MCSession?) -> Void)?
@@ -239,6 +242,15 @@ extension MPCManager: MCSessionDelegate {
                     self.lastCommandTick &+= 1
                 } else if message == "end_session" {
                     self.lastEndSessionTick &+= 1
+                } else if message.hasPrefix("mood_") {
+                    // Parse mood_<value> -> <value> and convert to Emotion
+                    let value = String(message.dropFirst("mood_".count)).lowercased()
+                    if let emotion = Emotion(rawValue: value) {
+                        self.receivedEmotion = emotion
+                        print("Parsed emotion from message: \(emotion)")
+                    } else {
+                        print("Unknown emotion value received: \(value)")
+                    }
                 }
             }
         }
@@ -346,3 +358,4 @@ extension MPCManager: MCNearbyServiceBrowserDelegate {
         preferredPeer = nil
     }
 }
+
