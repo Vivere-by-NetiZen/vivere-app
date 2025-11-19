@@ -12,7 +12,7 @@ import SwiftUI
 import Photos
 
 struct ReminiscenceTherapyView: View {
-    let jobId: String?
+    let operationId: String?
 
     @State private var videoURL: URL?
     @State private var player: AVQueuePlayer?
@@ -24,8 +24,13 @@ struct ReminiscenceTherapyView: View {
     @Environment(\.dismiss) private var dismiss
     @Query private var images: [ImageModel]
 
-    init(jobId: String? = nil) {
-        self.jobId = jobId
+    // Add debugging info
+    private var debugInfo: String {
+        "OperationId: \(operationId ?? "nil")"
+    }
+
+    init(operationId: String? = nil) {
+        self.operationId = operationId
     }
 
     @Environment(MPCManager.self) var mpcManager
@@ -120,36 +125,109 @@ struct ReminiscenceTherapyView: View {
                     }
                 }
             } else if let error = errorMessage {
-                // Error state
-                VStack(spacing: 24) {
-                    Image(systemName: "exclamationmark.triangle")
-                    .font(.largeTitle)
-                    .foregroundColor(.white)
-
-                    Text("Unable to load video")
-                        .font(.title3)
-                        .fontWeight(.medium)
-                        .foregroundColor(.white)
-
-                    if !error.isEmpty {
-                        Text(error)
-                            .font(.body)
-                            .foregroundColor(.white.opacity(0.8))
-                            .multilineTextAlignment(.center)
+                // Error state - show fallback image if available
+                if let fallbackImage {
+                    ZStack {
+                        Image("frame")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .ignoresSafeArea(.container, edges: .top)
                             .padding(.horizontal)
+                            .padding(.bottom)
+                            .shadow(radius: 10, y: 10)
+
+                        GeometryReader { proxy in
+                            Color.clear
+                                .overlay(
+                                    Image(uiImage: fallbackImage)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: proxy.size.width * 0.6)
+                                        .offset(y: 40)
+                                )
+                        }
+
+                        // Error overlay
+                        VStack(spacing: 24) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.largeTitle)
+                                .foregroundColor(.white)
+
+                            Text("Unable to load video")
+                                .font(.title3)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white)
+
+                            if !error.isEmpty {
+                                Text(error)
+                                    .font(.body)
+                                    .foregroundColor(.white.opacity(0.8))
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal)
+                            }
+                        }
+                        .padding(20)
+                        .background(Color.black.opacity(0.5))
+                        .cornerRadius(16)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    VStack(spacing: 24) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.largeTitle)
+                            .foregroundColor(.white)
+
+                        Text("Unable to load video")
+                            .font(.title3)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white)
+
+                        if !error.isEmpty {
+                            Text(error)
+                                .font(.body)
+                                .foregroundColor(.white.opacity(0.8))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                        }
                     }
                 }
             } else {
-                // No video available
-                VStack(spacing: 24) {
-                    Image(systemName: "video.slash")
-                        .font(.largeTitle)
-                        .foregroundColor(.white)
+                // No video available - show fallback image if available
+                if let fallbackImage {
+                    ZStack {
+                        Image("frame")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .ignoresSafeArea(.container, edges: .top)
+                            .padding(.horizontal)
+                            .padding(.bottom)
+                            .shadow(radius: 10, y: 10)
 
-                    Text("No video available")
-                        .font(.title3)
-                        .fontWeight(.medium)
-                        .foregroundColor(.white)
+                        GeometryReader { proxy in
+                            Color.clear
+                                .overlay(
+                                    Image(uiImage: fallbackImage)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: proxy.size.width * 0.6)
+                                        .offset(y: 40)
+                                )
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    VStack(spacing: 24) {
+                        Image(systemName: "video.slash")
+                            .font(.largeTitle)
+                            .foregroundColor(.white)
+
+                        Text("No video available")
+                            .font(.title3)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white)
+                    }
                 }
             }
 
@@ -178,18 +256,18 @@ struct ReminiscenceTherapyView: View {
             player = nil
         }
         .onReceive(NotificationCenter.default.publisher(for: .videoDownloadCompleted)) { notification in
-            print("DEBUG: Received videoDownloadCompleted notification for job: \(notification.userInfo?["jobId"] ?? "nil")")
-            if let completedJobId = notification.userInfo?["jobId"] as? String,
-               completedJobId == jobId
+            print("DEBUG: Received videoDownloadCompleted notification for operation: \(notification.userInfo?["operationId"] ?? "nil")")
+            if let completedOpId = notification.userInfo?["operationId"] as? String,
+               completedOpId == operationId
             {
-                print("DEBUG: Job ID matches, loading video")
+                print("DEBUG: Operation ID matches, loading video")
                 loadVideo()
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .videoDownloadFailed)) { notification in
-            print("DEBUG: Received videoDownloadFailed notification for job: \(notification.userInfo?["jobId"] ?? "nil")")
-            if let failedJobId = notification.userInfo?["jobId"] as? String,
-               failedJobId == jobId
+            print("DEBUG: Received videoDownloadFailed notification for operation: \(notification.userInfo?["operationId"] ?? "nil")")
+            if let failedOpId = notification.userInfo?["operationId"] as? String,
+               failedOpId == operationId
             {
                 isLoading = false
                 errorMessage = notification.userInfo?["error"] as? String ?? "Video generation failed"
@@ -205,15 +283,17 @@ struct ReminiscenceTherapyView: View {
     }
 
     private func loadVideo() {
-        print("DEBUG: loadVideo called for jobId: \(jobId ?? "nil")")
-        guard let jobId = jobId else {
+        print("DEBUG: loadVideo called for operationId: \(operationId ?? "nil")")
+        guard let operationId = operationId else {
             isLoading = false
-            errorMessage = "No job ID provided"
+            errorMessage = "No operation ID provided"
+            // Still try to load fallback image even if operationId is nil
+            loadFallbackImage()
             return
         }
 
         // Check if video is already downloaded
-        if let localURL = VideoDownloadService.shared.getLocalVideoURL(jobId: jobId) {
+        if let localURL = VideoDownloadService.shared.getLocalVideoURL(operationId: operationId) {
             print("DEBUG: Video found locally at \(localURL)")
             videoURL = localURL
             setupLoopingPlayer(url: localURL)
@@ -226,15 +306,15 @@ struct ReminiscenceTherapyView: View {
 
         Task {
             do {
-                let status = try await VideoGenerationService.shared.checkStatus(jobId: jobId)
+                let status = try await VideoGenerationService.shared.checkStatus(operationId: operationId)
                 print("DEBUG: Status check result: \(status.status)")
 
                 let statusLower = status.status.lowercased()
                 if statusLower == "completed" {
                     print("DEBUG: Video is completed, downloading...")
-                    await VideoDownloadService.shared.downloadVideo(jobId: jobId)
+                    await VideoDownloadService.shared.downloadVideo(operationId: operationId)
 
-                    if let localURL = VideoDownloadService.shared.getLocalVideoURL(jobId: jobId) {
+                    if let localURL = VideoDownloadService.shared.getLocalVideoURL(operationId: operationId) {
                         await MainActor.run {
                             videoURL = localURL
                             setupLoopingPlayer(url: localURL)
@@ -253,7 +333,7 @@ struct ReminiscenceTherapyView: View {
                     }
                 } else {
                     print("DEBUG: Video status is \(status.status), starting monitoring")
-                    VideoDownloadService.shared.startMonitoring(jobId: jobId)
+                    VideoDownloadService.shared.startMonitoring(operationId: operationId)
                 }
             } catch {
                 print("DEBUG: Error checking status: \(error)")
@@ -266,12 +346,30 @@ struct ReminiscenceTherapyView: View {
     }
 
     private func loadFallbackImage() {
-        guard let jobId = jobId else { return }
-        guard let imageModel = images.first(where: { $0.jobId == jobId }) else { return }
+        // Try to find image model by operationId first
+        var imageModel: ImageModel?
+
+        if let operationId = operationId {
+            imageModel = images.first(where: { $0.operationId == operationId })
+        }
+
+        // If not found and operationId is nil, try to use the first available image
+        // This handles cases where operationId wasn't set yet or is missing
+        if imageModel == nil && images.isEmpty == false {
+            imageModel = images.first
+        }
+
+        guard let imageModel = imageModel else {
+            print("DEBUG: No image model found for fallback")
+            return
+        }
 
         Task {
             let assets = PHAsset.fetchAssets(withLocalIdentifiers: [imageModel.assetId], options: nil)
-            guard let asset = assets.firstObject else { return }
+            guard let asset = assets.firstObject else {
+                print("DEBUG: Could not find asset for assetId: \(imageModel.assetId)")
+                return
+            }
 
             let options = PHImageRequestOptions()
             options.deliveryMode = .highQualityFormat
@@ -290,6 +388,7 @@ struct ReminiscenceTherapyView: View {
                 hasResumed = true
                 Task { @MainActor in
                     self.fallbackImage = image
+                    print("DEBUG: Fallback image loaded successfully")
                 }
             }
         }
