@@ -114,7 +114,7 @@ struct CompletionView: View {
     let container = try! ModelContainer(for: ImageModel.self, configurations: config)
     let mockImage = ImageModel(assetId: "mock", context: "Mock Context", operationId: "mock-op-id")
 
-    return CompletionView()(imageModel: mockImage)
+    return CompletionView(imageModel: mockImage)
         .modelContainer(container)
 }
 
