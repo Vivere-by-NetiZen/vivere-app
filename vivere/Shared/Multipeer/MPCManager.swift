@@ -177,6 +177,7 @@ class MPCManager: NSObject {
         guard !session.connectedPeers.isEmpty else { return }
         guard let data = message.data(using: .utf8) else { return }
         try? session.send(data, toPeers: session.connectedPeers, with: .reliable)
+        print("sent data: \(message)")
     }
     
     // New generic data send
@@ -221,6 +222,7 @@ extension MPCManager: MCSessionDelegate {
                     DispatchQueue.main.async {
                         self.receivedInitialQuestionImage = image
                     }
+                    SpeechTranscriberViewModel.shared.getInitialQuestion(image: image)
                     return
                 }
             }
@@ -240,6 +242,7 @@ extension MPCManager: MCSessionDelegate {
                 }
             }
         }
+        print("received data: \(data)")
     }
     
     func session(_ session: MCSession,

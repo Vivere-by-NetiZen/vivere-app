@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>API_BASE_URL</key>
-	<string>https://presymphonic-preexclusively-kaylene.ngrok-free.dev</string>
+	<string>https://server-macro.bunny-kitchen.ts.net</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_vivere-sync._tcp</string>
@@ -17,6 +17,6 @@
 		<string>launchImage</string>
 	</dict>
 	<key>WS_BASE_URL</key>
-	<string>wss://presymphonic-preexclusively-kaylene.ngrok-free.dev</string>
+	<string>wss://server-macro.bunny-kitchen.ts.net</string>
 </dict>
 </plist>

@@ -161,6 +161,14 @@ struct ReminiscenceTherapyView: View {
         .onAppear {
             loadVideo()
             loadFallbackImage()
+            mpcManager.send(message: "show_transcriber")
+        }
+        .onChange(of: mpcManager.lastEndSessionTick) { _, _ in
+            showGoodbye = true
+        }
+        .navigationDestination(isPresented: $showGoodbye) {
+            GoodbyeView()
+                .navigationBarBackButtonHidden(true)
         }
         .onDisappear {
             // Clean up player looper when view disappears
@@ -192,6 +200,8 @@ struct ReminiscenceTherapyView: View {
             // Dismiss this view to go back
             dismiss()
         }
+//        .background(.viverePrimary)
+//        .ignoresSafeArea(.container, edges: .top)
     }
 
     private func loadVideo() {
@@ -306,18 +316,6 @@ struct ReminiscenceTherapyView: View {
 
         // Start playing
         queuePlayer.play()
-        .background(.viverePrimary)
-        .ignoresSafeArea(.container, edges: .top)
-        .onAppear {
-            mpcManager.send(message: "show_transcriber")
-        }
-        .onChange(of: mpcManager.lastEndSessionTick) { _, _ in
-            showGoodbye = true
-        }
-        .navigationDestination(isPresented: $showGoodbye) {
-            GoodbyeView()
-        }
-        .navigationBarHidden(true)
     }
 }
 
