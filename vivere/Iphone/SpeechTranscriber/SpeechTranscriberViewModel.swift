@@ -232,6 +232,7 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
         
         Task { [weak self] in
             do {
+                print("Fetching initial question")
                 let (data, response) = try await URLSession.shared.data(for: request)
                 guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
                     await MainActor.run {

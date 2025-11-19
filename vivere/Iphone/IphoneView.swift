@@ -9,6 +9,9 @@ import SwiftUI
 import AVFoundation
 
 struct IphoneView: View {
+    init() {
+        SpeechTranscriberViewModel.requestMicrophonePermissionIfNeeded()
+    }
     @State private var router = Router()
     @Environment(MPCManager.self) private var mpc
     @State private var mainText = "Pastikan iPhone Terhubung dengan Ipad-mu"
