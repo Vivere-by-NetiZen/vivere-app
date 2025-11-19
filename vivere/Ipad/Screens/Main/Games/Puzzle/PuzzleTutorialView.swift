@@ -9,7 +9,7 @@ import SwiftUI
 
 struct PuzzleTutorialView: View {
     @Binding var isPresented: Bool
-    
+
     var body: some View {
         ZStack {
             Color.black.opacity(0.4)
@@ -17,7 +17,7 @@ struct PuzzleTutorialView: View {
                 .onTapGesture {_ in
                     isPresented = false
                 }
-            
+
             VStack(spacing: 40) {
                 // Top Part
                 VStack(alignment: .leading, spacing: 30) {
@@ -27,7 +27,7 @@ struct PuzzleTutorialView: View {
                         .fontWeight(.semibold)
                         .foregroundColor(.darkBlue)
                         .tracking(0.136)
-                    
+
                     // Instructions - Two steps side by side
                     HStack(spacing: 40) {
                         // Step 1
@@ -36,7 +36,7 @@ struct PuzzleTutorialView: View {
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 300, height: 300)
-                            
+
                             Text("Pindahkan setiap potongan gambar ke tempatnya")
                                 .font(.body)
                                 .foregroundColor(.black)
@@ -45,14 +45,14 @@ struct PuzzleTutorialView: View {
                                 .lineSpacing(5)
                         }
                         .frame(width: 300)
-                        
+
                         // Step 2
                         VStack(spacing: 20) {
                             Image("step2")
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 300, height: 300)
-                            
+
                             Text("Kalau cocok, potongan gambar akan menempel otomatis")
                                 .font(.body)
                                 .foregroundColor(.black)
@@ -63,7 +63,7 @@ struct PuzzleTutorialView: View {
                         .frame(width: 300)
                     }
                 }
-                
+
                 // Button
                 CustomIpadButton(
                     color: .darkBlue,
@@ -103,7 +103,7 @@ struct PuzzleTutorialView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                         .padding(.bottom, 17)
                         .padding(.trailing, 20)
-                    
+
                     // Bottom left accessory
                     Image("buttonLeft")
                         .resizable()

@@ -9,6 +9,7 @@ import AVKit
 import Foundation
 import SwiftData
 import SwiftUI
+import Photos
 
 struct ReminiscenceTherapyView: View {
     let jobId: String?
@@ -17,10 +18,11 @@ struct ReminiscenceTherapyView: View {
     @State private var player: AVQueuePlayer?
     @State private var playerLooper: AVPlayerLooper?
     @State private var isLoading = true
-    @State private var downloadProgress: Int = 0
     @State private var errorMessage: String?
+    @State private var fallbackImage: UIImage?
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Query private var images: [ImageModel]
 
     init(jobId: String? = nil) {
         self.jobId = jobId
@@ -58,30 +60,68 @@ struct ReminiscenceTherapyView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if isLoading {
-                // Loading state
-                VStack(spacing: 24) {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        .scaleEffect(1.5)
+                // Loading state with fallback image
+                ZStack {
+                    if let fallbackImage {
+                        ZStack {
+                            Image("frame")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .ignoresSafeArea(.container, edges: .top)
+                                .padding(.horizontal)
+                                .padding(.bottom)
+                                .shadow(radius: 10, y: 10)
 
-                    if downloadProgress > 0 {
-                        Text("Downloading video... \(downloadProgress)%")
-                            .font(.title3)
-                            .fontWeight(.medium)
-                            .foregroundColor(.white)
+                            GeometryReader { proxy in
+                                Color.clear
+                                    .overlay(
+                                        Image(uiImage: fallbackImage)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: proxy.size.width * 0.6)
+                                            .offset(y: 40)
+                                    )
+                            }
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                        // Overlay loading indicator
+                        VStack(spacing: 24) {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .scaleEffect(1.5)
+                                .padding()
+                                .background(Color.black.opacity(0.5))
+                                .cornerRadius(16)
+
+                            Text("Preparing video...")
+                                .font(.title3)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white)
+                                .padding(8)
+                                .background(Color.black.opacity(0.5))
+                                .cornerRadius(8)
+                        }
                     } else {
-                        Text("Preparing video...")
-                            .font(.title3)
-                            .fontWeight(.medium)
-                            .foregroundColor(.white)
+                        VStack(spacing: 24) {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .scaleEffect(1.5)
+
+                            Text("Preparing video...")
+                                .font(.title3)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white)
+                        }
                     }
                 }
             } else if let error = errorMessage {
                 // Error state
                 VStack(spacing: 24) {
                     Image(systemName: "exclamationmark.triangle")
-                        .font(.largeTitle)
-                        .foregroundColor(.white)
+                    .font(.largeTitle)
+                    .foregroundColor(.white)
 
                     Text("Unable to load video")
                         .font(.title3)
@@ -117,6 +157,7 @@ struct ReminiscenceTherapyView: View {
         .navigationBarBackButtonHidden(true)
         .onAppear {
             loadVideo()
+            loadFallbackImage()
         }
         .onDisappear {
             // Clean up player looper when view disappears
@@ -126,10 +167,22 @@ struct ReminiscenceTherapyView: View {
             player = nil
         }
         .onReceive(NotificationCenter.default.publisher(for: .videoDownloadCompleted)) { notification in
+            print("DEBUG: Received videoDownloadCompleted notification for job: \(notification.userInfo?["jobId"] ?? "nil")")
             if let completedJobId = notification.userInfo?["jobId"] as? String,
                completedJobId == jobId
             {
+                print("DEBUG: Job ID matches, loading video")
                 loadVideo()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .videoDownloadFailed)) { notification in
+            print("DEBUG: Received videoDownloadFailed notification for job: \(notification.userInfo?["jobId"] ?? "nil")")
+            if let failedJobId = notification.userInfo?["jobId"] as? String,
+               failedJobId == jobId
+            {
+                isLoading = false
+                errorMessage = notification.userInfo?["error"] as? String ?? "Video generation failed"
+                print("DEBUG: Error message set: \(errorMessage ?? "nil")")
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .navigateToHome)) { _ in
@@ -139,6 +192,7 @@ struct ReminiscenceTherapyView: View {
     }
 
     private func loadVideo() {
+        print("DEBUG: loadVideo called for jobId: \(jobId ?? "nil")")
         guard let jobId = jobId else {
             isLoading = false
             errorMessage = "No job ID provided"
@@ -147,74 +201,83 @@ struct ReminiscenceTherapyView: View {
 
         // Check if video is already downloaded
         if let localURL = VideoDownloadService.shared.getLocalVideoURL(jobId: jobId) {
+            print("DEBUG: Video found locally at \(localURL)")
             videoURL = localURL
             setupLoopingPlayer(url: localURL)
             isLoading = false
             return
         }
 
-        // Start monitoring and downloading
+        print("DEBUG: Video not found locally, checking status immediately")
         isLoading = true
-        VideoDownloadService.shared.startMonitoring(jobId: jobId)
 
-        // Check status and download if ready
         Task {
-            await checkVideoStatus(jobId: jobId)
+            do {
+                let status = try await VideoGenerationService.shared.checkStatus(jobId: jobId)
+                print("DEBUG: Status check result: \(status.status)")
+
+                let statusLower = status.status.lowercased()
+                if statusLower == "completed" {
+                    print("DEBUG: Video is completed, downloading...")
+                    await VideoDownloadService.shared.downloadVideo(jobId: jobId)
+
+                    if let localURL = VideoDownloadService.shared.getLocalVideoURL(jobId: jobId) {
+                        await MainActor.run {
+                            videoURL = localURL
+                            setupLoopingPlayer(url: localURL)
+                            isLoading = false
+                        }
+                    } else {
+                        await MainActor.run {
+                            isLoading = false
+                            errorMessage = "Video download failed"
+                        }
+                    }
+                } else if statusLower == "failed" || statusLower == "error" {
+                    await MainActor.run {
+                        isLoading = false
+                        errorMessage = "Video generation failed"
+                    }
+                } else {
+                    print("DEBUG: Video status is \(status.status), starting monitoring")
+                    VideoDownloadService.shared.startMonitoring(jobId: jobId)
+                }
+            } catch {
+                print("DEBUG: Error checking status: \(error)")
+                await MainActor.run {
+                    isLoading = false
+                    errorMessage = "Failed to check video status: \(error.localizedDescription)"
+                }
+            }
         }
     }
 
-    private func checkVideoStatus(jobId: String) async {
-        let config = AppConfig.shared
-        let url = config.api("generate_video/\(jobId)/status")
+    private func loadFallbackImage() {
+        guard let jobId = jobId else { return }
+        guard let imageModel = images.first(where: { $0.jobId == jobId }) else { return }
 
-        do {
-            let (data, response) = try await URLSession.shared.data(from: url)
+        Task {
+            let assets = PHAsset.fetchAssets(withLocalIdentifiers: [imageModel.assetId], options: nil)
+            guard let asset = assets.firstObject else { return }
 
-            guard let httpResponse = response as? HTTPURLResponse,
-                  (200 ..< 300).contains(httpResponse.statusCode)
-            else {
-                await MainActor.run {
-                    isLoading = false
-                    errorMessage = "Failed to check video status"
+            let options = PHImageRequestOptions()
+            options.deliveryMode = .highQualityFormat
+            options.resizeMode = .fast
+            options.isNetworkAccessAllowed = true
+            options.isSynchronous = false
+
+            var hasResumed = false
+            PHImageManager.default().requestImage(
+                for: asset,
+                targetSize: CGSize(width: 640, height: 400),
+                contentMode: .aspectFit,
+                options: options
+            ) { image, _ in
+                guard !hasResumed, let image = image else { return }
+                hasResumed = true
+                Task { @MainActor in
+                    self.fallbackImage = image
                 }
-                return
-            }
-
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            let statusResponse = try decoder.decode(VideoStatusResponse.self, from: data)
-
-            await MainActor.run {
-                downloadProgress = statusResponse.progress
-
-                if statusResponse.status == "completed" {
-                    // Video is ready, download it
-                    Task {
-                        await VideoDownloadService.shared.downloadVideo(jobId: jobId)
-                        // Reload after download
-                        await MainActor.run {
-                            if let localURL = VideoDownloadService.shared.getLocalVideoURL(jobId: jobId) {
-                                videoURL = localURL
-                                setupLoopingPlayer(url: localURL)
-                                isLoading = false
-                            } else {
-                                isLoading = false
-                                errorMessage = "Video download failed"
-                            }
-                        }
-                    }
-                } else if statusResponse.status == "error" {
-                    isLoading = false
-                    errorMessage = statusResponse.error ?? "Video generation failed"
-                } else {
-                    // Still processing, keep monitoring
-                    // The WebSocket service will handle completion
-                }
-            }
-        } catch {
-            await MainActor.run {
-                isLoading = false
-                errorMessage = "Failed to check video status: \(error.localizedDescription)"
             }
         }
     }

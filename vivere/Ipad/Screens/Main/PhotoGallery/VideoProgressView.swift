@@ -34,143 +34,76 @@ final class VideoProgressViewModel {
     var items: [VideoProgressItem] = []
     var isLoading = true
 
-    // WebSocket services can be accessed from nonisolated context for cleanup
-    nonisolated(unsafe) private var webSocketServices: [UUID: VideoStatusWebSocketService] = [:]
+    private var monitoringTasks: [Task<Void, Never>] = []
 
     init(images: [ImageModel]) {
         self.items = images.map { VideoProgressItem(imageModel: $0) }
-        loadInitialStatus()
+        startMonitoring()
     }
 
-    func loadInitialStatus() {
-        Task {
+    func startMonitoring() {
+        cancelMonitoring()
+
+        let task = Task {
             isLoading = true
 
-            // Load initial status for all items
             await withTaskGroup(of: Void.self) { group in
                 for index in items.indices {
                     guard let jobId = items[index].imageModel.jobId else { continue }
 
                     group.addTask { [weak self] in
-                        await self?.checkStatus(for: index, jobId: jobId)
+                        await self?.monitorJob(index: index, jobId: jobId)
                     }
-                }
-            }
-
-            // Connect WebSocket for items that are not completed
-            for index in items.indices {
-                guard let jobId = items[index].imageModel.jobId else { continue }
-                if items[index].status != "completed" && items[index].status != "error" {
-                    connectWebSocket(for: index, jobId: jobId)
                 }
             }
 
             isLoading = false
         }
+        monitoringTasks.append(task)
     }
 
-    private func checkStatus(for index: Int, jobId: String) async {
-        let config = AppConfig.shared
-        let url = config.api("generate_video/\(jobId)/status")
+    private func monitorJob(index: Int, jobId: String) async {
+        while !Task.isCancelled {
+            do {
+                let status = try await VideoGenerationService.shared.checkStatus(jobId: jobId)
+                let statusLower = status.status.lowercased()
 
-        do {
-            let (data, response) = try await URLSession.shared.data(from: url)
+                await MainActor.run {
+                    if index < items.count {
+                        items[index].status = status.status
 
-            guard let httpResponse = response as? HTTPURLResponse,
-                  (200..<300).contains(httpResponse.statusCode) else {
-                return
-            }
-
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            let statusResponse = try decoder.decode(VideoStatusResponse.self, from: data)
-
-            await MainActor.run {
-                if index < items.count {
-                    items[index].status = statusResponse.status
-                    items[index].progress = statusResponse.progress
-                    items[index].videoUrl = statusResponse.videoUrl
-                    items[index].error = statusResponse.error
+                        if statusLower == "completed" {
+                            items[index].progress = 100
+                            items[index].videoUrl = VideoGenerationService.shared.getVideoDownloadURL(jobId: jobId).absoluteString
+                        } else if statusLower == "failed" || statusLower == "error" {
+                            items[index].error = "Video generation failed"
+                        }
+                    }
                 }
+
+                if statusLower == "completed" || statusLower == "failed" || statusLower == "error" {
+                    return
+                }
+
+                try await Task.sleep(nanoseconds: 5 * 1_000_000_000)
+
+            } catch {
+                #if DEBUG
+                print("Failed to check status for \(jobId): \(error)")
+                #endif
+                try? await Task.sleep(nanoseconds: 10 * 1_000_000_000)
             }
-        } catch {
-            #if DEBUG
-            print("Failed to check status for \(jobId): \(error)")
-            #endif
         }
     }
 
-    private func connectWebSocket(for index: Int, jobId: String) {
-        let itemId = items[index].id
-
-        // Create a new service instance for this job
-        let service = VideoStatusWebSocketService(jobId: jobId)
-
-        // Create a delegate wrapper for this specific item
-        let delegate = VideoProgressItemDelegate(
-            itemId: itemId,
-            viewModel: self
-        )
-
-        webSocketServices[itemId] = service
-        service.connect(delegate: delegate)
-    }
-
-    func updateItem(itemId: UUID, status: String, progress: Int, videoUrl: String?) {
-        if let index = items.firstIndex(where: { $0.id == itemId }) {
-            items[index].status = status
-            items[index].progress = progress
-            items[index].videoUrl = videoUrl
-        }
-    }
-
-    func updateItemError(itemId: UUID, error: String) {
-        if let index = items.firstIndex(where: { $0.id == itemId }) {
-            items[index].status = "error"
-            items[index].error = error
-        }
-    }
-
-    nonisolated func disconnectAll() {
-        // WebSocket cleanup doesn't require main actor isolation
-        webSocketServices.values.forEach { $0.disconnect() }
-        webSocketServices.removeAll()
+    func cancelMonitoring() {
+        monitoringTasks.forEach { $0.cancel() }
+        monitoringTasks.removeAll()
     }
 
     deinit {
-        disconnectAll()
+        // Tasks are cancelled automatically when self is deallocated due to [weak self]
     }
-}
-
-// Helper class to bridge delegate calls to view model
-private class VideoProgressItemDelegate: VideoStatusWebSocketDelegate {
-    let itemId: UUID
-    weak var viewModel: VideoProgressViewModel?
-
-    init(itemId: UUID, viewModel: VideoProgressViewModel) {
-        self.itemId = itemId
-        self.viewModel = viewModel
-    }
-
-    func didReceiveStatus(jobId: String, status: String, progress: Int, videoUrl: String?) {
-        viewModel?.updateItem(itemId: itemId, status: status, progress: progress, videoUrl: videoUrl)
-    }
-
-    func didReceiveError(jobId: String, error: String) {
-        viewModel?.updateItemError(itemId: itemId, error: error)
-    }
-
-    func didComplete(jobId: String, status: String) {
-        // Status already updated via didReceiveStatus
-    }
-}
-
-struct VideoStatusResponse: Codable {
-    let jobId: String
-    let status: String
-    let progress: Int
-    let videoUrl: String?
-    let error: String?
 }
 
 struct VideoProgressView: View {
@@ -189,7 +122,7 @@ struct VideoProgressView: View {
             ZStack {
                 Color.viverePrimary.ignoresSafeArea()
 
-                if viewModel.isLoading {
+                if viewModel.isLoading && viewModel.items.isEmpty {
                     ProgressView()
                         .tint(.white)
                 } else if viewModel.items.isEmpty {
@@ -220,14 +153,14 @@ struct VideoProgressView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Tutup") {
-                        viewModel.disconnectAll()
+                        viewModel.cancelMonitoring()
                         dismiss()
                     }
                     .foregroundColor(.white)
                 }
             }
             .onDisappear {
-                viewModel.disconnectAll()
+                viewModel.cancelMonitoring()
             }
         }
     }
@@ -241,9 +174,9 @@ struct VideoProgressRow: View {
         switch item.status {
         case "completed":
             return .green
-        case "error":
+        case "error", "failed":
             return .red
-        case "running", "queued":
+        case "running", "queued", "processing":
             return .blue
         default:
             return .gray
@@ -254,9 +187,9 @@ struct VideoProgressRow: View {
         switch item.status {
         case "completed":
             return "Selesai"
-        case "error":
+        case "error", "failed":
             return "Error"
-        case "running":
+        case "running", "processing":
             return "Sedang dibuat"
         case "queued":
             return "Menunggu"
@@ -304,12 +237,13 @@ struct VideoProgressRow: View {
                         .foregroundColor(.white.opacity(0.9))
                 }
 
-                if item.status == "running" || item.status == "queued" {
-                    ProgressView(value: Double(item.progress), total: 100)
+                if item.status == "running" || item.status == "queued" || item.status == "processing" {
+                    ProgressView()
                         .tint(.white)
+                        .scaleEffect(0.8)
 
-                    Text("\(item.progress)%")
-                        .font(.body)
+                    Text("Mohon tunggu...")
+                        .font(.caption)
                         .foregroundColor(.white.opacity(0.8))
                 }
 
@@ -320,10 +254,12 @@ struct VideoProgressRow: View {
                         .lineLimit(2)
                 }
 
-                if item.status == "completed", let videoUrl = item.videoUrl {
+                if item.status == "completed" {
                     Button {
-                        // TODO: Implement video download functionality
-                        // videoUrl contains the download endpoint URL
+                        Task {
+                            guard let jobId = item.imageModel.jobId else { return }
+                            await VideoDownloadService.shared.downloadVideo(jobId: jobId)
+                        }
                     } label: {
                         HStack {
                             Image(systemName: "arrow.down.circle.fill")
@@ -383,4 +319,3 @@ struct VideoProgressRow: View {
 #Preview {
     VideoProgressView(images: [])
 }
-

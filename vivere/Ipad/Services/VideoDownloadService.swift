@@ -34,7 +34,6 @@ class VideoDownloadService {
     private let config = AppConfig.shared
     private let fileManager = FileManager.default
     private var downloadTasks: [String: Task<Void, Never>] = [:]
-    private var webSocketServices: [String: VideoStatusWebSocketService] = [:]
 
     // Directory for storing downloaded videos
     private var videosDirectory: URL {
@@ -88,53 +87,48 @@ class VideoDownloadService {
     func stopMonitoring(jobId: String) {
         downloadTasks[jobId]?.cancel()
         downloadTasks.removeValue(forKey: jobId)
-        webSocketServices[jobId]?.disconnect()
-        webSocketServices.removeValue(forKey: jobId)
     }
 
-    /// Monitor video status via WebSocket and download when ready
+    /// Monitor video status via polling and download when ready
     private func monitorAndDownload(jobId: String) async {
-        // First check if video is already completed
-        if await checkAndDownloadIfReady(jobId: jobId) {
-            return
+        let maxRetries = 60 // 5 minutes (assuming 5s interval)
+        var retryCount = 0
+
+        while retryCount < maxRetries {
+            if Task.isCancelled { return }
+
+            do {
+                let status = try await VideoGenerationService.shared.checkStatus(jobId: jobId)
+                let statusLower = status.status.lowercased()
+
+                if statusLower == "completed" {
+                    await downloadVideo(jobId: jobId)
+                    stopMonitoring(jobId: jobId)
+                    return
+                } else if statusLower == "failed" || statusLower == "error" {
+                    #if DEBUG
+                    print("Video generation failed for job \(jobId)")
+                    #endif
+                    stopMonitoring(jobId: jobId)
+                    return
+                }
+
+                // Wait before next poll
+                try await Task.sleep(nanoseconds: 5 * 1_000_000_000) // 5 seconds
+                retryCount += 1
+
+            } catch {
+                #if DEBUG
+                print("Error checking status for \(jobId): \(error)")
+                #endif
+                // Wait a bit longer on error
+                try? await Task.sleep(nanoseconds: 10 * 1_000_000_000)
+                retryCount += 1
+            }
         }
 
-        // Set up WebSocket monitoring
-        let service = VideoStatusWebSocketService(jobId: jobId)
-        let delegate = VideoDownloadDelegate(jobId: jobId, service: self)
-
-        webSocketServices[jobId] = service
-        service.connect(delegate: delegate)
-    }
-
-    /// Check status and download if ready (polling fallback)
-    private func checkAndDownloadIfReady(jobId: String) async -> Bool {
-        let url = config.api("generate_video/\(jobId)/status")
-
-        do {
-            let (data, response) = try await URLSession.shared.data(from: url)
-
-            guard let httpResponse = response as? HTTPURLResponse,
-                  (200..<300).contains(httpResponse.statusCode) else {
-                return false
-            }
-
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            let statusResponse = try decoder.decode(VideoStatusResponse.self, from: data)
-
-            if statusResponse.status == "completed", statusResponse.videoUrl != nil {
-                await downloadVideo(jobId: jobId)
-                return true
-            }
-
-            return false
-        } catch {
-            #if DEBUG
-            print("Failed to check status for \(jobId): \(error)")
-            #endif
-            return false
-        }
+        // Timeout
+        stopMonitoring(jobId: jobId)
     }
 
     /// Download video from server
@@ -147,7 +141,7 @@ class VideoDownloadService {
             return
         }
 
-        let downloadURL = config.api("generate_video/\(jobId)/download")
+        let downloadURL = VideoGenerationService.shared.getVideoDownloadURL(jobId: jobId)
         let filePath = videoFilePath(for: jobId)
 
         #if DEBUG
@@ -214,43 +208,6 @@ class VideoDownloadService {
     deinit {
         // Cancel all tasks
         downloadTasks.values.forEach { $0.cancel() }
-        webSocketServices.values.forEach { $0.disconnect() }
-    }
-}
-
-// Delegate for WebSocket status updates
-private class VideoDownloadDelegate: VideoStatusWebSocketDelegate {
-    let jobId: String
-    weak var service: VideoDownloadService?
-
-    init(jobId: String, service: VideoDownloadService) {
-        self.jobId = jobId
-        self.service = service
-    }
-
-    func didReceiveStatus(jobId: String, status: String, progress: Int, videoUrl: String?) {
-        if status == "completed", videoUrl != nil {
-            Task {
-                await service?.downloadVideo(jobId: jobId)
-                service?.stopMonitoring(jobId: jobId)
-            }
-        }
-    }
-
-    func didReceiveError(jobId: String, error: String) {
-        #if DEBUG
-        print("WebSocket error for job \(jobId): \(error)")
-        #endif
-        service?.stopMonitoring(jobId: jobId)
-    }
-
-    func didComplete(jobId: String, status: String) {
-        if status == "completed" {
-            Task {
-                await service?.downloadVideo(jobId: jobId)
-            }
-        }
-        service?.stopMonitoring(jobId: jobId)
     }
 }
 
@@ -259,4 +216,3 @@ extension Notification.Name {
     static let videoDownloadCompleted = Notification.Name("videoDownloadCompleted")
     static let videoDownloadFailed = Notification.Name("videoDownloadFailed")
 }
-

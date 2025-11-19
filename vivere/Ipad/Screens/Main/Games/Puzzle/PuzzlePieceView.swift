@@ -19,7 +19,7 @@ struct PuzzlePieceView: View {
             .position(x: piece.currPos.x + dragOffset.width, y: piece.currPos.y + dragOffset.height)
             .gesture(
                 DragGesture()
-                    .updating($dragOffset) { value, state, _ in
+                    .updating( $dragOffset) { value, state, _ in
                         state = value.translation
                     }
                     .onEnded { value in
