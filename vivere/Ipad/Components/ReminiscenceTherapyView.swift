@@ -17,7 +17,6 @@ struct ReminiscenceTherapyView: View {
     @State private var player: AVQueuePlayer?
     @State private var playerLooper: AVPlayerLooper?
     @State private var isLoading = true
-    @State private var downloadProgress: Int = 0
     @State private var errorMessage: String?
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -64,24 +63,17 @@ struct ReminiscenceTherapyView: View {
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         .scaleEffect(1.5)
 
-                    if downloadProgress > 0 {
-                        Text("Downloading video... \(downloadProgress)%")
-                            .font(.title3)
-                            .fontWeight(.medium)
-                            .foregroundColor(.white)
-                    } else {
-                        Text("Preparing video...")
-                            .font(.title3)
-                            .fontWeight(.medium)
-                            .foregroundColor(.white)
-                    }
+                    Text("Preparing video...")
+                        .font(.title3)
+                        .fontWeight(.medium)
+                        .foregroundColor(.white)
                 }
             } else if let error = errorMessage {
                 // Error state
                 VStack(spacing: 24) {
                     Image(systemName: "exclamationmark.triangle")
-                        .font(.largeTitle)
-                        .foregroundColor(.white)
+                    .font(.largeTitle)
+                    .foregroundColor(.white)
 
                     Text("Unable to load video")
                         .font(.title3)
@@ -132,6 +124,14 @@ struct ReminiscenceTherapyView: View {
                 loadVideo()
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .videoDownloadFailed)) { notification in
+            if let failedJobId = notification.userInfo?["jobId"] as? String,
+               failedJobId == jobId
+            {
+                isLoading = false
+                errorMessage = notification.userInfo?["error"] as? String ?? "Video generation failed"
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .navigateToHome)) { _ in
             // Dismiss this view to go back
             dismiss()
@@ -156,67 +156,6 @@ struct ReminiscenceTherapyView: View {
         // Start monitoring and downloading
         isLoading = true
         VideoDownloadService.shared.startMonitoring(jobId: jobId)
-
-        // Check status and download if ready
-        Task {
-            await checkVideoStatus(jobId: jobId)
-        }
-    }
-
-    private func checkVideoStatus(jobId: String) async {
-        let config = AppConfig.shared
-        let url = config.api("generate_video/\(jobId)/status")
-
-        do {
-            let (data, response) = try await URLSession.shared.data(from: url)
-
-            guard let httpResponse = response as? HTTPURLResponse,
-                  (200 ..< 300).contains(httpResponse.statusCode)
-            else {
-                await MainActor.run {
-                    isLoading = false
-                    errorMessage = "Failed to check video status"
-                }
-                return
-            }
-
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            let statusResponse = try decoder.decode(VideoStatusResponse.self, from: data)
-
-            await MainActor.run {
-                downloadProgress = statusResponse.progress
-
-                if statusResponse.status == "completed" {
-                    // Video is ready, download it
-                    Task {
-                        await VideoDownloadService.shared.downloadVideo(jobId: jobId)
-                        // Reload after download
-                        await MainActor.run {
-                            if let localURL = VideoDownloadService.shared.getLocalVideoURL(jobId: jobId) {
-                                videoURL = localURL
-                                setupLoopingPlayer(url: localURL)
-                                isLoading = false
-                            } else {
-                                isLoading = false
-                                errorMessage = "Video download failed"
-                            }
-                        }
-                    }
-                } else if statusResponse.status == "error" {
-                    isLoading = false
-                    errorMessage = statusResponse.error ?? "Video generation failed"
-                } else {
-                    // Still processing, keep monitoring
-                    // The WebSocket service will handle completion
-                }
-            }
-        } catch {
-            await MainActor.run {
-                isLoading = false
-                errorMessage = "Failed to check video status: \(error.localizedDescription)"
-            }
-        }
     }
 
     /// Setup looping video player using AVPlayerLooper
