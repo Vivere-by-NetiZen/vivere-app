@@ -13,7 +13,6 @@ import Photos
 
 class PuzzleViewModel: ObservableObject {
     @Published var pieces: [PuzzlePiece] = []
-    @Published var referenceUIImage: UIImage?
     @Published var normalizedImage: UIImage?
     @Published var triggerSendToIphone: Bool = false
     @Published var selectedImageModel: ImageModel?
@@ -34,7 +33,7 @@ class PuzzleViewModel: ObservableObject {
     // Ensures we have a selected image and pieces prepared
     func preparePuzzleIfNeeded(screenSize: CGSize) async {
         // If already prepared, skip
-        if referenceUIImage != nil && !pieces.isEmpty { return }
+        if normalizedImage != nil && !pieces.isEmpty { return }
 
         // Ensure Photos authorization
         let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
@@ -60,7 +59,6 @@ class PuzzleViewModel: ObservableObject {
         if let uiImg = await loadUIImage(fromLocalIdentifier: randomItem.assetId) {
             // Normalize orientation once so cropping uses correctly oriented pixels
             let normalized = normalize(image: uiImg)
-            referenceUIImage = normalized
             setupPuzzle(screenSize: screenSize, using: normalized)
             // Send to iPhone via MPC
             normalizedImage = normalized
