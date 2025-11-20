@@ -40,7 +40,7 @@ struct MatchCardView: View {
                         .onTapGesture {
                             dismiss()
                         }
-                        .padding()
+                        .padding(40)
                     Spacer()
                     Text("Cocokkan 2 kartu dengan gambar yang sama")
                         .font(Font.largeTitle)
@@ -54,7 +54,7 @@ struct MatchCardView: View {
                         .onTapGesture {
                             isTutorialShown = true
                         }
-                        .padding()
+                        .padding(40)
                 }
                 .frame(maxWidth: .infinity)
                 
@@ -68,26 +68,34 @@ struct MatchCardView: View {
                 }.frame(maxWidth: 260*3 + 10*2) // card width + space in between
                 
             }
-            if isMatchedImageShown {
-                ZStack {
-                    Color.black.opacity(0.4)
-                        .ignoresSafeArea(.all)
-                    if let lastMatchedImage = viewModel.lastMatchedImage {
-                        Image(uiImage: lastMatchedImage)
-                            .resizable()
-                            .scaledToFit()
-                            .padding(40)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .background(Color.white)
-                            .cornerRadius(20)
-                            .padding(80)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            
+            ZStack {
+                if isMatchedImageShown {
+                    ZStack {
+                        Color.black.opacity(0.4)
+                            .ignoresSafeArea(.all)
+                        if let lastMatchedImage = viewModel.lastMatchedImage {
+                            Image(uiImage: lastMatchedImage)
+                                .resizable()
+                                .scaledToFit()
+                                .padding(40)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .background(Color.white)
+                                .cornerRadius(20)
+                                .padding(80)
+                        }
+                    }
+                    .transition(.asymmetric(insertion: .move(edge: .bottom), removal: .move(edge: .bottom)))
+                    .onTapGesture {
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            isMatchedImageShown = false
+                        }
                     }
                 }
-                .onTapGesture {_ in
-                    isMatchedImageShown = false
-                }
+
             }
-            
+                        
             if isTutorialShown {
                 MatchCardTutorialSheetView(isPresented: $isTutorialShown)
             }
@@ -110,7 +118,11 @@ struct MatchCardView: View {
             }
         }
         .onChange(of: viewModel.lastMatchedImage) {
-            isMatchedImageShown = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    isMatchedImageShown = true
+                }
+            }
         }
         .onChange(of: viewModel.triggerSendToIphone) {
             if viewModel.triggerSendToIphone {

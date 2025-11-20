@@ -116,13 +116,15 @@ class MatchCardViewModel: ObservableObject {
         }
         
         for item in temp_cards {
-            cards.append(MatchCard(imgName: item.imgName, img: item.img))
+            temp_cards.append(MatchCard(imgName: item.imgName, img: item.img))
+        }
+        
+        for item in temp_cards.shuffled() {
             cards.append(MatchCard(imgName: item.imgName, img: item.img))
         }
     }
     
     func flipCard(card: MatchCard) {
-        //TODO: add flip animation
         guard let idx = cards.firstIndex(where: {$0.id == card.id}), !cards[idx].isMatched else { return }
         
         cards[idx].isFaceUp.toggle()
