@@ -15,6 +15,7 @@ struct CompletionView: View {
 
     @State private var confettiTrigger: Int = 0
     @State private var showReminiscenceTherapy = false
+    @State private var path = NavigationPath()
     @Environment(\.dismiss) private var dismiss
 
     init(imageModel: ImageModel? = nil) {
@@ -100,6 +101,15 @@ struct CompletionView: View {
             .onReceive(NotificationCenter.default.publisher(for: .navigateToHome)) { _ in
                 // Dismiss this view to go back to home
                 dismiss()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .navigateToOnboarding)) { _ in
+                path.append(Teleporter.onboarding)
+            }
+            .navigationDestination(for: Teleporter.self) { destination in
+                switch destination {
+                case .onboarding:
+                    OnboardingView()
+                }
             }
             .navigationDestination(isPresented: $showReminiscenceTherapy) {
                 ReminiscenceTherapyView(operationId: imageModel?.operationId)

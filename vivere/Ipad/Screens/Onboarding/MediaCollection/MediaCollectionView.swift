@@ -80,7 +80,7 @@ struct MediaCollectionView: View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $isSelected) {
-            InputContextView(imagesIds: localIdentifier)
+            InputContextView(imagesIds: localIdentifier, isOnboarding: true)
         }
     }
 }

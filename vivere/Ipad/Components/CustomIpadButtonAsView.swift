@@ -9,6 +9,7 @@ import SwiftUI
 
 struct CustomIpadButtonAsView: View {
     let label:LocalizedStringKey
+    var labelColor: Color? = nil
     var icon:Image? = nil
     let color:Color
     let style:CustomIpadButtonStyle
@@ -18,7 +19,7 @@ struct CustomIpadButtonAsView: View {
             .padding(30)
             .font(style == .large ? .largeTitle : .title)
             .fontWeight(.semibold)
-            .foregroundColor(Color(.black))
+            .foregroundColor(labelColor != nil ? labelColor! : .black)
             .frame(minWidth:minWidth, minHeight: minHeight)
             .background(
                 ZStack {

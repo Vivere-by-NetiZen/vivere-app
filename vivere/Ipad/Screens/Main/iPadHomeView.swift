@@ -19,8 +19,13 @@ struct iPadHomeView: View {
     @State private var path = NavigationPath()
     @State private var showPairDevice = false
     @State private var showInstructionsSheet = false
+    @State private var showUploadImageSheet = false
+    @State private var addNewImagesDetailTrigger = false
+    @State private var imageIds = [String]()
+    
     @Environment(MPCManager.self) private var mpc
     @Environment(\.modelContext) private var modelContext
+    @Query private var images: [ImageModel]
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -97,14 +102,21 @@ struct iPadHomeView: View {
                         // Game Cards Section
                         HStack(alignment: .center, spacing: 120) {
                             // Cocokkan Gambar Card
-                            NavigationLink(value: HomeDestination.matchCard) {
+                            Button(action: {
+                                if images.count < 3 {
+                                    print("test img not enough")
+                                    showUploadImageSheet = true
+                                } else {
+                                    print("test img enough")
+                                    path.append(HomeDestination.matchCard)
+                                }
+                            }) {
                                 CustomIpadButton(
                                     color: .gray50,
                                     showDashedBorder: false,
                                     shadowColor: Color(hex: "87622a"),
                                     shadowOffset: CGSize(width: 3, height: 4),
-                                    action: {
-                                    }
+                                    action: {}
                                 ) {
                                     VStack(spacing: 20) {
                                         Image("cocokkanGambar")
@@ -185,6 +197,9 @@ struct iPadHomeView: View {
                     MatchCardView()
                 }
             }
+            .navigationDestination(isPresented: $addNewImagesDetailTrigger) {
+                InputContextView(imagesIds: imageIds, isOnboarding: false)
+            }
             .sheet(isPresented: $showPairDevice) {
                 PairDeviceSheetView()
                     .environment(mpc)
@@ -192,8 +207,20 @@ struct iPadHomeView: View {
             .sheet(isPresented: $showInstructionsSheet) {
                 InstructionSheetView()
             }
+            .sheet(isPresented: $showUploadImageSheet) {
+                UploadImageSheetView(isPresented: $showUploadImageSheet, inputDetailTrigger: $addNewImagesDetailTrigger, localIdentifier: $imageIds)
+            }
             .onReceive(NotificationCenter.default.publisher(for: .navigateToHome)) { _ in
                 path.removeLast(path.count)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .navigateToOnboarding)) { _ in
+                path.append(Teleporter.onboarding)
+            }
+            .navigationDestination(for: Teleporter.self) { destination in
+                switch destination {
+                case .onboarding:
+                    OnboardingView()
+                }
             }
             .onReceive(NotificationCenter.default.publisher(for: .moodUpdate)) { notification in
                 if let value = notification.userInfo?["value"] as? String {
