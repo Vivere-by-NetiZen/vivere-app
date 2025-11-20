@@ -20,7 +20,7 @@ struct CardView: View {
                     .cornerRadius(20)
                     .padding()
                     .background(Color.white)
-//                    .padding()
+                    .padding()
                     .frame(width: 260, height: 290)
                     .cornerRadius(20)
             } else {
@@ -31,6 +31,11 @@ struct CardView: View {
                 }
             }
         }
+        .rotation3DEffect(
+            .degrees(card.isFaceUp ? 0 : 180),
+            axis: (x: 0, y: 1, z: 0)
+        )
+        .animation(.linear(duration: 0.35), value: card.isFaceUp)
     }
 }
 

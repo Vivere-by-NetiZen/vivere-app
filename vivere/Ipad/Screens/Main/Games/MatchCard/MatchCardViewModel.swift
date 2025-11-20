@@ -116,7 +116,10 @@ class MatchCardViewModel: ObservableObject {
         }
         
         for item in temp_cards {
-            cards.append(MatchCard(imgName: item.imgName, img: item.img))
+            temp_cards.append(MatchCard(imgName: item.imgName, img: item.img))
+        }
+        
+        for item in temp_cards.shuffled() {
             cards.append(MatchCard(imgName: item.imgName, img: item.img))
         }
     }
