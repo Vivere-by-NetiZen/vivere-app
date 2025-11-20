@@ -60,9 +60,9 @@ struct ReminiscenceTherapyView: View {
                         Color.clear
                             .overlay(
                                 VideoPlayer(player: player)
-                                    .aspectRatio(640 / 400, contentMode: .fit)
-                                    .frame(width: proxy.size.width * 0.6)
-                                    .offset(y: 40)
+                                    .aspectRatio(16 / 9, contentMode: .fit)
+                                    .frame(width: proxy.size.width * 0.7)
+                                    .offset(y: 80)
                             )
                     }
                 }
