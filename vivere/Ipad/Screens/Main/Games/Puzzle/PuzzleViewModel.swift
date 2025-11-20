@@ -29,79 +29,28 @@ class PuzzleViewModel: ObservableObject {
         (col * row + piecesAreaCols - 1) / piecesAreaCols // Ceiling division
     }
 
-
     // Ensures we have a selected image and pieces prepared
     func preparePuzzleIfNeeded(screenSize: CGSize) async {
         // If already prepared, skip
         if normalizedImage != nil && !pieces.isEmpty { return }
 
-        // Ensure Photos authorization
-        let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
-        if status == .notDetermined {
-            _ = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
-        }
-        guard PHPhotoLibrary.authorizationStatus(for: .readWrite) == .authorized ||
-              PHPhotoLibrary.authorizationStatus(for: .readWrite) == .limited else {
-            print("Photos access not granted.")
-            return
-        }
-
-        // Pick a random ImageModel
-        guard let randomItem = images.randomElement() else {
-            print("No ImageModel items found in SwiftData.")
+        // Use PhotosSelectionService singleton to pick images
+        guard let result = await PhotosSelectionService.shared.pickImages(from: images, count: 1) else {
             return
         }
 
         // Store selected ImageModel for passing to completion view
-        selectedImageModel = randomItem
+        selectedImageModel = result.featuredModel
 
-        // Resolve UIImage from Photos assetId
-        if let uiImg = await loadUIImage(fromLocalIdentifier: randomItem.assetId) {
-            // Normalize orientation once so cropping uses correctly oriented pixels
-            let normalized = normalize(image: uiImg)
-            setupPuzzle(screenSize: screenSize, using: normalized)
-            // Send to iPhone via MPC
-            normalizedImage = normalized
-            triggerSendToIphone = true
-        } else {
-            print("Failed to load UIImage for assetId: \(randomItem.assetId)")
-        }
-    }
+        // Build puzzle from featured image
+        setupPuzzle(screenSize: screenSize, using: result.featuredImage)
 
-    // Load UIImage from Photos using local identifier
-    func loadUIImage(fromLocalIdentifier id: String) async -> UIImage? {
-        let assets = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil)
-        guard let asset = assets.firstObject else { return nil }
+        // Keep normalizedImage for reference overlay / external usage
+        normalizedImage = result.featuredImage
 
-        let options = PHImageRequestOptions()
-        options.version = .original
-        options.isNetworkAccessAllowed = true
-        options.deliveryMode = .highQualityFormat
-        options.isSynchronous = false
-
-        return await withCheckedContinuation { continuation in
-            PHImageManager.default().requestImageDataAndOrientation(for: asset, options: options) { data, _, _, _ in
-                if let data, let image = UIImage(data: data) {
-                    continuation.resume(returning: image)
-                } else {
-                    continuation.resume(returning: nil)
-                }
-            }
-        }
-    }
-
-    // Normalize UIImage orientation to .up so cgImage cropping is correct
-    func normalize(image: UIImage) -> UIImage {
-        if image.imageOrientation == .up {
-            return image
-        }
-        let format = UIGraphicsImageRendererFormat.default()
-        format.scale = image.scale
-        format.opaque = false
-        let renderer = UIGraphicsImageRenderer(size: image.size, format: format)
-        return renderer.image { _ in
-            image.draw(in: CGRect(origin: .zero, size: image.size))
-        }
+        // If you still use this flag elsewhere to trigger sending, keep it
+        // Otherwise you can remove this line and the property
+         triggerSendToIphone = true
     }
 
     // Setup puzzle with two-area layout: puzzle board on left, pieces area on right
@@ -180,3 +129,4 @@ class PuzzleViewModel: ObservableObject {
         return imgs
     }
 }
+

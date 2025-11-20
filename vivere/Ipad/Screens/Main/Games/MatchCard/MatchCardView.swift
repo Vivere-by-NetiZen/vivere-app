@@ -38,6 +38,7 @@ struct MatchCardView: View {
                 viewModel.images = self.images
                 await viewModel.prepareCardsIfNeeded()
             }
+            mpc.send(message: "warm up")
         }
     }
 }

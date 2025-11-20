@@ -147,10 +147,10 @@ struct SpeechTranscriberView: View {
                                 hasRequestSuggestion = true
                             }) {
                                 HStack(spacing: 8) {
-                                    if viewModel.isFetchingSuggestion {
-                                        ProgressView()
-                                            .tint(.white)
-                                    }
+//                                    if viewModel.isFetchingSuggestion {
+//                                        ProgressView()
+//                                            .tint(.white)
+//                                    }
                                     Text("Saran Tanggapan")
                                         .font(.headline)
                                 }

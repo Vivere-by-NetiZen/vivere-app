@@ -19,7 +19,6 @@ struct IpadView: View {
                 iPadHomeView()
                     .onAppear {
                         hasCompletedIpadOnboarding = true
-                        // Start background video monitoring when home view appears
                         VideoDownloadService.shared.startMonitoringAll(modelContext: modelContext)
                     }
             } else {
@@ -32,7 +31,6 @@ struct IpadView: View {
                     .font(Font.largeTitle.bold())
             }
 
-            // Debug menu - always visible
             DebugMenuView()
                 .zIndex(1000)
         }
@@ -47,7 +45,6 @@ struct IpadView: View {
                     }
             }
         }
-        // Mark onboarding as completed once the home screen is visible for the first time.
         .onChange(of: hasCompletedIpadOnboarding) { _, newValue in
             // no-op; kept to make intent explicit
         }

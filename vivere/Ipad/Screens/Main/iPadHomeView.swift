@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 enum HomeDestination: Hashable, Codable {
     case puzzle
@@ -19,6 +20,7 @@ struct iPadHomeView: View {
     @State private var showPairDevice = false
     @State private var showInstructionsSheet = false
     @Environment(MPCManager.self) private var mpc
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -27,9 +29,7 @@ struct iPadHomeView: View {
                     .ignoresSafeArea(edges: .all)
 
                 VStack(spacing: 0) {
-                    // Header Section
                     HStack(alignment: .center) {
-                        // Logo and Title
                         HStack(spacing: 17) {
                             Image("Logo")
                                 .resizable()
@@ -45,7 +45,6 @@ struct iPadHomeView: View {
 
                         Spacer()
 
-                        // Ellipsis Menu Button
                         Menu {
                             Button {
                                 path.append(HomeDestination.photoGallery)
@@ -159,7 +158,6 @@ struct iPadHomeView: View {
                 }
                 .zIndex(1)
 
-                // Decorative image at bottom left
                 VStack {
                     Spacer()
                     HStack {
@@ -195,14 +193,38 @@ struct iPadHomeView: View {
                 InstructionSheetView()
             }
             .onReceive(NotificationCenter.default.publisher(for: .navigateToHome)) { _ in
-                // Pop to root (home) when navigateToHome notification is received
                 path.removeLast(path.count)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .moodUpdate)) { notification in
+                if let value = notification.userInfo?["value"] as? String {
+                    Task { @MainActor in
+                        try? await MoodProcessingService.updateFeaturedModelEmotion(to: value, in: modelContext)
+                    }
+                } else if
+                    let userInfo = notification.userInfo,
+                    let id = userInfo["id"] as? UUID,
+                    let emotion = userInfo["emotion"] as? Emotion {
+                    do {
+                        let descriptor = FetchDescriptor<ImageModel>()
+                        if let images = try? modelContext.fetch(descriptor),
+                           let model = images.first(where: { $0.id == id }) {
+                            model.emotion = emotion
+                            try? modelContext.save()
+                            #if DEBUG
+                            print("✅ Updated emotion for featured ImageModel \(id) to \(emotion)")
+                            #endif
+                        } else {
+                            #if DEBUG
+                            print("⚠️ Featured ImageModel with id \(id) not found")
+                            #endif
+                        }
+                    }
+                }
             }
         }
     }
 }
 
-// Sheet wrapper for PairDeviceView
 struct PairDeviceSheetView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var isNextPressed: Bool = false
@@ -262,7 +284,3 @@ struct PairDeviceSheetView: View {
     }
 }
 
-#Preview {
-    iPadHomeView()
-        .environment(MPCManager())
-}
