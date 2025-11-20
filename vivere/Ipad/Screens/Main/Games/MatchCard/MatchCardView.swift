@@ -65,7 +65,7 @@ struct MatchCardView: View {
                                 viewModel.flipCard(card: card)
                             }
                     }
-                }
+                }.frame(maxWidth: 260*3 + 10*2) // card width + space in between
                 
             }
             if isMatchedImageShown {
