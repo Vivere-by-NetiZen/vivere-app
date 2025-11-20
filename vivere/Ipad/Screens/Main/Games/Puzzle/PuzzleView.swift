@@ -69,7 +69,7 @@ struct PuzzleView: View {
                                     RoundedRectangle(cornerRadius: 0)
                                         .stroke(Color.black, lineWidth: 4)
                                 )
-                                .offset(x: -25, y: -17)
+                                .offset(x: -25, y: -66)
 
                             // Reference image (faded)
                             if let referenceImage = viewModel.normalizedImage {
@@ -77,7 +77,7 @@ struct PuzzleView: View {
                                     .resizable()
                                     .frame(width: viewModel.size * CGFloat(viewModel.col), height: viewModel.size * CGFloat(viewModel.row))
                                     .opacity(0.5)
-                                    .offset(x: -25, y: -17)
+                                    .offset(x: -25, y: -66)
                             }
                         }
                         .frame(width: viewModel.size * CGFloat(viewModel.col) + 40, height: viewModel.size * CGFloat(viewModel.row) + 40)
