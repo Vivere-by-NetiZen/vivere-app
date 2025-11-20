@@ -15,15 +15,19 @@ struct CardView: View {
             if card.isFaceUp || card.isMatched {
                 Image(uiImage: card.img)
                     .resizable()
-                    .scaledToFit()
-                    .border(Color.white)
+                    .scaledToFill()
+                    .frame(width: 240, height: 270)
+                    .cornerRadius(20)
+                    .padding()
+                    .background(Color.white)
+//                    .padding()
                     .frame(width: 260, height: 290)
-                    .cornerRadius(10)
+                    .cornerRadius(20)
             } else {
                 if let uiImg = UIImage(named: "cardBack") {
                     Image(uiImage: uiImg)
                         .frame(width: 260, height: 290)
-                        .cornerRadius(10)
+                        .cornerRadius(20)
                 }
             }
         }
