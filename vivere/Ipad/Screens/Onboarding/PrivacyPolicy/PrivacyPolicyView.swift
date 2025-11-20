@@ -26,26 +26,29 @@ struct PrivacyPolicyView: View {
                         .foregroundColor(Color.white)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding()
+                .padding(.vertical, 40)
+                .padding(.horizontal, 40)
                 
                 VStack {
                     Image("privacyPolicy")
                         .frame(width: 300, height: 300)
                     
-                    Text("Kebijakan Privasi")
-                        .font(Font.largeTitle.bold())
-                        .foregroundColor(.white)
-                        .padding(.top, 30)
-                        .frame(width: 700)
-                        .multilineTextAlignment(TextAlignment.center)
-                    
-                    Text("Aplikasi ini memerlukan izin untuk mengumpulkan dan menyimpan beberapa foto pribadi untuk digunakan dalam fitur yang tersedia. Data yang dikumpulkan akan dijaga keamanannya agar tidak dibagikan tanpa persetujuan.")
-                        .font(Font.title2)
-                        .foregroundColor(Color.white)
-                        .frame(width: 800)
-                        .multilineTextAlignment(.center)
-                        .padding(.top, 10)
-                        .padding(.bottom, 30)
+                    VStack(spacing: 16){
+                        Text("Kebijakan Privasi")
+                            .font(Font.largeTitle.bold())
+                            .foregroundColor(.white)
+//                            .padding(.top, 30)
+                            .frame(width: 700)
+                            .multilineTextAlignment(TextAlignment.center)
+                        
+                        Text("Aplikasi ini memerlukan izin untuk mengumpulkan dan menyimpan beberapa foto pribadi untuk digunakan dalam fitur yang tersedia. Data yang dikumpulkan akan dijaga keamanannya agar tidak dibagikan tanpa persetujuan.")
+                            .font(Font.title2)
+                            .foregroundColor(Color.white)
+                            .frame(width: 800)
+                            .multilineTextAlignment(.center)
+//                            .padding(.top, 10)
+                            .padding(.bottom, 40)
+                    }
                     
                     HStack {
                         Text("Dengan melanjutkan, kamu menyetujui ketentuan")
@@ -63,6 +66,7 @@ struct PrivacyPolicyView: View {
                         Text("kami")
                             .foregroundColor(Color.white)
                     }
+                    .padding(.bottom, 8)
                     
                     CustomIpadButton(label: "Lanjut", color: .accent, style: .large){
                         isNextPressed = true

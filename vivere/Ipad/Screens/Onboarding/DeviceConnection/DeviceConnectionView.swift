@@ -17,7 +17,7 @@ struct DeviceConnectionView: View {
         ZStack {
             Color.viverePrimary.ignoresSafeArea(edges: .all)
 
-            VStack {
+            VStack(spacing: 32) {
                 HStack {
                     Image("progressStepper1")
                     Line()
@@ -32,23 +32,26 @@ struct DeviceConnectionView: View {
                         .saturation(0)
                 }
                 .frame(maxWidth: 400)
-                .padding()
+//                .padding()
 
                 Image("downloadVivere")
                     .frame(width: 300, height: 300)
 
-                Text("Install Vivere di iPhonemu")
-                    .font(Font.largeTitle.bold())
-                    .foregroundColor(.white)
-                    .padding(.top, 30)
+                VStack(spacing: 16){
+                    Text("Install Vivere di iPhonemu")
+                        .font(Font.largeTitle.bold())
+                        .foregroundColor(.white)
+    //                    .padding(.top, 30)
 
-                Text("Vivere menggunakan dua perangkat, iPad dan iPhone untuk interaksi satu sama lain. Jadi pastikan Anda sudah unduh Vivere di iPhone ya.")
-                    .font(Font.title)
-                    .foregroundColor(Color.white)
-                    .frame(width: 800)
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 10)
-                    .padding(.bottom, 30)
+                    Text("Vivere menggunakan dua perangkat, iPad dan iPhone untuk interaksi satu sama lain. Jadi pastikan Anda sudah unduh Vivere di iPhone ya.")
+                        .font(Font.title)
+                        .foregroundColor(Color.white)
+                        .frame(width: 800)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(nil)
+    //                    .padding(.top, 10)
+    //                    .padding(.bottom, 24)
+                }
 
                 CustomIpadButton(label: "Sudah Install", color: .accent, style: .large){
                     isNextPressed = true

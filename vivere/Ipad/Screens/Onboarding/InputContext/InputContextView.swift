@@ -74,52 +74,66 @@ struct InputContextView: View {
                     }
 
                     VStack {
-                        Text("Ceritakan sedikit tentang foto itu")
-                            .font(.title)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                        TextEditor(text: $currContext)
-                            .frame(maxHeight: 300)
-                            .padding()
-                            .background(Color.white)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .stroke(Color.black, lineWidth: 2)
-                            )
-                            .cornerRadius(20)
-                            .padding()
-                        Text("*Anda bisa melanjutkannya nanti")
-                            .foregroundColor(.white)
-                            .padding(.bottom, 20)
-                            .padding(.horizontal)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        HStack {
-                            if viewModel.idx > 0 {
-                                Button("Kembali") {
-                                    viewModel.previous(currContext: currContext)
-                                    currContext = viewModel.currentContext ?? ""
-                                }
-                                .font(Font.title2)
+                        VStack(alignment: .leading) {
+                            Text("Ceritakan sedikit tentang foto itu")
+                                .font(.title)
                                 .fontWeight(.semibold)
-                                .buttonStyle(.plain)
                                 .foregroundColor(.white)
-                                Spacer()
-                            }
-                            if viewModel.idx < viewModel.totalImgCount - 1 {
-                                CustomIpadButton(label: "Selanjutnya", color: .accent, style: .large) {
-                                    viewModel.next(currContext: currContext)
-                                    currContext = viewModel.currentContext ?? ""
-                                }
-                            } else {
-                                CustomIpadButton(label: "Selanjutnya", color: .accent, style: .large) {
-                                    viewModel.save(currContext: currContext)
-                                    Task {
-                                        await uploadAndSave()
-                                    }
-                                }
-                                .disabled(viewModel.isUploading)
-                            }
                         }
+                        
+                        ZStack(alignment: .topLeading) {
+                            if currContext.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                Text("Contoh: jalan jalan di taman bersama keluarga")
+                                    .foregroundColor(.gray)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 12)
+                            }
+
+                            TextEditor(text: $currContext)
+                                .scrollContentBackground(.hidden) // hide default background on iOS 16+
+                                .background(Color.clear)
+                        }
+                        .frame(maxHeight: 300)
+                        .padding()
+                        .background(Color.white)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(Color.black, lineWidth: 2)
+                        )
+                        .cornerRadius(20)
+
+                        Text("*Kamu bisa mengisi deskripsinya nanti")
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+//                        VStack(alignment: .center, spacing: 0){
+                            HStack {
+                                if viewModel.idx > 0 {
+                                    Button("Kembali") {
+                                        viewModel.previous(currContext: currContext)
+                                        currContext = viewModel.currentContext ?? ""
+                                    }
+                                    .font(Font.title2)
+                                    .fontWeight(.semibold)
+                                    .buttonStyle(.plain)
+                                    .foregroundColor(.white)
+                                    Spacer()
+                                }
+                                if viewModel.idx < viewModel.totalImgCount - 1 {
+                                    CustomIpadButton(label: "Selanjutnya", color: .accent, style: .large) {
+                                        viewModel.next(currContext: currContext)
+                                        currContext = viewModel.currentContext ?? ""
+                                    }
+                                } else {
+                                    CustomIpadButton(label: "Selanjutnya", color: .accent, style: .large) {
+                                        viewModel.save(currContext: currContext)
+                                        Task {
+                                            await uploadAndSave()
+                                        }
+                                    }
+                                    .disabled(viewModel.isUploading)
+                                }
+                            }
+//                        }
                         .padding(.horizontal)
                     }
                     .frame(maxWidth: 500)

@@ -100,8 +100,8 @@ struct CustomIpadButton<Label: View>: View {
                         )
                     if showDashedBorder {
                         RoundedRectangle(cornerRadius: 20)
-                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [15]))
-                            .padding(10)
+                            .stroke(style: StrokeStyle(lineWidth: 1.5, dash: [16, 16]))
+                            .padding(5)
                             .foregroundStyle(color == .deny || color == .darkBlue ? .white : .black)
                     }
                 }
@@ -113,9 +113,9 @@ struct CustomIpadButton<Label: View>: View {
         case .icon:
             return 150
         case .small:
-            return 300
+            return 200
         case .large:
-            return 320
+            return 270
         }
     }
 
@@ -124,9 +124,9 @@ struct CustomIpadButton<Label: View>: View {
         case .icon:
             return 80
         case .small:
-            return 80
+            return 70
         case .large:
-            return 100
+            return 90
         }
     }
 }

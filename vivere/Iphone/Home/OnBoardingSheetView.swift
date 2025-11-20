@@ -36,7 +36,7 @@ struct OnBoardingSheetView: View {
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, 34)
                     .padding(.top, 24)
                     .padding(.bottom, 16)
                 }
