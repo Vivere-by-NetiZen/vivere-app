@@ -15,6 +15,7 @@ struct MatchCardView: View {
     @State var showCompletionView: Bool = false
     @State var isTutorialShown: Bool = false
     @State var isMatchedImageShown: Bool = false
+    @State var isExitConfirmationShown: Bool = false
     
     @Environment(MPCManager.self) private var mpc
     @Environment(\.dismiss) private var dismiss
@@ -26,7 +27,7 @@ struct MatchCardView: View {
     var body: some View {
         ZStack {
             Color.viverePrimary
-                .ignoresSafeArea()
+                .ignoresSafeArea(.all)
             
             VStack {
                 HStack {
@@ -38,7 +39,7 @@ struct MatchCardView: View {
                         .background(Color.white)
                         .clipShape(Circle())
                         .onTapGesture {
-                            dismiss()
+                            isExitConfirmationShown = true
                         }
                         .padding(40)
                     Spacer()
@@ -98,6 +99,10 @@ struct MatchCardView: View {
                         
             if isTutorialShown {
                 MatchCardTutorialSheetView(isPresented: $isTutorialShown)
+            }
+            
+            if isExitConfirmationShown {
+                ExitGameConfirmationView(isPresented: $isExitConfirmationShown)
             }
             
         }

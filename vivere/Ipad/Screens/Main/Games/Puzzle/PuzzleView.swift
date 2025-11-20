@@ -15,6 +15,7 @@ struct PuzzleView: View {
     @State var isCompleted: Bool = false
     @State var showCompletionView: Bool = false
     @State var isTutorialShown: Bool = false
+    @State var isExitConfirmationShown: Bool = false
 
     @Environment(MPCManager.self) private var mpc
     @Environment(\.dismiss) private var dismiss
@@ -37,7 +38,7 @@ struct PuzzleView: View {
                         .background(Color.white)
                         .clipShape(Circle())
                         .onTapGesture {
-                            dismiss()
+                            isExitConfirmationShown = true
                         }
                         .padding(40)
                         Spacer()
@@ -107,6 +108,10 @@ struct PuzzleView: View {
 
                 if isTutorialShown {
                     PuzzleTutorialView(isPresented: $isTutorialShown)
+                }
+                
+                if isExitConfirmationShown {
+                    ExitGameConfirmationView(isPresented: $isExitConfirmationShown)
                 }
             }
             .onAppear {
