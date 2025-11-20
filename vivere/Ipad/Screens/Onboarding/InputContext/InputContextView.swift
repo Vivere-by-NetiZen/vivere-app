@@ -163,6 +163,7 @@ struct InputContextView: View {
         }
 
         }
+        .ignoresSafeArea(.keyboard)
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $isDoneInputing) {
             FinishOnboardingView()
