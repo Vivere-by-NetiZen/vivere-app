@@ -125,7 +125,6 @@ class MatchCardViewModel: ObservableObject {
     }
     
     func flipCard(card: MatchCard) {
-        //TODO: add flip animation
         guard let idx = cards.firstIndex(where: {$0.id == card.id}), !cards[idx].isMatched else { return }
         
         cards[idx].isFaceUp.toggle()

@@ -118,7 +118,6 @@ struct MatchCardView: View {
             }
         }
         .onChange(of: viewModel.lastMatchedImage) {
-//            isMatchedImageShown = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 withAnimation(.easeInOut(duration: 0.5)) {
                     isMatchedImageShown = true
