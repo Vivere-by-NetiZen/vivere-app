@@ -20,6 +20,10 @@ struct PendingInvitation: Identifiable {
     let peer: MCPeerID
 }
 
+extension Notification.Name {
+    static let moodUpdate = Notification.Name("moodUpdate")
+}
+
 @Observable
 class MPCManager: NSObject {
     private let serviceType = "vivere-sync"
@@ -41,13 +45,13 @@ class MPCManager: NSObject {
     var lastCommandTick: Int = 0
     var lastEndSessionTick: Int = 0
 
-    // New: parsed emotion from "mood_<value>" messages (iPad listens for this)
     var receivedEmotion: Emotion? = nil
+
+    var currentFeaturedImageModelID: UUID?
     
     var pendingInvitation: PendingInvitation?
     private var pendingInvitationHandler: ((Bool, MCSession?) -> Void)?
     
-    // New: track which peer is currently being invited by the iPad
     var invitingPeer: MCPeerID?
     
     private(set) var preferredPeer: MCPeerID?
@@ -56,7 +60,6 @@ class MPCManager: NSObject {
     private var browser: MCNearbyServiceBrowser?
     
     override init() {
-        // Determine role without referencing self
         let resolvedRole: DeviceRole
         #if os(iOS)
         let idiom = UIDevice.current.userInterfaceIdiom
@@ -66,7 +69,6 @@ class MPCManager: NSObject {
         #endif
         self.role = resolvedRole
         
-        // Load or create a stable local MCPeerID without referencing self
         let localKey = "localPeerKey"
         let localPeer = MPCManager.loadLocalPeer(withKey: localKey) ?? {
             #if os(iOS)
@@ -80,11 +82,9 @@ class MPCManager: NSObject {
         }()
         self.peerID = localPeer
         
-        // Create session
         let session = MCSession(peer: localPeer, securityIdentity: nil, encryptionPreference: .required)
         self.session = session
         
-        // Now we can call super and then reference self
         super.init()
         
         self.session.delegate = self
@@ -110,18 +110,16 @@ class MPCManager: NSObject {
         }
     }
     
-    // iPad manually connects first time
     func connect(to peer: MCPeerID) {
         guard role == .ipadHost else { return }
         guard session.connectedPeers.isEmpty else { return }   // only 1 at a time
-        // Mark inviting state and use a longer timeout to allow slow accepts
         DispatchQueue.main.async {
             self.invitingPeer = peer
         }
         browser?.invitePeer(peer, to: session, withContext: nil, timeout: 60)
+        send(message: "warming up")
     }
     
-    // Save & load preferred peer
     private func savePreferredPeer(_ peer: MCPeerID) {
         do {
             let data = try NSKeyedArchiver.archivedData(withRootObject: peer, requiringSecureCoding: true)
@@ -185,6 +183,7 @@ class MPCManager: NSObject {
     
     // New generic data send
     func send(data: Data) {
+        print("Sending data")
         guard !session.connectedPeers.isEmpty else { return }
         try? session.send(data, toPeers: session.connectedPeers, with: .reliable)
     }
@@ -245,9 +244,25 @@ extension MPCManager: MCSessionDelegate {
                 } else if message.hasPrefix("mood_") {
                     // Parse mood_<value> -> <value> and convert to Emotion
                     let value = String(message.dropFirst("mood_".count)).lowercased()
+                    
+                    // Post new-style notification with raw value so iPadHomeView can update via PhotosSelectionService
+                    NotificationCenter.default.post(
+                        name: .moodUpdate,
+                        object: nil,
+                        userInfo: ["value": value]
+                    )
+                    
                     if let emotion = Emotion(rawValue: value) {
                         self.receivedEmotion = emotion
                         print("Parsed emotion from message: \(emotion)")
+                        // Legacy: if iPad host and we know the current featured image id, post notification for SwiftData update
+                        if self.role == .ipadHost, let id = self.currentFeaturedImageModelID {
+                            NotificationCenter.default.post(
+                                name: .moodUpdate,
+                                object: nil,
+                                userInfo: ["id": id, "emotion": emotion]
+                            )
+                        }
                     } else {
                         print("Unknown emotion value received: \(value)")
                     }
@@ -313,16 +328,15 @@ extension MPCManager: MCNearbyServiceBrowserDelegate {
         
         guard role == .ipadHost else { return }
         
-        // If we already have a preferred iPhone saved:
         if let preferred = preferredPeer {
             if peerID == preferred {
                 print("Found preferred iPhone \(peerID.displayName)")
                 if session.connectedPeers.isEmpty {
-                    // Mark inviting and use longer timeout for auto-invite as well
                     DispatchQueue.main.async {
                         self.invitingPeer = peerID
                     }
                     browser.invitePeer(peerID, to: session, withContext: nil, timeout: 60)
+                    send(message: "warming up")
                 }
             } else {
                 print("Ignoring non-preferred peer \(peerID.displayName)")
@@ -341,7 +355,6 @@ extension MPCManager: MCNearbyServiceBrowserDelegate {
         guard role == .ipadHost else { return }
         DispatchQueue.main.async {
             self.discoveredPeers.removeAll { $0 == peerID }
-            // If we were inviting this peer and it disappeared, clear inviting state
             if self.invitingPeer == peerID {
                 self.invitingPeer = nil
             }
@@ -358,4 +371,3 @@ extension MPCManager: MCNearbyServiceBrowserDelegate {
         preferredPeer = nil
     }
 }
-

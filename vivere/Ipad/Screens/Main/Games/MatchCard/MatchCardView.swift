@@ -106,6 +106,7 @@ struct MatchCardView: View {
                 viewModel.images = self.images
                 await viewModel.prepareCardsIfNeeded()
             }
+            mpc.send(message: "warm up")
         }
         .onChange(of: viewModel.cards) {
             let completed = viewModel.cards.allSatisfy{$0.isMatched == true}
