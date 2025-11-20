@@ -12,9 +12,11 @@ import Photos
 
 class MatchCardViewModel: ObservableObject {
     @Published var cards: [MatchCard] = []
+    @Published var completionImage: ImageModel?
     @Published var normalizedImage: UIImage?
     @Published var triggerSendToIphone: Bool = false
-
+    @Published var lastMatchedImage: UIImage?
+    
     var firstSelectedCard: Int?
     var images: [ImageModel] = []
     var selectedImageModels: [ImageModel] = []
@@ -56,16 +58,17 @@ class MatchCardViewModel: ObservableObject {
         }
 
         for item in temp_cards {
-            cards.append(MatchCard(imgName: item.imgName, img: item.img))
+            temp_cards.append(MatchCard(imgName: item.imgName, img: item.img))
+        }
+        
+        for item in temp_cards.shuffled() {
             cards.append(MatchCard(imgName: item.imgName, img: item.img))
         }
     }
 
     func flipCard(card: MatchCard) {
-        // BUG: after first match
-        // TODO: add flip animation
-        guard let idx = cards.firstIndex(where: { $0.id == card.id }), !cards[idx].isMatched else { return }
-
+        guard let idx = cards.firstIndex(where: {$0.id == card.id}), !cards[idx].isMatched else { return }
+        
         cards[idx].isFaceUp.toggle()
 
         if let firstSelectedCardIdx = firstSelectedCard {
@@ -80,6 +83,7 @@ class MatchCardViewModel: ObservableObject {
         if cards[firstCardIdx].imgName == cards[secondCardIdx].imgName {
             cards[firstCardIdx].isMatched = true
             cards[secondCardIdx].isMatched = true
+            lastMatchedImage = cards[firstCardIdx].img
         } else {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                 self.cards[firstCardIdx].isFaceUp = false

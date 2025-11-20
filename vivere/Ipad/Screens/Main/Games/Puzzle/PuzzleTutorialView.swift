@@ -32,7 +32,7 @@ struct PuzzleTutorialView: View {
                     HStack(spacing: 40) {
                         // Step 1
                         VStack(spacing: 20) {
-                            Image("step1")
+                            Image("puzzleTutorialStep1")
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 300, height: 300)
@@ -48,7 +48,7 @@ struct PuzzleTutorialView: View {
 
                         // Step 2
                         VStack(spacing: 20) {
-                            Image("step2")
+                            Image("puzzleTutorialStep2")
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 300, height: 300)

@@ -14,17 +14,28 @@ struct CardView: View {
         ZStack {
             if card.isFaceUp || card.isMatched {
                 Image(uiImage: card.img)
-                    .border(Color.white)
-                    .frame(width: 180, height: 320)
-                    .cornerRadius(10)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 240, height: 270)
+                    .cornerRadius(20)
+                    .padding()
+                    .background(Color.white)
+                    .padding()
+                    .frame(width: 260, height: 290)
+                    .cornerRadius(20)
             } else {
                 if let uiImg = UIImage(named: "cardBack") {
                     Image(uiImage: uiImg)
-                        .frame(width: 180, height: 320)
-                        .cornerRadius(10)
+                        .frame(width: 260, height: 290)
+                        .cornerRadius(20)
                 }
             }
         }
+        .rotation3DEffect(
+            .degrees(card.isFaceUp ? 0 : 180),
+            axis: (x: 0, y: 1, z: 0)
+        )
+        .animation(.linear(duration: 0.35), value: card.isFaceUp)
     }
 }
 

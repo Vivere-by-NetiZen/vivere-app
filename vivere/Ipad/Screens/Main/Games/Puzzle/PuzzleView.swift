@@ -39,7 +39,7 @@ struct PuzzleView: View {
                         .onTapGesture {
                             dismiss()
                         }
-                        .padding()
+                        .padding(40)
                         Spacer()
                         Text("Rangkai kepingan puzzle sesuai gambarnya ya")
                             .font(Font.largeTitle)
@@ -53,7 +53,7 @@ struct PuzzleView: View {
                         .onTapGesture {
                             isTutorialShown = true
                         }
-                        .padding()
+                        .padding(40)
                     }
                     .frame(maxWidth: .infinity)
 
@@ -136,7 +136,7 @@ struct PuzzleView: View {
             }
             .navigationBarBackButtonHidden(true)
             .fullScreenCover(isPresented: $showCompletionView) {
-                PuzzleCompletionView(imageModel: viewModel.selectedImageModel)
+                CompletionView(imageModel: viewModel.selectedImageModel)
             }
         }
     }
