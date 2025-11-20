@@ -29,6 +29,13 @@ struct DebugMenuView: View {
             }) {
                 Label("Log Data & Videos", systemImage: "doc.text.magnifyingglass")
             }
+            
+            //BUG: only work once after build, after that you need to restart the app to go back to onboarding
+            Button(role: .destructive, action: {
+                resetAll()
+            }) {
+                Label("Reset All Data", systemImage: "exclamationmark.triangle")
+            }
         } label: {
             Image(systemName: "ladybug.fill")
                 .font(.title3)
@@ -94,10 +101,36 @@ struct DebugMenuView: View {
 
         print("\n🏁 === DEBUG INFO END === 🏁\n")
     }
+    
+    private func resetAll() {
+        do {
+            let descriptor = FetchDescriptor<ImageModel>()
+            let allData = try modelContext.fetch(descriptor)
+
+            for data in allData {
+                modelContext.delete(data)
+            }
+
+            try modelContext.save()
+        } catch {
+            print("Error clearing Data: \(error)")
+        }
+        
+        let domain = Bundle.main.bundleIdentifier!
+        UserDefaults.standard.removePersistentDomain(forName: domain)
+        UserDefaults.standard.synchronize()
+        
+        NotificationCenter.default.post(name: .navigateToOnboarding, object: nil)
+    }
+}
+
+enum Teleporter: Hashable, Codable {
+    case onboarding
 }
 
 extension Notification.Name {
     static let navigateToHome = Notification.Name("navigateToHome")
+    static let navigateToOnboarding = Notification.Name("navigateToOnboarding")
 }
 
 #Preview {

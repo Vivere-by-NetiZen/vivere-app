@@ -20,6 +20,7 @@ struct ReminiscenceTherapyView: View {
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var fallbackImage: UIImage?
+    @State private var path = NavigationPath()
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Query private var images: [ImageModel]
@@ -277,6 +278,15 @@ struct ReminiscenceTherapyView: View {
         .onReceive(NotificationCenter.default.publisher(for: .navigateToHome)) { _ in
             // Dismiss this view to go back
             dismiss()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToOnboarding)) { _ in
+            path.append(Teleporter.onboarding)
+        }
+        .navigationDestination(for: Teleporter.self) { destination in
+            switch destination {
+            case .onboarding:
+                OnboardingView()
+            }
         }
 //        .background(.viverePrimary)
 //        .ignoresSafeArea(.container, edges: .top)

@@ -10,11 +10,11 @@ import SwiftData
 
 struct InputContextView: View {
     @State var viewModel = InputContextViewModel()
-
     @State private var currContext: String = ""
     @State private var isDoneInputing: Bool = false
 
     let imagesIds: [String]
+    let isOnboarding: Bool
 
     @Environment(\.modelContext) private var modelContext
 
@@ -35,21 +35,23 @@ struct InputContextView: View {
             .buttonStyle(.plain)
             .foregroundColor(.white)
             .padding()
-
+            
             VStack {
-                HStack {
-                    Image("progressStepper1")
-                    Line()
-                        .stroke(style: StrokeStyle(lineWidth: 4, dash: [15]))
-                        .frame(height: 1)
-                    Image("progressStepper2")
-                    Line()
-                        .stroke(style: StrokeStyle(lineWidth: 4, dash: [15]))
-                        .frame(height: 1)
-                    Image("progressStepper3")
+                if isOnboarding {
+                    HStack {
+                        Image("progressStepper1")
+                        Line()
+                            .stroke(style: StrokeStyle(lineWidth: 4, dash: [15]))
+                            .frame(height: 1)
+                        Image("progressStepper2")
+                        Line()
+                            .stroke(style: StrokeStyle(lineWidth: 4, dash: [15]))
+                            .frame(height: 1)
+                        Image("progressStepper3")
+                    }
+                    .frame(maxWidth: 400)
+                    .padding()
                 }
-                .frame(maxWidth: 400)
-                .padding()
 
                 HStack {
                     VStack {
@@ -180,7 +182,11 @@ struct InputContextView: View {
         .ignoresSafeArea(.keyboard)
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $isDoneInputing) {
-            FinishOnboardingView()
+            if isOnboarding {
+                FinishOnboardingView()
+            } else {
+                iPadHomeView()
+            }
         }
         .task {
             await viewModel.loadImages(imagesIds: imagesIds)

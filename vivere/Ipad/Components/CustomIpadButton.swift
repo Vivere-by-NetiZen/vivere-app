@@ -17,6 +17,7 @@ struct CustomIpadButton<Label: View>: View {
     let color: Color
     let action: () -> Void
     let label: Label
+    let labelColor: Color?
     let showDashedBorder: Bool
     let shadowColor: Color?
     let shadowOffset: CGSize
@@ -24,6 +25,7 @@ struct CustomIpadButton<Label: View>: View {
     // Backward compatible initializer for string-based API
     init(
         label: String,
+        labelColor: Color? = nil,
         icon: Image? = nil,
         color: Color,
         style: CustomIpadButtonStyle,
@@ -33,6 +35,7 @@ struct CustomIpadButton<Label: View>: View {
         action: @escaping () -> Void,
     ) where Label == AnyView {
         self.color = color
+        self.labelColor = labelColor
         self.action = action
         self.showDashedBorder = showDashedBorder
         self.shadowColor = shadowColor
@@ -55,7 +58,7 @@ struct CustomIpadButton<Label: View>: View {
             finalLabelText
                 .font(style == .large ? .largeTitle : .title)
                 .fontWeight(.semibold)
-                .foregroundColor(Color(.black))
+                .foregroundColor(labelColor != nil ? labelColor! : .black)
                 .frame(minWidth: Self.minWidth(for: style), minHeight: Self.minHeight(for: style))
         )
     }
@@ -63,6 +66,7 @@ struct CustomIpadButton<Label: View>: View {
     // New flexible initializer with @ViewBuilder
     init(
         color: Color,
+        labelColor: Color? = nil,
         showDashedBorder: Bool = true,
         shadowColor: Color? = nil,
         shadowOffset: CGSize = CGSize(width: 3, height: 3),
@@ -76,6 +80,7 @@ struct CustomIpadButton<Label: View>: View {
         self.shadowColor = shadowColor
         self.shadowOffset = shadowOffset
         self.label = label()
+        self.labelColor = labelColor
     }
 
     var body: some View {
