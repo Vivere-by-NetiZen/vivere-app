@@ -46,7 +46,7 @@ struct HomeView: View {
                 hasSeenBeforeStart = true
                 showBeforeStart = false
             })
-            .padding()
+//            .padding()
             .background(.white)
         }
         .alert(item: $bindableMpc.pendingInvitation) { invitation in

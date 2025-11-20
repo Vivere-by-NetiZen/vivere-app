@@ -25,16 +25,17 @@ struct OnboardingView: View {
                         .foregroundColor(Color.white)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding()
+                .padding(.top, 40)
+                .padding(.leading, 40)
                 
-                VStack {
+                VStack(spacing: 48) {
                     Image("welcomeToVivere")
                         .frame(width: 300, height: 300)
                     
                     Text("Hai, selamat datang. Sebelum mulai, akan ada beberapa langkah setup dulu ya")
                         .font(Font.largeTitle.bold())
                         .foregroundColor(.white)
-                        .padding(.top, 30)
+//                        .padding(.top, 30)
                         .frame(width: 700)
                         .multilineTextAlignment(TextAlignment.center)
                     

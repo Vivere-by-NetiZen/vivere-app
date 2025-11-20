@@ -17,7 +17,7 @@ struct MediaCollectionView: View {
         ZStack {
             Color.viverePrimary.ignoresSafeArea(edges: .all)
 
-            VStack {
+            VStack (spacing: 24) {
                 HStack {
                     Image("progressStepper1")
                     Line()
@@ -33,21 +33,22 @@ struct MediaCollectionView: View {
                 .frame(maxWidth: 400)
                 .padding()
 
-                Image("addMemories")
-                    .frame(width: 300, height: 300)
+                VStack(spacing: 32){
+                    Image("addMemories")
+                        .frame(width: 300, height: 300)
 
-                Text("Tambahkan Kenanganmu")
-                    .font(Font.largeTitle.bold())
-                    .foregroundColor(.white)
-                    .padding(.top, 30)
+                    VStack(spacing: 16){
+                        Text("Tambahkan Kenanganmu")
+                            .font(Font.largeTitle.bold())
+                            .foregroundColor(.white)
 
-                Text("Pilih beberapa foto yang memiliki cerita bagimu, tidak perlu banyak, cukup yang ingin dibagikan bersama.")
-                    .font(Font.title)
-                    .foregroundColor(Color.white)
-                    .frame(width: 800)
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 10)
-                    .padding(.bottom, 30)
+                        Text("Pilih beberapa foto yang memiliki cerita bagimu, tidak perlu banyak, cukup yang ingin dibagikan bersama.")
+                            .font(Font.title)
+                            .foregroundColor(Color.white)
+                            .frame(width: 800)
+                            .multilineTextAlignment(.center)
+                    }
+                }
 
                 PhotosPicker(selection: $pickerItems, matching: .images, photoLibrary: .shared()) {
                     CustomIpadButtonAsView(label: "\(Image(systemName: "square.and.arrow.up")) Tambahkan Foto", color: .accent, style: .icon)
