@@ -35,11 +35,15 @@ struct IphoneView: View {
                     mainText = "iPad sedang memulai sesi game, tunggu hingga selesai"
                 }
                 .onChange(of: mpc.connectedPeers) {
-                    mainText = "Pastikan iPad-mu telah memulai sesi game"
+                    if !mpc.connectedPeers.isEmpty {
+                        mainText = "Pastikan iPad-mu telah memulai sesi game"
+                    } else {
+                        mainText = "Pastikan iPhone Terhubung dengan iPad-mu"
+                    }
                 }
                 .onAppear {
                     if mpc.connectedPeers.isEmpty {
-                        mainText = "Pastikan iPhone Terhubung dengan Ipad-mu"
+                        mainText = "Pastikan iPhone Terhubung dengan iPad-mu"
                     } else {
                         mainText = "Pastikan iPad-mu telah memulai sesi game"
                     }

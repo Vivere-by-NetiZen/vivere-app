@@ -10,6 +10,7 @@ import SwiftUI
 struct DeviceConnectionView: View {
     @State private var isNextPressed: Bool = false
     @State private var isPaired: Bool = false
+    @State private var showConnectedConfirmation: Bool = false
     @AppStorage("debugSkipDeviceConnection") private var skipDeviceConnection: Bool = false
     @Environment(MPCManager.self) private var mpc
 
@@ -32,7 +33,6 @@ struct DeviceConnectionView: View {
                         .saturation(0)
                 }
                 .frame(maxWidth: 400)
-//                .padding()
 
                 Image("downloadVivere")
                     .frame(width: 300, height: 300)
@@ -41,7 +41,6 @@ struct DeviceConnectionView: View {
                     Text("Install Vivere di iPhonemu")
                         .font(Font.largeTitle.bold())
                         .foregroundColor(.white)
-    //                    .padding(.top, 30)
 
                     Text("Vivere menggunakan dua perangkat, iPad dan iPhone untuk interaksi satu sama lain. Jadi pastikan Anda sudah unduh Vivere di iPhone ya.")
                         .font(Font.title)
@@ -49,34 +48,39 @@ struct DeviceConnectionView: View {
                         .frame(width: 800)
                         .multilineTextAlignment(.center)
                         .lineLimit(nil)
-    //                    .padding(.top, 10)
-    //                    .padding(.bottom, 24)
                 }
 
                 CustomIpadButton(label: "Sudah Install", color: .accent, style: .large){
                     isNextPressed = true
                 }
                 .font(Font.title.bold())
-
             }
 
             if isNextPressed {
                 PairDeviceView(isNextPressed: $isNextPressed, isPaired: $isPaired)
             }
 
+            // Connected confirmation overlay (shows after connection is established)
+            if showConnectedConfirmation {
+                ConnectedConfirmationView()
+                    .transition(.opacity.combined(with: .scale))
+                    .zIndex(1)
+            }
         }
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $isPaired) {
             MediaCollectionView()
         }
         .onChange(of: isNextPressed) { _, next in
+            // If user opens the pairing sheet and is already connected, show confirmation instead of navigating immediately
             if next, !mpc.connectedPeers.isEmpty {
-                isPaired = true
+                presentConnectedConfirmationThenNavigate()
             }
         }
         .onChange(of: mpc.connectedPeers) { _, peers in
+            // When pairing UI is visible and a connection happens, show confirmation overlay first
             if isNextPressed, !peers.isEmpty {
-                isPaired = true
+                presentConnectedConfirmationThenNavigate()
             }
         }
         .onAppear {
@@ -90,6 +94,19 @@ struct DeviceConnectionView: View {
             if skip {
                 isPaired = true
             }
+        }
+    }
+
+    private func presentConnectedConfirmationThenNavigate() {
+        // Close the pairing overlay and show confirmation overlay
+        isNextPressed = false
+        showConnectedConfirmation = true
+
+        // Auto-dismiss after a short delay and navigate
+        let delay: TimeInterval = 1.8
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            showConnectedConfirmation = false
+            isPaired = true
         }
     }
 }
