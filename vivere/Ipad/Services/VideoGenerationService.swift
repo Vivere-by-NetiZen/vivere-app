@@ -134,7 +134,7 @@ class VideoGenerationService {
         // Add duration field (4 seconds)
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"duration\"\r\n\r\n".data(using: .utf8)!)
-        body.append("4\r\n".data(using: .utf8)!)
+        body.append("5\r\n".data(using: .utf8)!)
 
         body.append("--\(boundary)--\r\n".data(using: .utf8)!)
 
