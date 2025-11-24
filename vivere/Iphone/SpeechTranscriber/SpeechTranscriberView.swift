@@ -1,74 +1,291 @@
 import SwiftUI
+import Charts
+import CoreHaptics
 
 struct SpeechTranscriberView: View {
-    @State private var transcriber = SpeechTranscriber(localeIdentifier: "id-ID")
-    
-    var body: some View {
-        NavigationView {
-            VStack(spacing: 16) {
-                HStack {
-                    Button(transcriber.isTranscribing ? "Stop" : "Start Live Transcription") {
-                        if transcriber.isTranscribing {
-                            transcriber.stopTranscription()
-                        } else {
-                            transcriber.startLiveTranscription()
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    Button(transcriber.isFetchingSuggestion ? "Getting Suggestions…" : "Get Suggestions") {
-                        transcriber.fetchSuggestions()
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(transcriber.transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || transcriber.isFetchingSuggestion)
-                }
-                GroupBox("Transcript") {
-                    ScrollView {
-                        Text(transcriber.transcript.isEmpty ? "—" : transcriber.transcript)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, 8)
-                    }
-                    .frame(minHeight: 180)
-                }
-                
-                GroupBox("Suggestions") {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 8) {
-                            if let p = transcriber.suggestionPoint {
-                                Text("Point: \(p)")
-                                    .font(.headline)
-                            }
-                            if transcriber.suggestions.isEmpty {
-                                Text("—")
-                                    .foregroundStyle(.secondary)
-                            } else {
-                                ForEach(Array(transcriber.suggestions.enumerated()), id: \.offset) { idx, item in
-                                    HStack(alignment: .top, spacing: 8) {
-                                        Text("\(idx+1).")
-                                            .fontWeight(.semibold)
-                                        Text(item)
-                                            .fixedSize(horizontal: false, vertical: true)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                    }
-                                }
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical, 4)
-                    }
-                    .frame(minHeight: 180, maxHeight: 320)
-                }
-                
-                if let err = transcriber.errorMessage {
-                    Text(err).foregroundStyle(.red)
-                }
-                
-                Spacer()
-            }
-            .padding()
-            .navigationTitle("Live ASR (Apple Speech)")
-        }
-        .onAppear {
-            Task { await transcriber.requestAuthorization() }
+    @State private var hasRequestSuggestion: Bool = false
+    @State private var suggestionIndex: Int = 0
+    @State private var showEndSessionAlert: Bool = false
+    @State private var showMoodAlert: Bool = false
+    @State private var selectedMood: Mood? = nil
+    private var viewModel = SpeechTranscriberViewModel.shared
+    @Environment(MPCManager.self) private var mpc
+    @Environment(Router.self) private var router
+
+    // Gesture state for swipe on suggestions
+    @GestureState private var dragOffset: CGFloat = 0
+
+    private var composedTranscript: String {
+        let finals = viewModel.finalTranscripts.joined(separator: " ")
+        if viewModel.partialTranscript.isEmpty {
+            return finals.isEmpty ? "-" : finals
+        } else {
+            return finals.isEmpty ? viewModel.partialTranscript : "\(finals) \(viewModel.partialTranscript)"
         }
     }
+
+    var body: some View {
+        NavigationView {
+            ZStack {
+                RadialGradient(
+                    gradient: Gradient(stops: [
+                        .init(color: Color(hex: "#6594D8"), location:0.0),
+                        .init(color: Color(hex: "#D8E0F4"), location: 0.78)]),
+                    center: .bottom,
+                    startRadius: 0,
+                    endRadius: 250
+                )
+                .scaleEffect(x: 1.0,
+                             y: 2.5,
+                             anchor: .bottom)
+                .ignoresSafeArea()
+
+                VStack(spacing: 16) {
+                    if !hasRequestSuggestion {
+                        InitialQuestionCard(
+                            title: "Pertanyaan",
+                            question: viewModel.isFetchingInitialQuestions ? "Loading..." : viewModel.initialQuestion
+                        )
+                        .multilineTextAlignment(.center)
+                        .lineLimit(nil)
+                        .frame(minHeight: 410)
+                    } else {
+                        if viewModel.isFetchingSuggestion {
+                            ZStack {
+                                InitialQuestionCard(
+                                    title: "Saran Tanggapan",
+                                    question: ""
+                                )
+                                .frame(minHeight: 410)
+                            }
+                        } else if !viewModel.suggestions.isEmpty {
+                            // Swipeable suggestion card with dots INSIDE the card
+                            ZStack(alignment: .bottom) {
+                                // Card with swipe translation
+                                InitialQuestionCard(
+                                    title: "Saran Tanggapan",
+                                    question: currentSuggestion
+                                )
+                                .frame(minHeight: 410)
+                                .lineLimit(nil)
+                                .offset(x: dragOffset)
+                                .animation(.easeOut(duration: 0.18), value: dragOffset)
+
+                                // Page indicator (dots) INSIDE the card at the bottom
+                                HStack(spacing: 8) {
+                                    ForEach(viewModel.suggestions.indices, id: \.self) { idx in
+                                        Circle()
+                                            .fill(idx == suggestionIndex ? Color.blue.opacity(0.8) : Color.black.opacity(0.25))
+                                            .frame(width: 10, height: 10)
+                                    }
+                                }
+                                .padding(.bottom, 56) // inside the white card near bottom
+                            }
+                            // Apply gesture to the whole card stack
+                            .gesture(
+                                DragGesture(minimumDistance: 20, coordinateSpace: .local)
+                                    .updating($dragOffset, body: { value, state, _ in
+                                        // Limit visual drag to keep it subtle
+                                        state = max(-40, min(40, value.translation.width))
+                                    })
+                                    .onEnded { value in
+                                        let threshold: CGFloat = 60
+                                        let translation = value.translation.width
+                                        if translation < -threshold, hasNext {
+                                            withAnimation(.easeInOut) {
+                                                suggestionIndex = min(viewModel.suggestions.count - 1, suggestionIndex + 1)
+                                            }
+                                        } else if translation > threshold, hasPrevious {
+                                            withAnimation(.easeInOut) {
+                                                suggestionIndex = max(0, suggestionIndex - 1)
+                                            }
+                                        }
+                                    }
+                            )
+                        } else if let err = viewModel.errorMessage {
+                            VStack(spacing: 12) {
+                                Text("Gagal mengambil rekomendasi")
+                                    .font(.headline)
+                                    .foregroundColor(.black)
+                                Text(err)
+                                    .font(.subheadline)
+                                    .foregroundColor(.black)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal)
+                            }
+                            .padding(.top, 80)
+                            .padding(.horizontal, 16)
+                        }
+                    }
+
+                    MicVisualizerView()
+                        .frame(minHeight: 150, maxHeight: 180)
+                        .padding(.bottom, 0)
+
+                    VStack(spacing: 12) {
+                        if viewModel.errorMessage != nil {
+                            Button(action: {
+                                suggestionIndex = 0
+                                viewModel.getSuggestions()
+                                hasRequestSuggestion = true
+                            }) {
+                                Text("Coba Lagi")
+                                    .font(.headline)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 8)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.accentColor)
+                            .disabled(viewModel.isFetchingSuggestion)
+                        } else {
+                            Button(action: {
+                                suggestionIndex = 0
+                                viewModel.getSuggestions()
+                                hasRequestSuggestion = true
+                            }) {
+                                HStack(spacing: 8) {
+                                    Text("Saran Tanggapan")
+                                        .font(.headline)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.accentColor)
+                            .disabled(viewModel.isFetchingSuggestion || (viewModel.partialTranscript.isEmpty && viewModel.finalTranscripts.isEmpty))
+                        }
+
+                        Button(action: {
+                            showEndSessionAlert = true
+                        }) {
+                            Text("Selesaikan Sesi")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
+                        .font(.headline)
+                        .disabled(!hasRequestSuggestion || viewModel.isFetchingSuggestion)
+                    }
+                }
+                .padding(.vertical, 74)
+                .padding(.horizontal, 33)
+            }
+            .background(Color(hex: "#4A6FA5"))
+
+            .overlay {
+                if showEndSessionAlert {
+                    ZStack {
+                        Color.black.opacity(0.4)
+                            .ignoresSafeArea()
+
+                        VStack(spacing: 16) {
+                            VStack(spacing: 10){
+                                Text("Apakah kamu yakin untuk mengakhiri sesi?")
+                                    .font(.body)
+                                    .fontWeight(.semibold)
+                                    .multilineTextAlignment(.center)
+                                    .foregroundStyle(.primary)
+
+                                Text("Mengakhiri sesi akan menghentikan terapi dan menyimpan hasilnya secara otomatis.")
+                                    .font(.footnote)
+                                    .multilineTextAlignment(.center)
+                                    .foregroundStyle(.black)
+                            }
+                            .padding(24)
+
+                            HStack(spacing: 16) {
+                                Button {
+                                    withAnimation(.easeInOut) {
+                                        showEndSessionAlert = false
+                                    }
+                                } label: {
+                                    Text("Batalkan")
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 13)
+                                        .padding(.horizontal, 16)
+                                }
+                                .buttonStyle(.bordered)
+                                .tint(.gray)
+                                .foregroundStyle(.black)
+
+                                Button {
+                                    withAnimation(.easeInOut) {
+                                        showEndSessionAlert = false
+                                    }
+                                    mpc.send(message: "end_session")
+                                    viewModel.toggle(resume: false)
+                                    showMoodAlert = true
+                                } label: {
+                                    Text("Ya")
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 13)
+                                        .padding(.horizontal, 16)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(.accentColor)
+                            }
+                            .padding(.horizontal)
+                            .padding(.bottom)
+                        }
+                        .frame(maxWidth: 298)
+                        .background(.ultraThickMaterial, in: RoundedRectangle(cornerRadius: 34, style: .continuous))
+                        .shadow(color: .black.opacity(0.25), radius: 20, x: 0, y: 8)
+                        .padding(.horizontal, 24)
+                        .transition(.scale.combined(with: .opacity))
+                    }
+                    .animation(.easeInOut, value: showEndSessionAlert)
+                }
+
+                if showMoodAlert {
+                    Color.black.opacity(0.4)
+                        .ignoresSafeArea()
+                        .transition(.opacity)
+
+                    MoodCard(
+                        questionText: "Bagaimana suasana hati ODD-mu setelah sesi?",
+                        selectedMood: $selectedMood,
+                    )
+                    .transition(.scale.combined(with: .opacity))
+                    .onChange(of: selectedMood) {
+                        if selectedMood != nil {
+                            withAnimation(.easeInOut) {
+                                showMoodAlert = false
+                            }
+                            mpc.send(message: "mood_\(selectedMood!)")
+                            router.popToRoot()
+                        }
+                    }
+                }
+            }
+        }
+        .task {
+            await Task.yield()
+            viewModel.toggle(resume: false)
+        }
+        .onChange(of: viewModel.suggestions) { _, _ in
+            suggestionIndex = 0
+        }
+    }
+
+    private var hasPrevious: Bool {
+        suggestionIndex > 0
+    }
+
+    private var hasNext: Bool {
+        suggestionIndex < max(0, viewModel.suggestions.count - 1)
+    }
+
+    private var currentSuggestion: String {
+        guard !viewModel.suggestions.isEmpty,
+              viewModel.suggestions.indices.contains(suggestionIndex) else {
+            return ""
+        }
+        return viewModel.suggestions[suggestionIndex]
+    }
+}
+
+#Preview {
+    SpeechTranscriberView()
 }

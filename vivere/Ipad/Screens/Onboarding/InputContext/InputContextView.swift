@@ -1,0 +1,201 @@
+//
+//  InputContextView.swift
+//  vivere
+//
+//  Created by Reinhart on 10/11/25.
+//
+
+import SwiftUI
+import SwiftData
+
+struct InputContextView: View {
+    @State var viewModel = InputContextViewModel()
+    @State private var currContext: String = ""
+    @State private var isDoneInputing: Bool = false
+
+    let imagesIds: [String]
+    let isOnboarding: Bool
+
+    @Environment(\.modelContext) private var modelContext
+
+    var body: some View {
+        ZStack {
+            Color.viverePrimary.ignoresSafeArea(edges: .all)
+
+            Button("Lewati \(Image(systemName: "chevron.right.2"))") {
+                viewModel.save(currContext: "")
+                viewModel.saveAndUpload(modelContext: modelContext) {
+                    isDoneInputing = true
+                }
+            }
+            .disabled(viewModel.isUploading)
+            .font(Font.title)
+            .fontWeight(.bold)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+            .buttonStyle(.plain)
+            .foregroundColor(.white)
+            .padding()
+
+            VStack {
+                if isOnboarding {
+                    HStack {
+                        Image("progressStepper1")
+                        Line()
+                            .stroke(style: StrokeStyle(lineWidth: 4, dash: [15]))
+                            .frame(height: 1)
+                        Image("progressStepper2")
+                        Line()
+                            .stroke(style: StrokeStyle(lineWidth: 4, dash: [15]))
+                            .frame(height: 1)
+                        Image("progressStepper3")
+                    }
+                    .frame(maxWidth: 400)
+                    .padding()
+                }
+
+                HStack {
+                    VStack {
+                        if let image = viewModel.currentImage {
+                            image
+                                .resizable()
+//                                .scaledToFit()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .padding()
+                                .background(Color.white)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .stroke(Color.black, lineWidth: 2)
+                                )
+                                .cornerRadius(20)
+                                .padding()
+                        }
+                        Text("Foto \(viewModel.idx + 1) dari \(viewModel.totalImgCount)")
+                            .font(Font.title3)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white)
+                    }
+
+                    VStack {
+                        VStack(alignment: .leading) {
+                            Text("Ceritakan sedikit tentang foto itu")
+                                .font(.title)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.white)
+                        }
+
+                        ZStack(alignment: .topLeading) {
+                            if currContext.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                Text("Contoh: jalan jalan di taman bersama keluarga")
+                                    .foregroundColor(.gray)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 12)
+                            }
+
+                            TextEditor(text: $currContext)
+                                .scrollContentBackground(.hidden) // hide default background on iOS 16+
+                                .background(Color.clear)
+                        }
+                        .frame(maxHeight: 300)
+                        .padding()
+                        .background(Color.white)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(Color.black, lineWidth: 2)
+                        )
+                        .cornerRadius(20)
+
+                        Text("*Kamu bisa mengisi deskripsinya nanti")
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+//                        VStack(alignment: .center, spacing: 0){
+                            HStack {
+                                if viewModel.idx > 0 {
+                                    Button("Kembali") {
+                                        viewModel.previous(currContext: currContext)
+                                        currContext = viewModel.currentContext ?? ""
+                                    }
+                                    .font(Font.title2)
+                                    .fontWeight(.semibold)
+                                    .buttonStyle(.plain)
+                                    .foregroundColor(.white)
+                                    Spacer()
+                                }
+                                if viewModel.idx < viewModel.totalImgCount - 1 {
+                                    CustomIpadButton(label: "Selanjutnya", color: .accent, style: .large) {
+                                        viewModel.next(currContext: currContext)
+                                        currContext = viewModel.currentContext ?? ""
+                                    }
+                                } else {
+                                CustomIpadButton(label: "Selanjutnya", color: .accent, style: .large) {
+                                    viewModel.save(currContext: currContext)
+                                    viewModel.saveAndUpload(modelContext: modelContext) {
+                                        isDoneInputing = true
+                                    }
+                                }
+                                .disabled(viewModel.isUploading)
+                            }
+                        }
+//                        }
+                        .padding(.horizontal)
+                    }
+                    .frame(maxWidth: 500)
+            }
+                .padding(50)
+        }
+
+        // Upload progress overlay
+        if viewModel.isUploading {
+            ZStack {
+                Color.black.opacity(0.6)
+                    .ignoresSafeArea()
+
+                VStack(spacing: 20) {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                        .tint(.white)
+
+                    Text("Mengunggah foto dan membuat video...")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+
+                    Text("\(viewModel.uploadProgress)%")
+                        .font(.title3)
+                        .foregroundColor(.white)
+
+                    if let error = viewModel.uploadError {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundColor(.red)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                }
+                .padding(40)
+                .background(Color.vivereSecondary)
+                .cornerRadius(20)
+                .padding(40)
+            }
+        }
+
+        }
+        .ignoresSafeArea(.keyboard)
+        .navigationBarBackButtonHidden(true)
+        .navigationDestination(isPresented: $isDoneInputing) {
+            if isOnboarding {
+                FinishOnboardingView()
+            } else {
+                iPadHomeView()
+            }
+        }
+        .task {
+            await viewModel.loadImages(imagesIds: imagesIds)
+            currContext = viewModel.currentContext ?? ""
+        }
+    }
+
+}
+
+//#Preview {
+//    InputContextView()
+//}

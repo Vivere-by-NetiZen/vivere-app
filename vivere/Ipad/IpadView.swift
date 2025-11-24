@@ -6,18 +6,34 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct IpadView: View {
     @State private var isLandscape: Bool = false
-    
+    @AppStorage("hasCompletedIpadOnboarding") private var hasCompletedIpadOnboarding: Bool = false
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some View {
         ZStack {
-            OnboardingView()
-            if !isLandscape{
+            if hasCompletedIpadOnboarding {
+                iPadHomeView()
+                    .onAppear {
+                        hasCompletedIpadOnboarding = true
+                        VideoDownloadService.shared.startMonitoringAll(modelContext: modelContext)
+                    }
+            } else {
+                OnboardingView()
+            }
+
+            if !isLandscape {
                 Color.viverePrimary.ignoresSafeArea(.all)
                 Text("Please use landscape mode")
                     .font(Font.largeTitle.bold())
             }
+
+            DebugMenuView()
+                .zIndex(1000)
         }
         .background {
             GeometryReader { geo in
@@ -30,9 +46,23 @@ struct IpadView: View {
                     }
             }
         }
+        .onChange(of: hasCompletedIpadOnboarding) { _, newValue in
+            // no-op; kept to make intent explicit
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .didReachIpadHome)) { _ in
+            hasCompletedIpadOnboarding = true
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                // Refresh monitoring when app comes to foreground
+                if hasCompletedIpadOnboarding {
+                    VideoDownloadService.shared.startMonitoringAll(modelContext: modelContext)
+                }
+            }
+        }
     }
 }
 
-#Preview {
-    IpadView()
+extension Notification.Name {
+    static let didReachIpadHome = Notification.Name("didReachIpadHome")
 }

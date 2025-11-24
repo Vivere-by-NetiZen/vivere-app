@@ -13,77 +13,225 @@ enum CustomIpadButtonStyle {
     case large
 }
 
-struct CustomIpadButton: View {
-    let label:String
-    var icon:Image? = nil
-    let color:Color
-    let style:CustomIpadButtonStyle
-    let action:() -> Void
-    
-    var body: some View {
-        Button(action: action) {
+struct CustomIpadButton<Label: View>: View {
+    let color: Color
+    let action: () -> Void
+    let label: Label
+    let labelColor: Color?
+    let showDashedBorder: Bool
+    let shadowColor: Color?
+    let shadowOffset: CGSize
+
+    // Backward compatible initializer for string-based API
+    init(
+        label: String,
+        labelColor: Color? = nil,
+        icon: Image? = nil,
+        color: Color,
+        style: CustomIpadButtonStyle,
+        showDashedBorder: Bool = true,
+        shadowColor: Color? = nil,
+        shadowOffset: CGSize = CGSize(width: 3, height: 3),
+        action: @escaping () -> Void,
+    ) where Label == AnyView {
+        self.color = color
+        self.labelColor = labelColor
+        self.action = action
+        self.showDashedBorder = showDashedBorder
+        self.shadowColor = shadowColor
+        self.shadowOffset = shadowOffset
+
+        let finalLabelText: Text = {
+            switch style {
+            case .icon:
+                if let icon = icon {
+                    return Text("\(icon) \(label)")
+                } else {
+                    return Text(label)
+                }
+            default:
+                return Text(label)
+            }
+        }()
+
+        self.label = AnyView(
             finalLabelText
                 .font(style == .large ? .largeTitle : .title)
                 .fontWeight(.semibold)
-                .foregroundColor(Color(.black))
-                .frame(minWidth:minWidth, minHeight: minHeight)
-                .background(
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 20)
-                            .frame(minWidth:minWidth, minHeight: minHeight)
-                            .foregroundColor(color)
-                            .cornerRadius(20)
-                            .shadow(color: color, radius: 5, x: 5, y:5)
-                            .shadow(color: Color.black.opacity(0.2), radius:5, x: 5, y:5)
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [20]))
-                            .padding(10)
-                    }
-                )
-//                .padding()
-//                .cornerRadius(20)
+                .foregroundColor(labelColor != nil ? labelColor! : .black)
+                .frame(minWidth: Self.minWidth(for: style), minHeight: Self.minHeight(for: style))
+        )
+    }
+
+    // New flexible initializer with @ViewBuilder
+    init(
+        color: Color,
+        labelColor: Color? = nil,
+        showDashedBorder: Bool = true,
+        shadowColor: Color? = nil,
+        shadowOffset: CGSize = CGSize(width: 3, height: 3),
+        action: @escaping () -> Void,
+        @ViewBuilder label: () -> Label,
+        customFont: Font? = nil
+    ) {
+        self.color = color
+        self.action = action
+        self.showDashedBorder = showDashedBorder
+        self.shadowColor = shadowColor
+        self.shadowOffset = shadowOffset
+        self.label = label()
+        self.labelColor = labelColor
+    }
+
+    var body: some View {
+        Button(action: action) {
+            styledContent
         }
         .buttonStyle(.plain)
     }
-    
-    private var finalLabelText: Text {
-        switch style {
-        case .icon:
-            if let icon = icon {
-                return Text("\(icon) \(label)")
-            } else {
-                return Text(label)
-            }
-        default:
-            return Text(label)
-        }
+
+    // Styled content that can be used outside of Button (e.g., in NavigationLink)
+    var styledContent: some View {
+        label
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: 20)
+                        .foregroundColor(color)
+                        .shadow(
+                            color: shadowColor ?? color.tint(0.2),
+                            radius: 0,
+                            x: shadowOffset.width,
+                            y: shadowOffset.height
+                        )
+                    if showDashedBorder {
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(style: StrokeStyle(lineWidth: 1.5, dash: [16, 16]))
+                            .padding(5)
+                            .foregroundStyle(color == .deny || color == .darkBlue ? .white : .black)
+                    }
+                }
+            )
     }
-    
-    private var minWidth: CGFloat {
+
+    private static func minWidth(for style: CustomIpadButtonStyle) -> CGFloat {
         switch style {
         case .icon:
             return 150
         case .small:
-            return 300
+            return 200
         case .large:
-            return 320
+            return 270
         }
     }
-    
-    private var minHeight: CGFloat {
+
+    private static func minHeight(for style: CustomIpadButtonStyle) -> CGFloat {
         switch style {
         case .icon:
             return 80
         case .small:
-            return 80
+            return 70
         case .large:
-            return 100
+            return 90
         }
     }
 }
 
-#Preview {
-    CustomIpadButton(label: "label", icon: Image(systemName: "plus"), color:.accent, style: .icon) {
-        print("clicked")
+#Preview("Customizable") {
+    CustomIpadButtonPreview()
+}
+
+private struct CustomIpadButtonPreview: View {
+    @State private var label: String = "Label"
+    @State private var selectedStyle: CustomIpadButtonStyle = .large
+    @State private var selectedColorName: String = "accent"
+    @State private var useIcon: Bool = true
+    @State private var selectedSystemIcon: String = "plus"
+
+    private let availableStyles: [CustomIpadButtonStyle] = [.icon, .small, .large]
+    private let styleNames: [CustomIpadButtonStyle: String] = [.icon: "Icon", .small: "Small", .large: "Large"]
+
+    // Map of color display name -> actual Color used by the component
+    private let colorOptions: [(name: String, color: Color)] = [
+        ("accent", .accent),
+        ("blue", .blue),
+        ("green", .green),
+        ("orange", .orange),
+        ("pink", .pink),
+        ("purple", .purple),
+        ("red", .red),
+        ("yellow", .yellow),
+        ("black", .black),
+        ("white", .white)
+    ]
+
+    private let systemIcons: [String] = [
+        "plus", "checkmark", "xmark", "star", "heart", "paperplane", "pencil", "trash", "gear", "bell"
+    ]
+
+    private var resolvedColor: Color {
+        colorOptions.first(where: { $0.name == selectedColorName })?.color ?? .accent
+    }
+
+    private var resolvedIcon: Image? {
+        guard useIcon else { return nil }
+        return Image(systemName: selectedSystemIcon)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Content") {
+                    TextField("Label", text: $label)
+                    Toggle("Use Icon", isOn: $useIcon)
+                    if useIcon {
+                        Picker("System Icon", selection: $selectedSystemIcon) {
+                            ForEach(systemIcons, id: \.self) { name in
+                                Label(name, systemImage: name)
+                                    .labelStyle(.titleAndIcon)
+                                    .tag(name)
+                            }
+                        }
+                    }
+                }
+
+                Section("Style") {
+                    Picker("Button Style", selection: $selectedStyle) {
+                        ForEach(availableStyles, id: \.self) { style in
+                            Text(styleNames[style] ?? "").tag(style)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                Section("Appearance") {
+                    Picker("Color", selection: $selectedColorName) {
+                        ForEach(colorOptions, id: \.name) { option in
+                            HStack {
+                                Circle().fill(option.color).frame(width: 16, height: 16)
+                                Text(option.name)
+                            }
+                            .tag(option.name)
+                        }
+                    }
+                }
+
+                Section("Preview") {
+                    VStack(spacing: 20) {
+                        CustomIpadButton(
+                            label: label,
+                            icon: resolvedIcon,
+                            color: resolvedColor,
+                            style: selectedStyle
+                        ) {
+                            print("clicked")
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.vertical, 16)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            .navigationTitle("CustomIpadButton Preview")
+        }
     }
 }
