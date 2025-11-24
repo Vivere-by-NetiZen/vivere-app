@@ -11,6 +11,7 @@ import SwiftData
 struct DebugMenuView: View {
     @AppStorage("debugSkipDeviceConnection") private var skipDeviceConnection: Bool = false
     @Environment(\.modelContext) private var modelContext
+    @State private var showResetConfirmation: Bool = false
 
     var body: some View {
         Menu {
@@ -29,10 +30,10 @@ struct DebugMenuView: View {
             }) {
                 Label("Log Data & Videos", systemImage: "doc.text.magnifyingglass")
             }
-            
+
             //BUG: only work once after build, after that you need to restart the app to go back to onboarding
             Button(role: .destructive, action: {
-                resetAll()
+                showResetConfirmation = true
             }) {
                 Label("Reset All Data", systemImage: "exclamationmark.triangle")
             }
@@ -48,6 +49,14 @@ struct DebugMenuView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
         .padding(20)
+        .confirmationDialog("Reset All Data", isPresented: $showResetConfirmation, titleVisibility: .visible) {
+            Button("Reset All Data", role: .destructive) {
+                resetAll()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will delete all images, videos, and app settings. This action cannot be undone.")
+        }
     }
 
     private func logDebugInfo() {
@@ -101,7 +110,7 @@ struct DebugMenuView: View {
 
         print("\n🏁 === DEBUG INFO END === 🏁\n")
     }
-    
+
     private func resetAll() {
         do {
             let descriptor = FetchDescriptor<ImageModel>()
@@ -115,11 +124,11 @@ struct DebugMenuView: View {
         } catch {
             print("Error clearing Data: \(error)")
         }
-        
+
         let domain = Bundle.main.bundleIdentifier!
         UserDefaults.standard.removePersistentDomain(forName: domain)
         UserDefaults.standard.synchronize()
-        
+
         NotificationCenter.default.post(name: .navigateToOnboarding, object: nil)
     }
 }

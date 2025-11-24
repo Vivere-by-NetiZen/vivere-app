@@ -24,8 +24,8 @@ struct InputContextView: View {
 
             Button("Lewati \(Image(systemName: "chevron.right.2"))") {
                 viewModel.save(currContext: "")
-                Task {
-                    await uploadAndSave()
+                viewModel.saveAndUpload(modelContext: modelContext) {
+                    isDoneInputing = true
                 }
             }
             .disabled(viewModel.isUploading)
@@ -35,7 +35,7 @@ struct InputContextView: View {
             .buttonStyle(.plain)
             .foregroundColor(.white)
             .padding()
-            
+
             VStack {
                 if isOnboarding {
                     HStack {
@@ -82,7 +82,7 @@ struct InputContextView: View {
                                 .fontWeight(.semibold)
                                 .foregroundColor(.white)
                         }
-                        
+
                         ZStack(alignment: .topLeading) {
                             if currContext.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                                 Text("Contoh: jalan jalan di taman bersama keluarga")
@@ -126,15 +126,15 @@ struct InputContextView: View {
                                         currContext = viewModel.currentContext ?? ""
                                     }
                                 } else {
-                                    CustomIpadButton(label: "Selanjutnya", color: .accent, style: .large) {
-                                        viewModel.save(currContext: currContext)
-                                        Task {
-                                            await uploadAndSave()
-                                        }
+                                CustomIpadButton(label: "Selanjutnya", color: .accent, style: .large) {
+                                    viewModel.save(currContext: currContext)
+                                    viewModel.saveAndUpload(modelContext: modelContext) {
+                                        isDoneInputing = true
                                     }
-                                    .disabled(viewModel.isUploading)
                                 }
+                                .disabled(viewModel.isUploading)
                             }
+                        }
 //                        }
                         .padding(.horizontal)
                     }
@@ -194,69 +194,6 @@ struct InputContextView: View {
         }
     }
 
-    func uploadAndSave() async {
-        // Save images to database immediately (without job IDs)
-        // Store asset IDs for background update
-        let assetIds = viewModel.imageIdentifiers
-
-        await MainActor.run {
-            #if DEBUG
-            print("💾 Saving \(viewModel.totalImgCount) images to database immediately...")
-            #endif
-
-            for i in 0..<viewModel.totalImgCount {
-                let imgData = ImageModel(
-                    assetId: viewModel.imageIdentifiers[i],
-                    context: viewModel.imageContexts[i],
-                    operationId: nil // Will be updated in background
-                )
-                modelContext.insert(imgData)
-            }
-            try? modelContext.save()
-
-            #if DEBUG
-            print("✅ Images saved. Navigating to next screen immediately...")
-            #endif
-
-            // Navigate immediately - uploads happen in background
-            isDoneInputing = true
-        }
-
-        // Start background upload task (doesn't block navigation)
-        // Use Task instead of Task.detached to maintain access to view context
-        Task(priority: .background) { [weak viewModel] in
-            guard let viewModel = viewModel else { return }
-
-            #if DEBUG
-            print("🚀 Starting background upload process for \(viewModel.totalImgCount) images...")
-            #endif
-
-            let operationIds = await viewModel.uploadImagesForVideoGeneration()
-
-            // Update database with operation IDs in background
-            await MainActor.run {
-                #if DEBUG
-                print("💾 Updating database with operation IDs...")
-                #endif
-
-                // Fetch existing ImageModel entries and update them
-                let descriptor = FetchDescriptor<ImageModel>()
-                if let images = try? modelContext.fetch(descriptor) {
-                    for i in 0..<min(assetIds.count, operationIds.count) {
-                        let assetId = assetIds[i]
-                        if let imageModel = images.first(where: { $0.assetId == assetId }) {
-                            imageModel.operationId = operationIds[i]
-                        }
-                    }
-                    try? modelContext.save()
-
-                    #if DEBUG
-                    print("✅ Background upload complete. Operation IDs updated in database.")
-                    #endif
-                }
-            }
-        }
-    }
 }
 
 //#Preview {

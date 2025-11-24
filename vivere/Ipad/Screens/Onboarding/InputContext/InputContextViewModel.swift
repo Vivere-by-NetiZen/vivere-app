@@ -9,6 +9,7 @@ import Foundation
 import SwiftUI
 import PhotosUI
 import UIKit
+import SwiftData
 
 @Observable
 @MainActor
@@ -44,9 +45,21 @@ class InputContextViewModel {
         options.isSynchronous = false
         options.resizeMode = .none
 
-        for i in 0..<imagesIds.count {
-            let assetId = imagesIds[i]
-            let asset = assets.object(at: i)
+        for assetId in imagesIds {
+            // Find the specific asset for this ID
+            var targetAsset: PHAsset?
+            assets.enumerateObjects { asset, _, stop in
+                if asset.localIdentifier == assetId {
+                    targetAsset = asset
+                    stop.pointee = true
+                }
+            }
+
+            guard let asset = targetAsset else {
+                print("⚠️ Could not find asset for ID: \(assetId)")
+                continue
+            }
+
             let loadStartTime = CFAbsoluteTimeGetCurrent()
             if let imgWait = await withCheckedContinuation({ continuation in
                 imageManager.requestImageDataAndOrientation(for: asset, options: options) { data, _, _, _ in
@@ -60,7 +73,7 @@ class InputContextViewModel {
                 let loadDuration = CFAbsoluteTimeGetCurrent() - loadStartTime
                 #if DEBUG
                 let imageSizeMB = Double(imgWait.size.width * imgWait.size.height * 4) / (1024 * 1024) // Rough estimate
-                print("📷 Loaded image \(i + 1): \(String(format: "%.0f", imgWait.size.width))x\(String(format: "%.0f", imgWait.size.height)) (~\(String(format: "%.2f", imageSizeMB)) MB) in \(String(format: "%.3f", loadDuration))s")
+                print("📷 Loaded image for \(assetId): \(String(format: "%.0f", imgWait.size.width))x\(String(format: "%.0f", imgWait.size.height)) (~\(String(format: "%.2f", imageSizeMB)) MB) in \(String(format: "%.3f", loadDuration))s")
                 #endif
                 // Only append to arrays if image loaded successfully
                 self.imageIdentifiers.append(assetId)
@@ -109,8 +122,16 @@ class InputContextViewModel {
 
     /// Upload all images to backend for video generation (in parallel)
     /// Returns array of operation IDs (one per image, nil if upload failed)
-    /// Note: Backend queues jobs immediately and returns operation_id - doesn't wait for video generation (~30 min)
+    /// Note: Backend queues jobs immediately and returns operation_id - doesn't wait for video generation (~1-2 min)
     func uploadImagesForVideoGeneration() async -> [String?] {
+        // Request background execution time to ensure uploads complete even if app is backgrounded
+        var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
+        backgroundTaskID = UIApplication.shared.beginBackgroundTask {
+            // End the task if time expires.
+            UIApplication.shared.endBackgroundTask(backgroundTaskID)
+            backgroundTaskID = .invalid
+        }
+
         let uploadStartTime = CFAbsoluteTimeGetCurrent()
         await MainActor.run {
             isUploading = true
@@ -188,6 +209,119 @@ class InputContextViewModel {
             #endif
         }
 
+        // End background task
+        if backgroundTaskID != .invalid {
+            UIApplication.shared.endBackgroundTask(backgroundTaskID)
+            backgroundTaskID = .invalid
+        }
+
         return uploadedOperationIds
+    }
+
+    // MARK: - Save and Upload
+
+    func saveAndUpload(modelContext: ModelContext, completion: @escaping () -> Void) {
+        // 1. Prepare local data copy to avoid actor isolation issues
+        let assetIds = self.imageIdentifiers
+        let contexts = self.imageContexts
+        let totalCount = self.totalImgCount
+
+        Task {
+            // 2. Save/Upsert to SwiftData on MainActor
+            await MainActor.run {
+                #if DEBUG
+                print("💾 Saving \(totalCount) images to database immediately...")
+                #endif
+
+                // Fetch all existing images to check for duplicates
+                let descriptor = FetchDescriptor<ImageModel>()
+                let existingImages = (try? modelContext.fetch(descriptor)) ?? []
+
+                for i in 0..<totalCount {
+                    let assetId = assetIds[i]
+                    let context = contexts[i]
+
+                    // Find all existing models with this assetId
+                    let matches = existingImages.filter { $0.assetId == assetId }
+
+                    if let existingModel = matches.first {
+                        // Update the first match
+                        existingModel.context = context
+                        existingModel.operationId = nil // Reset for new generation
+                        #if DEBUG
+                        print("🔄 Updating existing model for asset: \(assetId)")
+                        #endif
+
+                        // Remove any duplicates found
+                        for duplicate in matches.dropFirst() {
+                            modelContext.delete(duplicate)
+                            #if DEBUG
+                            print("🗑️ Removing duplicate model for asset: \(assetId)")
+                            #endif
+                        }
+                    } else {
+                        // Insert new model if none exists
+                        let imgData = ImageModel(
+                            assetId: assetId,
+                            context: context,
+                            operationId: nil // Will be updated in background
+                        )
+                        modelContext.insert(imgData)
+                    }
+                }
+                try? modelContext.save()
+
+                #if DEBUG
+                print("✅ Images saved/updated. Navigating to next screen immediately...")
+                #endif
+
+                // Execute completion (navigation) immediately
+                completion()
+            }
+
+            // 3. Start background upload
+            await self.startBackgroundUpload(modelContext: modelContext, assetIds: assetIds)
+        }
+    }
+
+    private func startBackgroundUpload(modelContext: ModelContext, assetIds: [String]) async {
+        // Use Task.detached or just continue in the background
+        #if DEBUG
+        print("🚀 Starting background upload process for \(assetIds.count) images...")
+        #endif
+
+        let operationIds = await self.uploadImagesForVideoGeneration()
+
+        // Update database with operation IDs
+        await MainActor.run {
+            #if DEBUG
+            print("💾 Updating database with operation IDs...")
+            #endif
+
+            let descriptor = FetchDescriptor<ImageModel>()
+            if let images = try? modelContext.fetch(descriptor) {
+                for i in 0..<min(assetIds.count, operationIds.count) {
+                    let assetId = assetIds[i]
+                    // Update specific asset
+                    if let imageModel = images.first(where: { $0.assetId == assetId }) {
+                        let opId = operationIds[i]
+                        imageModel.operationId = opId
+
+                        // Start monitoring immediately for this operation ID if valid
+                        if let opId = opId {
+                            VideoDownloadService.shared.startMonitoring(operationId: opId)
+                            #if DEBUG
+                            print("👀 Started immediate monitoring for operation: \(opId)")
+                            #endif
+                        }
+                    }
+                }
+                try? modelContext.save()
+
+                #if DEBUG
+                print("✅ Background upload complete. Operation IDs updated in database.")
+                #endif
+            }
+        }
     }
 }
