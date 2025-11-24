@@ -22,7 +22,10 @@ struct iPadHomeView: View {
     @State private var showUploadImageSheet = false
     @State private var addNewImagesDetailTrigger = false
     @State private var imageIds = [String]()
-    
+
+    @AppStorage("hasShownInstructionsAutomatically") private var hasShownInstructionsAutomatically: Bool = false
+    @AppStorage("debugAlwaysShowInstructions") private var debugAlwaysShowInstructions: Bool = false
+
     @Environment(MPCManager.self) private var mpc
     @Environment(\.modelContext) private var modelContext
     @Query private var images: [ImageModel]
@@ -123,7 +126,7 @@ struct iPadHomeView: View {
                                             .resizable()
                                             .scaledToFit()
                                             .frame(width: 340, height: 350)
-                                        
+
                                         Text("Cocokkan Gambar")
                                             .font(.title2)
                                             .fontWeight(.semibold)
@@ -206,6 +209,18 @@ struct iPadHomeView: View {
             }
             .sheet(isPresented: $showInstructionsSheet) {
                 InstructionSheetView()
+                    .onDisappear {
+                        // Mark as shown automatically only if debug mode is off
+                        if !debugAlwaysShowInstructions {
+                            hasShownInstructionsAutomatically = true
+                        }
+                    }
+            }
+            .onAppear {
+                // Show instructions automatically on first launch or if debug mode is enabled
+                if !hasShownInstructionsAutomatically || debugAlwaysShowInstructions {
+                    showInstructionsSheet = true
+                }
             }
             .sheet(isPresented: $showUploadImageSheet) {
                 UploadImageSheetView(isPresented: $showUploadImageSheet, inputDetailTrigger: $addNewImagesDetailTrigger, localIdentifier: $imageIds)

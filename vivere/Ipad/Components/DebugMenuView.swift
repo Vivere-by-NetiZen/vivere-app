@@ -10,12 +10,14 @@ import SwiftData
 
 struct DebugMenuView: View {
     @AppStorage("debugSkipDeviceConnection") private var skipDeviceConnection: Bool = false
+    @AppStorage("debugAlwaysShowInstructions") private var debugAlwaysShowInstructions: Bool = false
     @Environment(\.modelContext) private var modelContext
     @State private var showResetConfirmation: Bool = false
 
     var body: some View {
         Menu {
             Toggle("Skip Device Connection", isOn: $skipDeviceConnection)
+            Toggle("Always Show Instructions", isOn: $debugAlwaysShowInstructions)
 
             Divider()
 
