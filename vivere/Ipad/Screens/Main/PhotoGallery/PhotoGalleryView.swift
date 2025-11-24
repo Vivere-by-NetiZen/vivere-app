@@ -234,7 +234,7 @@ struct PhotoThumbnailView: View {
         let options = PHImageRequestOptions()
         // Use .fastFormat for thumbnails - ensures single completion call
         // This prevents continuation misuse errors with async/await
-        options.deliveryMode = .fastFormat
+        options.deliveryMode = .highQualityFormat
         options.resizeMode = .fast
         options.isNetworkAccessAllowed = true
 
