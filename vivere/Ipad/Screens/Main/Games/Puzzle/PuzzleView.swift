@@ -28,19 +28,66 @@ struct PuzzleView: View {
                 Color.viverePrimary
                     .ignoresSafeArea()
 
+                // 1) The Game Board & Elements (Absolute Positioning)
+                // We use a Group so we can use .position() which relies on the GeometryReader's coordinate space (which matches the screen size if we ignore safe area or if geo fills screen)
+                // However, GeometryReader in this context is the root view, so coordinates should match.
+                Group {
+                    // Puzzle Board Background & Reference Image
+                    ZStack {
+                        // Puzzle board background
+                        RoundedRectangle(cornerRadius: 0)
+                            .fill(Color.white)
+                            .frame(width: viewModel.size * CGFloat(viewModel.col) + 40, height: viewModel.size * CGFloat(viewModel.row) + 40)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 0)
+                                    .stroke(Color.black, lineWidth: 4)
+                            )
+
+                        // Reference image (faded)
+                        if let referenceImage = viewModel.normalizedImage {
+                            Image(uiImage: referenceImage)
+                                .resizable()
+                                .frame(width: viewModel.size * CGFloat(viewModel.col), height: viewModel.size * CGFloat(viewModel.row))
+                                .opacity(0.5)
+                        }
+                    }
+                    .position(viewModel.boardCenter) // <--- Aligns perfectly with logic
+
+                    // Pieces Area Placeholder (Visual Guide)
+                    VStack(spacing: viewModel.piecesAreaSpacing) {
+                        ForEach(0..<viewModel.piecesAreaRows, id: \.self) { r in
+                            HStack(spacing: viewModel.piecesAreaSpacing) {
+                                ForEach(0..<viewModel.piecesAreaCols, id: \.self) { c in
+                                    Color.clear // Or semi-transparent white to show slots
+                                        .frame(width: viewModel.size, height: viewModel.size)
+                                }
+                            }
+                        }
+                    }
+                    .position(viewModel.piecesAreaCenter) // <--- Aligns perfectly with logic
+                }
+
+                // 2) Puzzle Pieces (Absolute Positioning)
+                ForEach($viewModel.pieces) { $piece in
+                    PuzzlePieceView(piece: $piece, size: viewModel.size, dentScale: viewModel.dentScale, trayScale: viewModel.trayScale) {
+                        viewModel.markPieceAsActive(piece.id)
+                    }
+                }
+
+                // 3) UI Overlays (Header, etc.)
                 VStack {
                     HStack {
                         Image(systemName: "chevron.left")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundColor(.black)
-                        .padding()
-                        .background(Color.white)
-                        .clipShape(Circle())
-                        .onTapGesture {
-                            isExitConfirmationShown = true
-                        }
-                        .padding(40)
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundColor(.black)
+                            .padding()
+                            .background(Color.white)
+                            .clipShape(Circle())
+                            .onTapGesture {
+                                isExitConfirmationShown = true
+                            }
+                            .padding(40)
                         Spacer()
                         Text("Rangkai kepingan puzzle sesuai gambarnya ya")
                             .font(Font.largeTitle)
@@ -50,68 +97,24 @@ struct PuzzleView: View {
                         Image(systemName: "questionmark.circle")
                             .font(.system(size: 50))
                             .fontWeight(.semibold)
-                        .foregroundColor(.accent)
-                        .onTapGesture {
-                            isTutorialShown = true
-                        }
-                        .padding(40)
+                            .foregroundColor(.accent)
+                            .onTapGesture {
+                                isTutorialShown = true
+                            }
+                            .padding(40)
                     }
                     .frame(maxWidth: .infinity)
-
-                    HStack(spacing: 60) {
-                        // Left side: Puzzle board
-                        ZStack {
-                            // Puzzle board background
-                            RoundedRectangle(cornerRadius: 0)
-                                .fill(Color.white)
-                                .frame(width: viewModel.size * CGFloat(viewModel.col) + 40, height: viewModel.size * CGFloat(viewModel.row) + 40)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 0)
-                                        .stroke(Color.black, lineWidth: 4)
-                                )
-                                .offset(x: -25, y: -66)
-
-                            // Reference image (faded)
-                            if let referenceImage = viewModel.normalizedImage {
-                                Image(uiImage: referenceImage)
-                                    .resizable()
-                                    .frame(width: viewModel.size * CGFloat(viewModel.col), height: viewModel.size * CGFloat(viewModel.row))
-                                    .opacity(0.5)
-                                    .offset(x: -25, y: -66)
-                            }
-                        }
-                        .frame(width: viewModel.size * CGFloat(viewModel.col) + 40, height: viewModel.size * CGFloat(viewModel.row) + 40)
-
-                        // Right side: Pieces area placeholder (visual guide)
-                        VStack(spacing: viewModel.piecesAreaSpacing) {
-                            ForEach(0..<viewModel.piecesAreaRows, id: \.self) { r in
-                                HStack(spacing: viewModel.piecesAreaSpacing) {
-                                    ForEach(0..<viewModel.piecesAreaCols, id: \.self) { c in
-                                        // Empty placeholder
-                                        Color.clear
-                                            .frame(width: viewModel.size, height: viewModel.size)
-                                    }
-                                }
-                            }
-                        }
-                        .frame(width: CGFloat(viewModel.piecesAreaCols) * viewModel.size + CGFloat(viewModel.piecesAreaCols - 1) * viewModel.piecesAreaSpacing)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(.horizontal, 60)
-                    .padding(.vertical, 40)
-                }
-
-                // All puzzle pieces (positioned absolutely)
-                ForEach($viewModel.pieces) { $piece in
-                    PuzzlePieceView(piece: $piece, size: viewModel.size)
+                    Spacer()
                 }
 
                 if isTutorialShown {
                     PuzzleTutorialView(isPresented: $isTutorialShown)
+                        .zIndex(2000)
                 }
-                
+
                 if isExitConfirmationShown {
                     ExitGameConfirmationView(isPresented: $isExitConfirmationShown)
+                        .zIndex(2000)
                 }
             }
             .onAppear {
