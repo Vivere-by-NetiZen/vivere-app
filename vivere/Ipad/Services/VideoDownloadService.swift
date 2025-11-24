@@ -91,10 +91,22 @@ class VideoDownloadService {
 
     /// Monitor video status via polling and download when ready
     private func monitorAndDownload(operationId: String) async {
-        let maxRetries = 60 // 5 minutes (assuming 5s interval)
-        var retryCount = 0
+        // Initial fast poll (every 5s) for 3 minutes
+        let fastPollInterval: UInt64 = 5
+        let fastPollDuration: Int = 3 * 60
+        let fastPollMaxRetries = fastPollDuration / Int(fastPollInterval)
 
-        while retryCount < maxRetries {
+        // Slower poll (every 15s) for remaining time up to 15 minutes total
+        let slowPollInterval: UInt64 = 15
+        let totalTimeout: Int = 15 * 60
+        let remainingTime = totalTimeout - fastPollDuration
+        let slowPollMaxRetries = remainingTime / Int(slowPollInterval)
+
+        var retryCount = 0
+        var currentInterval = fastPollInterval
+        var isSlowPhase = false
+
+        while retryCount < (fastPollMaxRetries + slowPollMaxRetries) {
             if Task.isCancelled { return }
 
             do {
@@ -113,8 +125,17 @@ class VideoDownloadService {
                     return
                 }
 
+                // Check if we should switch to slow polling
+                if !isSlowPhase && retryCount >= fastPollMaxRetries {
+                    isSlowPhase = true
+                    currentInterval = slowPollInterval
+                    #if DEBUG
+                    print("Switching to slow polling for operation \(operationId)")
+                    #endif
+                }
+
                 // Wait before next poll
-                try await Task.sleep(nanoseconds: 15 * 1_000_000_000)
+                try await Task.sleep(nanoseconds: currentInterval * 1_000_000_000)
                 retryCount += 1
 
             } catch {
@@ -149,23 +170,36 @@ class VideoDownloadService {
         #endif
 
         do {
-            let (data, response) = try await URLSession.shared.data(from: downloadURL)
+            try await AsyncUtils.withRetry(
+                timeout: 5 * 60,
+                retryInterval: 10,
+                operationDescription: "Download Video \(operationId)"
+            ) {
+                let (data, response) = try await URLSession.shared.data(from: downloadURL)
 
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw VideoDownloadError.downloadFailed("Invalid response")
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    throw VideoDownloadError.downloadFailed("Invalid response")
+                }
+
+                guard (200..<300).contains(httpResponse.statusCode) else {
+                    throw VideoDownloadError.downloadFailed("HTTP \(httpResponse.statusCode)")
+                }
+
+                // Download to a temporary file first to avoid corruption
+                let tempURL = self.fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+                try data.write(to: tempURL)
+
+                // Move to final destination
+                if self.fileManager.fileExists(atPath: filePath.path) {
+                    try? self.fileManager.removeItem(at: filePath)
+                }
+                try self.fileManager.moveItem(at: tempURL, to: filePath)
+
+                #if DEBUG
+                let fileSizeMB = Double(data.count) / (1024 * 1024)
+                print("✅ Video downloaded successfully for operation \(operationId) (\(String(format: "%.2f", fileSizeMB)) MB)")
+                #endif
             }
-
-            guard (200..<300).contains(httpResponse.statusCode) else {
-                throw VideoDownloadError.downloadFailed("HTTP \(httpResponse.statusCode)")
-            }
-
-            // Save video to file
-            try data.write(to: filePath)
-
-            #if DEBUG
-            let fileSizeMB = Double(data.count) / (1024 * 1024)
-            print("✅ Video downloaded successfully for operation \(operationId) (\(String(format: "%.2f", fileSizeMB)) MB)")
-            #endif
 
             // Notify that download completed
             NotificationCenter.default.post(
@@ -176,7 +210,7 @@ class VideoDownloadService {
 
         } catch {
             #if DEBUG
-            print("❌ Failed to download video for operation \(operationId): \(error)")
+            print("❌ Failed to download video for operation \(operationId) after retries: \(error.localizedDescription)")
             #endif
 
             NotificationCenter.default.post(

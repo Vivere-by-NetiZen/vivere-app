@@ -71,12 +71,13 @@ class VideoGenerationService {
     ///   - context: Optional context/prompt text
     /// - Returns: VideoJobResponse containing operation_id, prompt, status, and progress
     func generateVideo(from image: UIImage, context: String? = nil) async throws -> VideoJobResponse {
-        let startTime = CFAbsoluteTimeGetCurrent()
+        let processStartTime = CFAbsoluteTimeGetCurrent()
 
-        // Determine image format and encode
-        let encodeStartTime = CFAbsoluteTimeGetCurrent()
+        // 1. Prepare Image Data (Do this once, not in loop)
+        let resizedImage = image.resized(toMaxDimension: 1536)
+
         let hasAlpha: Bool = {
-            guard let cgImage = image.cgImage else { return false }
+            guard let cgImage = resizedImage.cgImage else { return false }
             let alphaInfo = cgImage.alphaInfo
             switch alphaInfo {
             case .first, .last, .premultipliedFirst, .premultipliedLast:
@@ -91,36 +92,51 @@ class VideoGenerationService {
         var filename: String
 
         if hasAlpha {
-            imageData = image.pngData()
+            imageData = resizedImage.pngData()
             mimeType = "image/png"
             filename = "image.png"
         } else {
-            if let jpeg = image.jpegData(compressionQuality: 0.8) {
+            if let jpeg = resizedImage.jpegData(compressionQuality: 0.85) {
                 imageData = jpeg
                 mimeType = "image/jpeg"
                 filename = "image.jpg"
             } else {
-                imageData = image.pngData()
+                imageData = resizedImage.pngData()
                 mimeType = "image/png"
                 filename = "image.png"
             }
         }
 
-        guard let imageData = imageData else {
+        guard let finalImageData = imageData else {
             throw VideoGenerationError.invalidImage
         }
 
-        let encodeDuration = CFAbsoluteTimeGetCurrent() - encodeStartTime
-        let imageSizeMB = Double(imageData.count) / (1024 * 1024)
-        #if DEBUG
-        print("  ⏱️ Image encoding took \(String(format: "%.3f", encodeDuration))s")
-        print("  📦 Image size: \(String(format: "%.2f", imageSizeMB)) MB (\(imageData.count) bytes)")
-        #endif
+        // 2. Upload Loop with AsyncUtils
+        return try await AsyncUtils.withRetry(
+            timeout: 5 * 60, // 5 minutes
+            retryInterval: 10,
+            operationDescription: "Video Upload",
+            shouldRetry: { error in
+                // Don't retry invalid image errors
+                if let genError = error as? VideoGenerationError, case .invalidImage = genError {
+                    return false
+                }
+                return true
+            }
+        ) {
+            try await self.performUpload(
+                imageData: finalImageData,
+                mimeType: mimeType,
+                filename: filename,
+                context: context
+            )
+        }
+    }
 
-        // New endpoint: /video/generate
+    private func performUpload(imageData: Data, mimeType: String, filename: String, context: String?) async throws -> VideoJobResponse {
+        let startTime = CFAbsoluteTimeGetCurrent()
         let endpointURL = config.api("video/generate")
 
-        // Create multipart form data
         let boundary = "Boundary-\(UUID().uuidString)"
         var body = Data()
         let fieldName = "image"
@@ -131,7 +147,7 @@ class VideoGenerationService {
         body.append(imageData)
         body.append("\r\n".data(using: .utf8)!)
 
-        // Add duration field (4 seconds)
+        // Add duration field (5 seconds)
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"duration\"\r\n\r\n".data(using: .utf8)!)
         body.append("5\r\n".data(using: .utf8)!)
@@ -142,79 +158,47 @@ class VideoGenerationService {
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.httpBody = body
-        request.timeoutInterval = 60
+        request.timeoutInterval = 60 // Increase timeout per request
         request.cachePolicy = .reloadIgnoringLocalCacheData
         request.httpShouldHandleCookies = false
         request.httpShouldUsePipelining = true
 
-        let networkStartTime = CFAbsoluteTimeGetCurrent()
-        #if DEBUG
-        print("  📤 Uploading \(String(format: "%.2f", Double(imageData.count) / (1024 * 1024))) MB image...")
-        #endif
-        do {
-            let (data, response) = try await uploadSession.data(for: request)
-            let totalNetworkDuration = CFAbsoluteTimeGetCurrent() - networkStartTime
+        let (data, response) = try await uploadSession.data(for: request)
 
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw VideoGenerationError.invalidResponse
-            }
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw VideoGenerationError.invalidResponse
+        }
 
+        guard !data.isEmpty else {
+            throw VideoGenerationError.invalidResponse
+        }
+
+        guard (200..<300).contains(httpResponse.statusCode) else {
             #if DEBUG
-            print("  ⏱️ Total network time: \(String(format: "%.3f", totalNetworkDuration))s")
-            print("  📥 Response status: \(httpResponse.statusCode)")
+            print("❌ Video Generation Server Error: \(httpResponse.statusCode)")
+            if let errorString = String(data: data, encoding: .utf8) {
+                print("   Response Body: \(errorString)")
+            }
             #endif
+            throw VideoGenerationError.serverError(httpResponse.statusCode)
+        }
 
-            guard !data.isEmpty else {
-                throw VideoGenerationError.invalidResponse
-            }
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
 
-            guard (200..<300).contains(httpResponse.statusCode) else {
-                #if DEBUG
-                if let errorString = String(data: data, encoding: .utf8) {
-                    print("Server error response: \(errorString)")
-                }
-                #endif
-                throw VideoGenerationError.serverError(httpResponse.statusCode)
-            }
-
-            let decodeStartTime = CFAbsoluteTimeGetCurrent()
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-
-            do {
-                // Decode new response format
-                let statusResponse = try decoder.decode(VideoGenerationStatus.self, from: data)
-
-                let decodeDuration = CFAbsoluteTimeGetCurrent() - decodeStartTime
-                let totalDuration = CFAbsoluteTimeGetCurrent() - startTime
-                #if DEBUG
-                print("  ⏱️ JSON decoding took \(String(format: "%.3f", decodeDuration))s")
-                print("  ⏱️ Total upload time: \(String(format: "%.3f", totalDuration))s")
-                #endif
-
-                // Map to VideoJobResponse for compatibility
-                return VideoJobResponse(
-                    operationId: statusResponse.operationId,
-                    prompt: context ?? "",
-                    status: statusResponse.status,
-                    progress: 0
-                )
-            } catch let decodingError {
-                #if DEBUG
-                print("Failed to decode response: \(decodingError)")
-                if let responseString = String(data: data, encoding: .utf8) {
-                    print("Response body: \(responseString)")
-                }
-                #endif
-                throw VideoGenerationError.invalidResponse
-            }
-        } catch let error as VideoGenerationError {
-            throw error
+        do {
+            let statusResponse = try decoder.decode(VideoGenerationStatus.self, from: data)
+            return VideoJobResponse(
+                operationId: statusResponse.operationId,
+                prompt: context ?? "",
+                status: statusResponse.status,
+                progress: 0
+            )
         } catch {
             #if DEBUG
-            print("Network request error: \(error)")
+            print("Failed to decode response: \(error)")
             #endif
-            throw VideoGenerationError.networkError(error.localizedDescription)
+            throw VideoGenerationError.invalidResponse
         }
     }
 
@@ -227,7 +211,22 @@ class VideoGenerationService {
 
         guard let httpResponse = response as? HTTPURLResponse,
               (200..<300).contains(httpResponse.statusCode) else {
-            throw VideoGenerationError.serverError((response as? HTTPURLResponse)?.statusCode ?? 500)
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 500
+            // Print server error details to console
+            print("❌ Video Status Check Server Error:")
+            print("   Status Code: \(statusCode)")
+            print("   Operation ID: \(operationId)")
+            print("   URL: \(url.absoluteString)")
+            if let errorString = String(data: data, encoding: .utf8) {
+                print("   Response Body: \(errorString)")
+            } else {
+                print("   Response Body: (unable to decode as UTF-8, \(data.count) bytes)")
+            }
+            if let httpURLResponse = response as? HTTPURLResponse,
+               let allHeaders = httpURLResponse.allHeaderFields as? [String: Any] {
+                print("   Response Headers: \(allHeaders)")
+            }
+            throw VideoGenerationError.serverError(statusCode)
         }
 
         let decoder = JSONDecoder()
@@ -241,3 +240,4 @@ class VideoGenerationService {
         return config.api("video/file/\(operationId)")
     }
 }
+

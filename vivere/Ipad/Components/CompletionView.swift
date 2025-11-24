@@ -112,7 +112,7 @@ struct CompletionView: View {
                 }
             }
             .navigationDestination(isPresented: $showReminiscenceTherapy) {
-                ReminiscenceTherapyView(operationId: imageModel?.operationId)
+                ReminiscenceTherapyView(imageModel: imageModel)
             }
         }
     }

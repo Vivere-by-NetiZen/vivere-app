@@ -12,7 +12,11 @@ import SwiftUI
 import Photos
 
 struct ReminiscenceTherapyView: View {
-    let operationId: String?
+    let imageModel: ImageModel?
+
+    private var operationId: String? {
+        imageModel?.operationId
+    }
 
     @State private var videoURL: URL?
     @State private var player: AVQueuePlayer?
@@ -23,20 +27,19 @@ struct ReminiscenceTherapyView: View {
     @State private var path = NavigationPath()
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @Query private var images: [ImageModel]
 
     // Add debugging info
     private var debugInfo: String {
         "OperationId: \(operationId ?? "nil")"
     }
 
-    init(operationId: String? = nil) {
-        self.operationId = operationId
+    init(imageModel: ImageModel? = nil) {
+        self.imageModel = imageModel
     }
 
     @Environment(MPCManager.self) var mpcManager
     @State private var showGoodbye = false
-    
+
     var body: some View {
         ZStack {
             Color.viverePrimary
@@ -356,21 +359,8 @@ struct ReminiscenceTherapyView: View {
     }
 
     private func loadFallbackImage() {
-        // Try to find image model by operationId first
-        var imageModel: ImageModel?
-
-        if let operationId = operationId {
-            imageModel = images.first(where: { $0.operationId == operationId })
-        }
-
-        // If not found and operationId is nil, try to use the first available image
-        // This handles cases where operationId wasn't set yet or is missing
-        if imageModel == nil && images.isEmpty == false {
-            imageModel = images.first
-        }
-
         guard let imageModel = imageModel else {
-            print("DEBUG: No image model found for fallback")
+            print("DEBUG: No image model provided for fallback")
             return
         }
 
