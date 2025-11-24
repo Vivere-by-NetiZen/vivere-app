@@ -216,11 +216,9 @@ struct iPadHomeView: View {
                         }
                     }
             }
-            .onAppear {
-                // Show instructions automatically on first launch or if debug mode is enabled
-                if !hasShownInstructionsAutomatically || debugAlwaysShowInstructions {
-                    showInstructionsSheet = true
-                }
+            .onReceive(NotificationCenter.default.publisher(for: .showInstructionsOnLaunch)) { _ in
+                // Show instructions when app launches (first install or debug mode)
+                showInstructionsSheet = true
             }
             .sheet(isPresented: $showUploadImageSheet) {
                 UploadImageSheetView(isPresented: $showUploadImageSheet, inputDetailTrigger: $addNewImagesDetailTrigger, localIdentifier: $imageIds)

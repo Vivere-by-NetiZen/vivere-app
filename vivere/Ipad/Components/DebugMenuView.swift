@@ -142,6 +142,7 @@ enum Teleporter: Hashable, Codable {
 extension Notification.Name {
     static let navigateToHome = Notification.Name("navigateToHome")
     static let navigateToOnboarding = Notification.Name("navigateToOnboarding")
+    static let showInstructionsOnLaunch = Notification.Name("showInstructionsOnLaunch")
 }
 
 #Preview {
