@@ -50,8 +50,7 @@ class PuzzleViewModel: ObservableObject {
         // Build puzzle from featured image
         setupPuzzle(screenSize: screenSize, using: result.featuredImage)
 
-        // Keep normalizedImage for reference overlay / external usage
-        normalizedImage = result.featuredImage
+        // normalizedImage is now set within setupPuzzle
 
         // If you still use this flag elsewhere to trigger sending, keep it
         // Otherwise you can remove this line and the property
@@ -70,7 +69,12 @@ class PuzzleViewModel: ObservableObject {
         let maxH = availableHeight / CGFloat(row)
         self.size = min(maxW, maxH)
 
-        let imgs = splitImageIntoPieces(img: uiImg, col: col, row: row)
+        // Crop image to match puzzle aspect ratio (object-cover behavior)
+        let targetRatio = CGFloat(col) / CGFloat(row)
+        let croppedImg = cropImage(uiImg, toAspectRatio: targetRatio)
+        self.normalizedImage = croppedImg
+
+        let imgs = splitImageIntoPieces(img: croppedImg, col: col, row: row)
         let dents = getPuzzleDent()
 
         // Calculate puzzle board position (left side)
@@ -172,6 +176,33 @@ class PuzzleViewModel: ObservableObject {
             }
         }
         return imgs
+    }
+
+    private func cropImage(_ image: UIImage, toAspectRatio ratio: CGFloat) -> UIImage {
+        let width = image.size.width
+        let height = image.size.height
+        let currentRatio = width / height
+
+        var newWidth: CGFloat
+        var newHeight: CGFloat
+
+        if currentRatio > ratio {
+            // Wider than target
+            newHeight = height
+            newWidth = height * ratio
+        } else {
+            // Taller than target
+            newWidth = width
+            newHeight = width / ratio
+        }
+
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: newWidth, height: newHeight))
+        return renderer.image { _ in
+            // Draw centered
+            let x = (newWidth - width) / 2
+            let y = (newHeight - height) / 2
+            image.draw(in: CGRect(x: x, y: y, width: width, height: height))
+        }
     }
 }
 
