@@ -90,9 +90,10 @@ struct ReminiscenceTherapyView: View {
                                     .overlay(
                                         Image(uiImage: fallbackImage)
                                             .resizable()
-                                            .aspectRatio(contentMode: .fit)
-                                            .frame(width: proxy.size.width * 0.6)
-                                            .offset(y: 40)
+                                            .scaledToFill()
+                                            .frame(width: proxy.size.width * 0.7, height: (proxy.size.width * 0.7) * (9.0 / 16.0))
+                                            .clipped()
+                                            .offset(y: 80)
                                     )
                             }
                         }
@@ -146,9 +147,10 @@ struct ReminiscenceTherapyView: View {
                                 .overlay(
                                     Image(uiImage: fallbackImage)
                                         .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(width: proxy.size.width * 0.6)
-                                        .offset(y: 40)
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(width: proxy.size.width * 0.7, height: (proxy.size.width * 0.7) * (9.0 / 16.0))
+                                        .clipped()
+                                        .offset(y: 80)
                                 )
                         }
 
@@ -214,9 +216,10 @@ struct ReminiscenceTherapyView: View {
                                 .overlay(
                                     Image(uiImage: fallbackImage)
                                         .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(width: proxy.size.width * 0.6)
-                                        .offset(y: 40)
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(width: proxy.size.width * 0.7, height: (proxy.size.width * 0.7) * (9.0 / 16.0))
+                                        .clipped()
+                                        .offset(y: 80)
                                 )
                         }
                     }
