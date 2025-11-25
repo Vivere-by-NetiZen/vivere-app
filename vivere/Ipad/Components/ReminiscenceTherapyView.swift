@@ -61,13 +61,13 @@ struct ReminiscenceTherapyView: View {
                     // Video player with infinite loop (behind frame)
                     // Video dimensions are always 640 × 400 (aspect ratio: 1.6)
                     GeometryReader { proxy in
-                        Color.clear
-                            .overlay(
-                                VideoPlayer(player: player)
-                                    .aspectRatio(16 / 9, contentMode: .fit)
-                                    .frame(width: proxy.size.width * 0.7)
-                                    .offset(y: 80)
-                            )
+                        ZStack {
+                            VideoPlayer(player: player)
+                                .aspectRatio(16 / 9, contentMode: .fit)
+                                .frame(width: proxy.size.width * 0.7)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .offset(y: 80)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -86,15 +86,15 @@ struct ReminiscenceTherapyView: View {
                                 .shadow(radius: 10, y: 10)
 
                             GeometryReader { proxy in
-                                Color.clear
-                                    .overlay(
-                                        Image(uiImage: fallbackImage)
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: proxy.size.width * 0.7, height: (proxy.size.width * 0.7) * (9.0 / 16.0))
-                                            .clipped()
-                                            .offset(y: 80)
-                                    )
+                                ZStack {
+                                    Image(uiImage: fallbackImage)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: proxy.size.width * 0.7, height: (proxy.size.width * 0.7) * (9.0 / 16.0))
+                                        .clipped()
+                                }
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .offset(y: 80)
                             }
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
