@@ -67,7 +67,7 @@ class MatchCardViewModel: ObservableObject {
     }
 
     func flipCard(card: MatchCard) {
-        guard let idx = cards.firstIndex(where: {$0.id == card.id}), !cards[idx].isMatched else { return }
+        guard let idx = cards.firstIndex(where: {$0.id == card.id}), !cards[idx].isMatched, !cards[idx].isFaceUp else { return }
         
         cards[idx].isFaceUp.toggle()
 

@@ -113,20 +113,20 @@ struct MatchCardView: View {
             }
             mpc.send(message: "warm up")
         }
-        .onChange(of: viewModel.cards) {
-            let completed = viewModel.cards.allSatisfy{$0.isMatched == true}
-            if completed && !isCompleted {
-                isCompleted = true
-                // Show completion view after a brief delay
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    showCompletionView = true
-                }
-            }
-        }
         .onChange(of: viewModel.lastMatchedImage) {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 withAnimation(.easeInOut(duration: 0.5)) {
                     isMatchedImageShown = true
+                }
+            }
+        }
+        .onChange(of: isMatchedImageShown) {
+            let completed = viewModel.cards.allSatisfy{$0.isMatched == true}
+            if completed && !isCompleted && !isMatchedImageShown {
+                isCompleted = true
+                // Show completion view after a brief delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    showCompletionView = true
                 }
             }
         }
