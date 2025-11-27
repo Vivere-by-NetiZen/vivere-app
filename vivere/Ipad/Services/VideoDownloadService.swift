@@ -7,6 +7,8 @@
 
 import Foundation
 import SwiftData
+import Photos
+import UIKit
 
 enum VideoDownloadError: Error, LocalizedError {
     case invalidJobId
@@ -230,11 +232,77 @@ class VideoDownloadService {
             for image in images {
                 if let operationId = image.operationId {
                     startMonitoring(operationId: operationId)
+                } else {
+                    // Case where image exists but upload hasn't started/finished
+                    // We'll try to re-upload these in background if needed
+                    Task {
+                        await reuploadImageIfNeeded(image, modelContext: modelContext)
+                    }
                 }
             }
         } catch {
             #if DEBUG
             print("Failed to fetch ImageModels: \(error)")
+            #endif
+        }
+    }
+
+    private func reuploadImageIfNeeded(_ imageModel: ImageModel, modelContext: ModelContext) async {
+        guard imageModel.operationId == nil else { return }
+
+        // Use PhotosSelectionService to get the image efficiently?
+        // Or just re-fetch PHAsset here. Since we are in a background service, simpler is better.
+
+        // We need to be careful not to create retain cycles or thread issues
+        let assetId = imageModel.assetId
+        let context = imageModel.context
+
+        // Verify asset exists
+        let assets = PHAsset.fetchAssets(withLocalIdentifiers: [assetId], options: nil)
+        guard let asset = assets.firstObject else { return }
+
+        // Load UIImage
+        let options = PHImageRequestOptions()
+        options.version = .original
+        options.isNetworkAccessAllowed = true
+        options.deliveryMode = .highQualityFormat
+        options.isSynchronous = false
+
+        let image: UIImage? = await withCheckedContinuation { continuation in
+            PHImageManager.default().requestImageDataAndOrientation(for: asset, options: options) { data, _, _, _ in
+                if let data, let img = UIImage(data: data) {
+                    continuation.resume(returning: img)
+                } else {
+                    continuation.resume(returning: nil)
+                }
+            }
+        }
+
+        guard let validImage = image else { return }
+
+        #if DEBUG
+        print("🔄 Re-uploading missing video job for asset: \(assetId)")
+        #endif
+
+        do {
+            let response = try await VideoGenerationService.shared.generateVideo(from: validImage, context: context)
+
+            // Safely update SwiftData on MainActor
+            // We need to re-fetch the model on MainActor since the passed `imageModel` might be from a different context/thread
+            await MainActor.run {
+                // Re-fetch the object to ensure thread safety and validity
+                let descriptor = FetchDescriptor<ImageModel>(predicate: #Predicate { $0.assetId == assetId })
+                if let freshModel = try? modelContext.fetch(descriptor).first {
+                    freshModel.operationId = response.operationId
+                    try? modelContext.save()
+
+                    // Start monitoring the new job
+                    self.startMonitoring(operationId: response.operationId)
+                }
+            }
+        } catch {
+            #if DEBUG
+            print("❌ Failed to re-upload image for video generation: \(error)")
             #endif
         }
     }

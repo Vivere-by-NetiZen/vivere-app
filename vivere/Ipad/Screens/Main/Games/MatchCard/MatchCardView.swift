@@ -112,9 +112,16 @@ struct MatchCardView: View {
                 await viewModel.prepareCardsIfNeeded()
             }
         }
-        .onChange(of: viewModel.cards) {
+        .onChange(of: viewModel.lastMatchedImage) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    isMatchedImageShown = true
+                }
+            }
+        }
+        .onChange(of: isMatchedImageShown) {
             let completed = viewModel.cards.allSatisfy{$0.isMatched == true}
-            if completed && !isCompleted {
+            if completed && !isCompleted && !isMatchedImageShown {
                 isCompleted = true
                 // Show completion view after a brief delay
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
