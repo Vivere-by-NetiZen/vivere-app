@@ -23,7 +23,7 @@ struct PrivacyPolicyView: View {
                     Text("Vivere")
                         .font(.largeTitle)
                         .fontWeight(.semibold)
-                        .foregroundColor(Color.white)
+                        .foregroundColor(.white)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .padding(.vertical, 40)
@@ -39,11 +39,11 @@ struct PrivacyPolicyView: View {
                             .foregroundColor(.white)
 //                            .padding(.top, 30)
                             .frame(width: 700)
-                            .multilineTextAlignment(TextAlignment.center)
+                            .multilineTextAlignment(.center)
                         
                         Text("Aplikasi ini memerlukan izin untuk mengumpulkan dan menyimpan beberapa foto pribadi untuk digunakan dalam fitur yang tersedia. Data yang dikumpulkan akan dijaga keamanannya agar tidak dibagikan tanpa persetujuan.")
-                            .font(Font.title2)
-                            .foregroundColor(Color.white)
+                            .font(.title2)
+                            .foregroundColor(.white)
                             .frame(width: 800)
                             .multilineTextAlignment(.center)
 //                            .padding(.top, 10)
@@ -52,19 +52,28 @@ struct PrivacyPolicyView: View {
                     
                     HStack {
                         Text("Dengan melanjutkan, kamu menyetujui ketentuan")
-                            .foregroundColor(Color.white)
-                        Button("persetujuan pengguna"){
+                            .foregroundColor(.white)
+                        Button(action: {
                             isPrivacyPressed = true
+                        }){
+                            Text("persetujuan pengguna")
+                                .foregroundColor(.white)
+                                .fontWeight(.semibold)
+                                .underline()
                         }
-                        .foregroundColor(.accent)
                         Text("dan")
                             .foregroundColor(Color.white)
-                        Button("kebijakan privasi"){
+                        Button(action: {
                             isPrivacyPressed = true
+                        }){
+                            Text("kebijakan privasi")
+                                .foregroundColor(.white)
+                                .fontWeight(.semibold)
+                                .underline()
+                            
                         }
-                        .foregroundColor(.accent)
                         Text("kami")
-                            .foregroundColor(Color.white)
+                            .foregroundColor(.white)
                     }
                     .padding(.bottom, 8)
                     
