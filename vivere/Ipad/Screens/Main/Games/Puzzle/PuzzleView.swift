@@ -119,7 +119,6 @@ struct PuzzleView: View {
                     viewModel.images = images
                     await viewModel.preparePuzzleIfNeeded(screenSize: geo.size)
                 }
-                mpc.send(message: "warm up")
             }
             .onChange(of: viewModel.pieces) {
                 let completed = viewModel.pieces.allSatisfy{$0.currPos == $0.correctPos}
@@ -131,14 +130,14 @@ struct PuzzleView: View {
                     }
                 }
             }
-            .onChange(of: viewModel.triggerSendToIphone) {
-                if viewModel.triggerSendToIphone {
-                    if let normalizedImage = viewModel.normalizedImage {
-                        sendImageForInitialQuestion(normalizedImage)
-                    }
-                    viewModel.triggerSendToIphone = false
-                }
-            }
+//            .onChange(of: viewModel.triggerSendToIphone) {
+//                if viewModel.triggerSendToIphone {
+//                    if let normalizedImage = viewModel.normalizedImage {
+//                        sendImageForInitialQuestion(normalizedImage)
+//                    }
+//                    viewModel.triggerSendToIphone = false
+//                }
+//            }
             .navigationBarBackButtonHidden(true)
             .fullScreenCover(isPresented: $showCompletionView) {
                 CompletionView(imageModel: viewModel.selectedImageModel)

@@ -47,6 +47,7 @@ class PuzzleViewModel: ObservableObject {
 
         // Keep normalizedImage for reference overlay / external usage
         normalizedImage = result.featuredImage
+        ReminiscenceTherapyViewModel.shared.getInitialQuestion(image: result.featuredImage)
 
         // If you still use this flag elsewhere to trigger sending, keep it
         // Otherwise you can remove this line and the property

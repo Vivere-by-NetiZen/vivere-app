@@ -111,7 +111,6 @@ struct MatchCardView: View {
                 viewModel.images = self.images
                 await viewModel.prepareCardsIfNeeded()
             }
-            mpc.send(message: "warm up")
         }
         .onChange(of: viewModel.cards) {
             let completed = viewModel.cards.allSatisfy{$0.isMatched == true}
@@ -130,37 +129,10 @@ struct MatchCardView: View {
                 }
             }
         }
-        .onChange(of: viewModel.triggerSendToIphone) {
-            if viewModel.triggerSendToIphone {
-                if let normalizedImage = viewModel.normalizedImage {
-                    sendImageForInitialQuestion(normalizedImage)
-                }
-                viewModel.triggerSendToIphone = false
-            }
-        }
         .navigationBarBackButtonHidden(true)
         .fullScreenCover(isPresented: $showCompletionView) {
             CompletionView(imageModel: viewModel.completionImage)
         }
-    }
-    
-    func sendImageForInitialQuestion(_ image: UIImage) {
-        // Prefer JPEG to keep payload smaller; adjust quality as needed
-        guard let data = image.jpegData(compressionQuality: 0.8) ?? image.pngData() else {
-            return
-        }
-        // Simple envelope: 4 bytes length of "type" + utf8 type + payload
-        let type = "initial_question_image"
-        guard let typeData = type.data(using: .utf8) else { return }
-        
-        var envelope = Data()
-        var typeLen = UInt32(typeData.count).bigEndian
-        withUnsafeBytes(of: &typeLen) { envelope.append(contentsOf: $0) }
-        envelope.append(typeData)
-        envelope.append(data)
-        
-        mpc.send(data: envelope)
-        print("Sent image to iphone")
     }
     
 }

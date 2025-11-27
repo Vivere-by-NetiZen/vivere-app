@@ -1,39 +1,38 @@
+//
+//  ReminiscenceTherapyViewModel.swift
+//  vivere
+//
+//  Created by Ahmed Nizhan Haikal on 25/11/25.
+//
+
 import Foundation
-import UIKit
-import Combine
 import AVFoundation
+import UIKit
 
-@MainActor
 @Observable
-final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
-    static let shared = SpeechTranscriberViewModel()
-
+final class ReminiscenceTherapyViewModel: SpeechTranscriberDelegate {
     private let config = AppConfig.shared
     var urlString: String
     var isStreaming: Bool = false
-    var status: String = "idle"
-    var bytesSent: Int64 = 0
-    var logs: [String] = []
     var partialTranscript: String = ""
     var finalTranscripts: [String] = []
     var suggestions: [String] = []
     var errorMessage: String?
     var isFetchingSuggestion: Bool = false
     var suggestionPoint: Int?
-    var isPaused: Bool = false
     var suggested = false
-
-    // New state for initial questions
+    var status = ""
+    static let shared = ReminiscenceTherapyViewModel()
+    
     var initialQuestion: String = ""
     var isFetchingInitialQuestions: Bool = false
-    
     private let streamer = SpeechTranscriber.shared
-
+    
     private init() {
         self.urlString = config.ws("ws/audio").absoluteString
         streamer.delegate = self
     }
-
+    
     static func requestMicrophonePermissionIfNeeded() {
         let av = AVAudioSession.sharedInstance()
         if #available(iOS 17.0, *) {
@@ -55,46 +54,15 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
         }
     }
     
-    func pauseStream() {
-        streamer.pause()
-        isPaused = true
-    }
-    
-    func resumeStream() {
-        Task.detached { [urlString] in
-            do {
-                guard let url = URL(string: urlString) else {
-                    print("invalid URL")
-                    return
-                }
-                try await SpeechTranscriber.shared.resume(url: url)
-                await MainActor.run {
-                    self.isPaused = false
-                    self.suggested = false
-                }
-            } catch {
-                await MainActor.run {
-                    self.errorMessage = "Failed to resume: \(error.localizedDescription)"
-                    self.status = "error"
-                }
-            }
-        }
-    }
-
     func start(resume: Bool) {
         guard let url = URL(string: urlString) else {
             print("invalid URL")
             return
         }
         isStreaming = true
-        if resume {
-            resumeStream()
-            return
-        }
 
         partialTranscript = ""
         finalTranscripts.removeAll()
-        isPaused = false
         suggested = false
 
         Task.detached {
@@ -115,11 +83,6 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
 
     func stop(resume: Bool) {
         isStreaming = false
-        if resume {
-            pauseStream()
-            getSuggestions()
-            return
-        }
         SpeechTranscriber.shared.stop()
     }
     
@@ -254,9 +217,8 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
             }
         }
     }
-
-    // MARK: - Delegate
-
+    
+    // MARK: - SpeechTranscriberDelegate
     func streamerDidReceiveTranscript(_ text: String, isFinal: Bool) {
         Task { @MainActor in
             if isFinal {
@@ -270,7 +232,6 @@ final class SpeechTranscriberViewModel: SpeechTranscriberDelegate {
     }
 }
 
-// MARK: - Response model for /initial-questions
 private struct InitialQuestionsResponse: Decodable {
     let question: String
     init(from decoder: Decoder) throws {
@@ -279,4 +240,3 @@ private struct InitialQuestionsResponse: Decodable {
     }
     private enum CodingKeys: String, CodingKey { case question }
 }
-
