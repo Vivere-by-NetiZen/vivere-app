@@ -50,21 +50,12 @@ struct PuzzleView: View {
                                 .frame(width: viewModel.size * CGFloat(viewModel.col), height: viewModel.size * CGFloat(viewModel.row))
                                 .opacity(0.5)
                         }
+                        Image("puzzleOutline")
+                            .resizable()
+                            .frame(width: viewModel.size * CGFloat(viewModel.col), height: viewModel.size * CGFloat(viewModel.row))
+                            .opacity(0.5)
                     }
                     .position(viewModel.boardCenter) // <--- Aligns perfectly with logic
-
-                    // Pieces Area Placeholder (Visual Guide)
-                    VStack(spacing: viewModel.piecesAreaSpacing) {
-                        ForEach(0..<viewModel.piecesAreaRows, id: \.self) { r in
-                            HStack(spacing: viewModel.piecesAreaSpacing) {
-                                ForEach(0..<viewModel.piecesAreaCols, id: \.self) { c in
-                                    Color.clear // Or semi-transparent white to show slots
-                                        .frame(width: viewModel.size, height: viewModel.size)
-                                }
-                            }
-                        }
-                    }
-                    .position(viewModel.piecesAreaCenter) // <--- Aligns perfectly with logic
                 }
 
                 // 2) Puzzle Pieces (Absolute Positioning)

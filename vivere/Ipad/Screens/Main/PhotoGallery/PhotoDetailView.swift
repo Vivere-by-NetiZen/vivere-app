@@ -11,12 +11,14 @@ import Photos
 
 struct PhotoDetailView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
 
     private let allImages: [ImageModel]
 
     @State private var activeImage: ImageModel
     @State private var displayedImage: UIImage?
     @State private var photoAuthorizationStatus: PHAuthorizationStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+    @State private var showDeleteConfirmation = false
 
     init(imageModel: ImageModel, allImages: [ImageModel]) {
         _activeImage = State(initialValue: imageModel)
@@ -84,16 +86,40 @@ struct PhotoDetailView: View {
 
             Spacer()
 
-            CustomIpadButton(color: .accent) {
-                // Placeholder for future menu actions
+            Menu {
+                Button(role: .destructive) {
+                    showDeleteConfirmation = true
+                } label: {
+                    Label("Hapus Foto", systemImage: "trash")
+                }
             } label: {
                 Image(systemName: "ellipsis")
                     .font(.title)
                     .fontWeight(.bold)
                     .foregroundColor(.black)
                     .frame(width: 64, height: 64)
+                    .background(
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(Color.accent)
+                                .shadow(color: Color.accent.opacity(0.2), radius: 0, x: 3, y: 3)
+
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(style: StrokeStyle(lineWidth: 1.5, dash: [16, 16]))
+                                .padding(5)
+                                .foregroundStyle(Color.black)
+                        }
+                    )
             }
             .frame(width: 90)
+            .confirmationDialog("Hapus Foto?", isPresented: $showDeleteConfirmation) {
+                Button("Hapus", role: .destructive) {
+                    deletePhoto()
+                }
+                Button("Batal", role: .cancel) {}
+            } message: {
+                Text("Apakah Anda yakin ingin menghapus foto ini? Tindakan ini tidak dapat dibatalkan.")
+            }
         }
     }
 
@@ -176,6 +202,11 @@ struct PhotoDetailView: View {
     private func goToNext() {
         guard let index = currentIndex, index < allImages.count - 1 else { return }
         activeImage = allImages[index + 1]
+    }
+
+    private func deletePhoto() {
+        modelContext.delete(activeImage)
+        dismiss()
     }
 
     private func requestPhotoAuthorizationIfNeeded() async {
