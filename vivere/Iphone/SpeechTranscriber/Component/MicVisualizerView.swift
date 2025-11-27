@@ -19,17 +19,17 @@ struct MicVisualizerView: View {
     private let smoothing: CGFloat = 0.1
     private let idleJitter: CGFloat = 0.02
 
-    private var currentScalar: CGFloat {
-        let mags = transcriber.downSampledMagnitudes
-        guard !mags.isEmpty else { return 0 }
-        
-        let upper = max(1, mags.count / 3)
-        let slice = mags.prefix(upper)
-        let avg = slice.reduce(0, +) / Float(slice.count)
-        let clamped = min(avg, Constants.magnitudeLimit)
-        // Normalize to 0...1
-        return CGFloat(clamped / Constants.magnitudeLimit)
-    }
+//    private var currentScalar: CGFloat {
+////        let mags = transcriber.downSampledMagnitudes
+//        guard !mags.isEmpty else { return 0 }
+//        
+//        let upper = max(1, mags.count / 3)
+//        let slice = mags.prefix(upper)
+//        let avg = slice.reduce(0, +) / Float(slice.count)
+//        let clamped = min(avg, Constants.magnitudeLimit)
+//        // Normalize to 0...1
+//        return CGFloat(clamped / Constants.magnitudeLimit)
+//    }
 
     var body: some View {
         GeometryReader { geo in
@@ -78,7 +78,8 @@ struct MicVisualizerView: View {
             guard isActive else { return }
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0/60.0) {
                 // Compute target magnitude with a tiny idle jitter so it doesn’t freeze visually
-                var target = currentScalar
+//                var target = currentScalar
+                var target = 0.0
                 if target < 0.01 {
                     target += CGFloat.random(in: -idleJitter...idleJitter)
                     target = max(0, min(0.03, target))

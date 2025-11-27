@@ -1,6 +1,4 @@
 import AVFoundation
-import Accelerate
-import Charts
 
 enum Constants {
     static let sampleAmount: Int = 200
@@ -21,16 +19,6 @@ final class SpeechTranscriber: NSObject {
     private let targetSampleRate: Double = 16_000
     private let targetChannels: AVAudioChannelCount = 1
     private var totalBytesSent: Int64 = 0
-    
-    var fftMagnitudes = [Float](repeating: 0, count: Constants.sampleAmount)
-    var downSampledMagnitudes: [Float] {
-        fftMagnitudes.lazy.enumerated().compactMap { (index, magnitude) in
-            index.isMultiple(of: Constants.downSampleFactor) ? magnitude : nil
-        }
-    }
-    
-    private let bufferSize = 8192
-    private var fftSetup: OpaquePointer?
     
     // Running state
     private var isRunning = false
@@ -113,11 +101,6 @@ final class SpeechTranscriber: NSObject {
         
         mixer.removeTap(onBus: 0)
         engine.stop()
-        fftMagnitudes = [Float](repeating: 0, count: Constants.sampleAmount)
-        if let setup = fftSetup {
-            vDSP_DFT_DestroySetup(setup)
-            fftSetup = nil
-        }
         
         guard ws != nil else {
             completeStop()
@@ -165,8 +148,6 @@ final class SpeechTranscriber: NSObject {
         
         mixer.removeTap(onBus: 0)
         engine.stop()
-        
-        fftMagnitudes = [Float](repeating: 0, count: Constants.sampleAmount)
     }
     
     func resume(url: URL) throws {
@@ -216,9 +197,6 @@ final class SpeechTranscriber: NSObject {
     private func startEngine() throws {
         let input = engine.inputNode
         let inputFormat = input.inputFormat(forBus: 0)
-        if fftSetup == nil {
-            fftSetup = vDSP_DFT_zop_CreateSetup(nil, UInt(self.bufferSize), .FORWARD)
-        }
         
         guard let mixerFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32,
                                               sampleRate: targetSampleRate,
@@ -246,19 +224,6 @@ final class SpeechTranscriber: NSObject {
                   self.isRunning,
                   !self.isPaused,
                   !self.isDraining else { return }
-            
-            let level = self.rmsLevel(from: buffer)
-            self.delegate?.streamerDidUpdateLevel(level)
-            
-            if let channel = buffer.floatChannelData?.pointee {
-                let frameCount = Int(buffer.frameLength)
-                var floatData = [Float](repeating: 0, count: self.bufferSize)
-                let copyCount = min(frameCount, self.bufferSize)
-                floatData.replaceSubrange(0..<copyCount, with: UnsafeBufferPointer(start: channel, count: copyCount))
-                Task { @MainActor in
-                    self.fftMagnitudes = await self.performFFT(data: floatData)
-                }
-            }
             
             guard let src = buffer.floatChannelData?.pointee else { return }
             let n = Int(buffer.frameLength)
@@ -341,52 +306,6 @@ final class SpeechTranscriber: NSObject {
             }
         }
     }
-    
-    private func rmsLevel(from buffer: AVAudioPCMBuffer) -> Float {
-        guard let floatData = buffer.floatChannelData?.pointee else { return 0 }
-        let n = Int(buffer.frameLength)
-        if n == 0 { return 0 }
-        var sum: Float = 0
-        for i in 0..<n { sum += floatData[i] * floatData[i] }
-        let rms = sqrt(sum / Float(n))
-        return min(max(rms * 4.0, 0), 1)
-    }
-    
-    // MARK: - FFT
-    func performFFT(data: [Float]) async -> [Float] {
-        guard let setup = fftSetup else {
-            return [Float](repeating: 0, count: Constants.sampleAmount)
-        }
-        
-        var realIn = data
-        if realIn.count < bufferSize {
-            realIn += [Float](repeating: 0, count: bufferSize - realIn.count)
-        } else if realIn.count > bufferSize {
-            realIn = Array(realIn.prefix(bufferSize))
-        }
-        
-        var imagIn = [Float](repeating: 0, count: bufferSize)
-        var realOut = [Float](repeating: 0, count: bufferSize)
-        var imagOut = [Float](repeating: 0, count: bufferSize)
-        var magnitudes = [Float](repeating: 0, count: Constants.sampleAmount)
-        
-        realIn.withUnsafeMutableBufferPointer { realInPtr in
-            imagIn.withUnsafeMutableBufferPointer { imagInPtr in
-                realOut.withUnsafeMutableBufferPointer { realOutPtr in
-                    imagOut.withUnsafeMutableBufferPointer { imagOutPtr in
-                        vDSP_DFT_Execute(setup,
-                                         realInPtr.baseAddress!, imagInPtr.baseAddress!,
-                                         realOutPtr.baseAddress!, imagOutPtr.baseAddress!)
-                        var complex = DSPSplitComplex(realp: realOutPtr.baseAddress!,
-                                                      imagp: imagOutPtr.baseAddress!)
-                        vDSP_zvabs(&complex, 1, &magnitudes, 1, UInt(Constants.sampleAmount))
-                    }
-                }
-            }
-        }
-        
-        return magnitudes.map { min($0, Constants.magnitudeLimit) }
-    }
 }
 
 extension SpeechTranscriber: URLSessionWebSocketDelegate {
@@ -404,3 +323,4 @@ extension SpeechTranscriber: URLSessionWebSocketDelegate {
         }
     }
 }
+

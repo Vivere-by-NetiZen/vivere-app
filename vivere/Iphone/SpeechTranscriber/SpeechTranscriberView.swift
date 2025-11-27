@@ -59,9 +59,7 @@ struct SpeechTranscriberView: View {
                                 .frame(minHeight: 410)
                             }
                         } else if !viewModel.suggestions.isEmpty {
-                            // Swipeable suggestion card with dots INSIDE the card
                             ZStack(alignment: .bottom) {
-                                // Card with swipe translation
                                 InitialQuestionCard(
                                     title: "Saran Tanggapan",
                                     question: currentSuggestion
@@ -71,7 +69,6 @@ struct SpeechTranscriberView: View {
                                 .offset(x: dragOffset)
                                 .animation(.easeOut(duration: 0.18), value: dragOffset)
 
-                                // Page indicator (dots) INSIDE the card at the bottom
                                 HStack(spacing: 8) {
                                     ForEach(viewModel.suggestions.indices, id: \.self) { idx in
                                         Circle()
@@ -79,13 +76,11 @@ struct SpeechTranscriberView: View {
                                             .frame(width: 10, height: 10)
                                     }
                                 }
-                                .padding(.bottom, 56) // inside the white card near bottom
+                                .padding(.bottom, 56)
                             }
-                            // Apply gesture to the whole card stack
                             .gesture(
                                 DragGesture(minimumDistance: 20, coordinateSpace: .local)
                                     .updating($dragOffset, body: { value, state, _ in
-                                        // Limit visual drag to keep it subtle
                                         state = max(-40, min(40, value.translation.width))
                                     })
                                     .onEnded { value in

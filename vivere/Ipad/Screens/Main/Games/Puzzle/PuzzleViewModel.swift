@@ -50,7 +50,9 @@ class PuzzleViewModel: ObservableObject {
         // Build puzzle from featured image
         setupPuzzle(screenSize: screenSize, using: result.featuredImage)
 
-        // normalizedImage is now set within setupPuzzle
+        // Keep normalizedImage for reference overlay / external usage
+        normalizedImage = result.featuredImage
+        ReminiscenceTherapyViewModel.shared.getInitialQuestion(image: result.featuredImage)
 
         // If you still use this flag elsewhere to trigger sending, keep it
         // Otherwise you can remove this line and the property
