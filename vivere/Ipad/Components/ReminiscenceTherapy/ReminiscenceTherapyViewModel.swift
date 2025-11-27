@@ -209,6 +209,7 @@ final class ReminiscenceTherapyViewModel: SpeechTranscriberDelegate {
                     self?.initialQuestion = decoded.question
                     self?.isFetchingInitialQuestions = false
                 }
+                print("Done fetching initial question")
             } catch {
                 await MainActor.run {
                     self?.errorMessage = "Failed to fetch initial questions: \(error.localizedDescription)"

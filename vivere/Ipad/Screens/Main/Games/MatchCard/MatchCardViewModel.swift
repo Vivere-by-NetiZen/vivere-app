@@ -46,6 +46,7 @@ class MatchCardViewModel: ObservableObject {
 
         // Use the featured image as normalizedImage (if you still need to trigger sending, keep the flag)
         normalizedImage = result.featuredImage
+        completionImage = result.featuredModel
         ReminiscenceTherapyViewModel.shared.getInitialQuestion(image: result.featuredImage)
         triggerSendToIphone = true
     }
