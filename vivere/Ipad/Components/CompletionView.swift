@@ -12,14 +12,16 @@ import SwiftData
 
 struct CompletionView: View {
     let imageModel: ImageModel?
+    let image: UIImage?
 
     @State private var confettiTrigger: Int = 0
     @State private var showReminiscenceTherapy = false
     @State private var path = NavigationPath()
     @Environment(\.dismiss) private var dismiss
 
-    init(imageModel: ImageModel? = nil) {
+    init(imageModel: ImageModel? = nil, image: UIImage? = nil) {
         self.imageModel = imageModel
+        self.image = image
     }
 
     var body: some View {
@@ -112,7 +114,7 @@ struct CompletionView: View {
                 }
             }
             .navigationDestination(isPresented: $showReminiscenceTherapy) {
-                ReminiscenceTherapyView(imageModel: imageModel)
+                ReminiscenceTherapyView(imageModel: imageModel, fallbackImage: image)
             }
         }
     }

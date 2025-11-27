@@ -10,25 +10,25 @@ import SwiftData
 
 struct MatchCardView: View {
     @StateObject private var viewModel = MatchCardViewModel()
-    
+
     @State private var isCompleted: Bool = false
     @State var showCompletionView: Bool = false
     @State var isTutorialShown: Bool = false
     @State var isMatchedImageShown: Bool = false
     @State var isExitConfirmationShown: Bool = false
-    
+
     @Environment(MPCManager.self) private var mpc
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query private var images: [ImageModel]
-    
+
     let col = 3
-    
+
     var body: some View {
         ZStack {
             Color.viverePrimary
                 .ignoresSafeArea(.all)
-            
+
             VStack {
                 HStack {
                     Image(systemName: "chevron.left")
@@ -58,7 +58,7 @@ struct MatchCardView: View {
                         .padding(40)
                 }
                 .frame(maxWidth: .infinity)
-                
+
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: col)) {
                     ForEach(viewModel.cards) { card in
                         CardView(card: card)
@@ -67,10 +67,10 @@ struct MatchCardView: View {
                             }
                     }
                 }.frame(maxWidth: 260*3 + 10*2) // card width + space in between
-                
+
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            
+
             ZStack {
                 if isMatchedImageShown {
                     ZStack {
@@ -96,15 +96,15 @@ struct MatchCardView: View {
                 }
 
             }
-                        
+
             if isTutorialShown {
                 MatchCardTutorialSheetView(isPresented: $isTutorialShown)
             }
-            
+
             if isExitConfirmationShown {
                 ExitGameConfirmationView(isPresented: $isExitConfirmationShown)
             }
-            
+
         }
         .onAppear {
             Task {
@@ -138,10 +138,10 @@ struct MatchCardView: View {
         }
         .navigationBarBackButtonHidden(true)
         .fullScreenCover(isPresented: $showCompletionView) {
-            CompletionView(imageModel: viewModel.completionImage)
+            CompletionView(imageModel: viewModel.completionImage, image: viewModel.normalizedImage)
         }
     }
-    
+
 }
 
 //#Preview {
