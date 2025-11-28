@@ -46,6 +46,14 @@ struct ReminiscenceTherapyView: View {
     
     @State private var isPanelOnRight: Bool = true
     @State private var isPanelVisible: Bool = false
+    @State private var confettiTrigger: Int = 0
+    var shouldTriggerConfetti: Bool = false
+
+    init(imageModel: ImageModel? = nil, fallbackImage: UIImage? = nil, shouldTriggerConfetti: Bool = false) {
+        self.imageModel = imageModel
+        _fallbackImage = State(initialValue: fallbackImage)
+        self.shouldTriggerConfetti = shouldTriggerConfetti
+    }
     
     var body: some View {
         ZStack {
@@ -74,6 +82,41 @@ struct ReminiscenceTherapyView: View {
             
             DebugMenuView()
                 .zIndex(1000)
+
+            // Confetti Layer
+            VStack {
+                Spacer()
+                HStack {
+                    Color.clear
+                        .frame(width: 10, height: 10)
+                        .confettiCannon(
+                            trigger: $confettiTrigger,
+                            num: 50,
+                            openingAngle: Angle.degrees(0),
+                            closingAngle: Angle.degrees(90),
+                            radius: 800,
+                            repetitions: 3,
+                            repetitionInterval: 0.5
+                        )
+
+                    Spacer()
+
+                    // Right cannon (bottom-right corner)
+                    Color.clear
+                        .frame(width: 10, height: 10)
+                        .confettiCannon(
+                            trigger: $confettiTrigger,
+                            num: 50,
+                            openingAngle: Angle.degrees(90),
+                            closingAngle: Angle.degrees(180),
+                            radius: 800,
+                            repetitions: 3,
+                            repetitionInterval: 0.5
+                        )
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            .allowsHitTesting(false) // Let touches pass through
         }
         .overlay {
             if showEndSessionAlert {
@@ -141,6 +184,9 @@ struct ReminiscenceTherapyView: View {
         .ignoresSafeArea()
         .navigationBarBackButtonHidden(true)
         .onAppear {
+            if shouldTriggerConfetti {
+                confettiTrigger += 1
+            }
             loadVideo()
             loadFallbackImage()
             refreshFeaturedEmotionSnapshot()
