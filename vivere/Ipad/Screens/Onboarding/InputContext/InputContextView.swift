@@ -37,22 +37,6 @@ struct InputContextView: View {
             .padding()
 
             VStack {
-                if isOnboarding {
-                    HStack {
-                        Image("progressStepper1")
-                        Line()
-                            .stroke(style: StrokeStyle(lineWidth: 4, dash: [15]))
-                            .frame(height: 1)
-                        Image("progressStepper2")
-                        Line()
-                            .stroke(style: StrokeStyle(lineWidth: 4, dash: [15]))
-                            .frame(height: 1)
-                        Image("progressStepper3")
-                    }
-                    .frame(maxWidth: 400)
-                    .padding()
-                }
-
                 HStack {
                     VStack {
                         if let image = viewModel.currentImage {
