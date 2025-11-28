@@ -19,20 +19,6 @@ struct DeviceConnectionView: View {
             Color.viverePrimary.ignoresSafeArea(edges: .all)
 
             VStack(spacing: 32) {
-                HStack {
-                    Image("progressStepper1")
-                    Line()
-                        .stroke(style: StrokeStyle(lineWidth: 4, dash: [15]))
-                        .frame(height: 1)
-                    Image("progressStepper2")
-                        .saturation(0)
-                    Line()
-                        .stroke(style: StrokeStyle(lineWidth: 4, dash: [15]))
-                        .frame(height: 1)
-                    Image("progressStepper3")
-                        .saturation(0)
-                }
-                .frame(maxWidth: 400)
 
                 Image("downloadVivere")
                     .frame(width: 300, height: 300)

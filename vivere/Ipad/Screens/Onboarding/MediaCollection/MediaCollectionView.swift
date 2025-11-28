@@ -18,21 +18,6 @@ struct MediaCollectionView: View {
             Color.viverePrimary.ignoresSafeArea(edges: .all)
 
             VStack (spacing: 24) {
-                HStack {
-                    Image("progressStepper1")
-                    Line()
-                        .stroke(style: StrokeStyle(lineWidth: 4, dash: [15]))
-                        .frame(height: 1)
-                    Image("progressStepper2")
-                    Line()
-                        .stroke(style: StrokeStyle(lineWidth: 4, dash: [15]))
-                        .frame(height: 1)
-                    Image("progressStepper3")
-                        .saturation(0)
-                }
-                .frame(maxWidth: 400)
-                .padding()
-
                 VStack(spacing: 32){
                     Image("addMemories")
                         .frame(width: 300, height: 300)
