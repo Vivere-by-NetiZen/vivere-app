@@ -134,7 +134,11 @@ struct PuzzleView: View {
 //            }
             .navigationBarBackButtonHidden(true)
             .fullScreenCover(isPresented: $showCompletionView) {
-                CompletionView(imageModel: viewModel.selectedImageModel, image: viewModel.normalizedImage)
+                ReminiscenceTherapyView(
+                    imageModel: viewModel.selectedImageModel,
+                    fallbackImage: viewModel.normalizedImage,
+                    shouldTriggerConfetti: true
+                )
             }
         }
     }
