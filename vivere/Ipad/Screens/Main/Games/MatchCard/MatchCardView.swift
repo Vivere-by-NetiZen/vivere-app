@@ -17,7 +17,7 @@ struct MatchCardView: View {
     @State var isMatchedImageShown: Bool = false
     @State var isExitConfirmationShown: Bool = false
 
-    @Environment(MPCManager.self) private var mpc
+//    @Environment(MPCManager.self) private var mpc
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query private var images: [ImageModel]

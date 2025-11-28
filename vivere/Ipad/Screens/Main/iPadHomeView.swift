@@ -26,7 +26,7 @@ struct iPadHomeView: View {
     @AppStorage("hasShownInstructionsAutomatically") private var hasShownInstructionsAutomatically: Bool = false
     @AppStorage("debugAlwaysShowInstructions") private var debugAlwaysShowInstructions: Bool = false
 
-    @Environment(MPCManager.self) private var mpc
+//    @Environment(MPCManager.self) private var mpc
     @Environment(\.modelContext) private var modelContext
     @Query private var images: [ImageModel]
 
@@ -66,11 +66,11 @@ struct iPadHomeView: View {
                                 Label("Instruksi Penggunaan", systemImage: "book")
                             }
 
-                            Button {
-                                showPairDevice = true
-                            } label: {
-                                Label("Koneksi iPhone", systemImage: "iphone")
-                            }
+//                            Button {
+//                                showPairDevice = true
+//                            } label: {
+//                                Label("Koneksi iPhone", systemImage: "iphone")
+//                            }
                         } label: {
                             ZStack {
                                 RoundedRectangle(cornerRadius: 32)
@@ -203,10 +203,10 @@ struct iPadHomeView: View {
             .navigationDestination(isPresented: $addNewImagesDetailTrigger) {
                 InputContextView(imagesIds: imageIds, isOnboarding: false)
             }
-            .sheet(isPresented: $showPairDevice) {
-                PairDeviceSheetView()
-                    .environment(mpc)
-            }
+//            .sheet(isPresented: $showPairDevice) {
+//                PairDeviceSheetView()
+////                    .environment(mpc)
+//            }
             .sheet(isPresented: $showInstructionsSheet) {
                 InstructionSheetView()
                     .onDisappear {
@@ -235,92 +235,92 @@ struct iPadHomeView: View {
                     OnboardingView()
                 }
             }
-            .onReceive(NotificationCenter.default.publisher(for: .moodUpdate)) { notification in
-                if let value = notification.userInfo?["value"] as? String {
-                    Task { @MainActor in
-                        try? await MoodProcessingService.updateFeaturedModelEmotion(to: value, in: modelContext)
-                    }
-                } else if
-                    let userInfo = notification.userInfo,
-                    let id = userInfo["id"] as? UUID,
-                    let emotion = userInfo["emotion"] as? Emotion {
-                    do {
-                        let descriptor = FetchDescriptor<ImageModel>()
-                        if let images = try? modelContext.fetch(descriptor),
-                           let model = images.first(where: { $0.id == id }) {
-                            model.emotion = emotion
-                            try? modelContext.save()
-                            #if DEBUG
-                            print("✅ Updated emotion for featured ImageModel \(id) to \(emotion)")
-                            #endif
-                        } else {
-                            #if DEBUG
-                            print("⚠️ Featured ImageModel with id \(id) not found")
-                            #endif
-                        }
-                    }
-                }
-            }
+//            .onReceive(NotificationCenter.default.publisher(for: .moodUpdate)) { notification in
+//                if let value = notification.userInfo?["value"] as? String {
+//                    Task { @MainActor in
+//                        try? await MoodProcessingService.updateFeaturedModelEmotion(to: value, in: modelContext)
+//                    }
+//                } else if
+//                    let userInfo = notification.userInfo,
+//                    let id = userInfo["id"] as? UUID,
+//                    let emotion = userInfo["emotion"] as? Emotion {
+//                    do {
+//                        let descriptor = FetchDescriptor<ImageModel>()
+//                        if let images = try? modelContext.fetch(descriptor),
+//                           let model = images.first(where: { $0.id == id }) {
+//                            model.emotion = emotion
+//                            try? modelContext.save()
+//                            #if DEBUG
+//                            print("✅ Updated emotion for featured ImageModel \(id) to \(emotion)")
+//                            #endif
+//                        } else {
+//                            #if DEBUG
+//                            print("⚠️ Featured ImageModel with id \(id) not found")
+//                            #endif
+//                        }
+//                    }
+//                }
+//            }
         }
     }
 }
 
-struct PairDeviceSheetView: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var isNextPressed: Bool = false
-    @State private var isPaired: Bool = false
-    @Environment(MPCManager.self) private var mpc
-
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.viverePrimary.ignoresSafeArea(edges: .all)
-
-                VStack(spacing: 30) {
-                    HStack {
-                        Spacer()
-                        Button {
-                            dismiss()
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.title2)
-                                .foregroundColor(.white)
-                        }
-                        .padding()
-                    }
-
-                    if !isNextPressed {
-                        VStack(spacing: 16) {
-                            Text("Hubungkan Perangkat Anda")
-                                .font(.largeTitle)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
-
-                            Text("Tekan tombol \"hubungkan\" di bawah lalu dekatkan iPad dengan iPhone, perangkat akan otomatis terhubung satu sama lain.")
-                                .font(.body)
-                                .foregroundColor(.white)
-                                .multilineTextAlignment(.center)
-                                .lineLimit(nil)
-                                .padding(.horizontal, 40)
-                        }
-
-                        CustomIpadButton(label: "Mulai Pencarian", color: .accent, style: .large) {
-                            isNextPressed = true
-                        }
-                    } else {
-                        PairDeviceView(isNextPressed: $isNextPressed, isPaired: $isPaired)
-                            .onChange(of: isPaired) { _, newValue in
-                                if newValue {
-                                    dismiss()
-                                }
-                            }
-                    }
-
-                    Spacer()
-                }
-            }
-            .navigationBarBackButtonHidden(true)
-        }
-    }
-}
+//struct PairDeviceSheetView: View {
+//    @Environment(\.dismiss) private var dismiss
+//    @State private var isNextPressed: Bool = false
+//    @State private var isPaired: Bool = false
+////    @Environment(MPCManager.self) private var mpc
+//
+//    var body: some View {
+//        NavigationStack {
+//            ZStack {
+//                Color.viverePrimary.ignoresSafeArea(edges: .all)
+//
+//                VStack(spacing: 30) {
+//                    HStack {
+//                        Spacer()
+//                        Button {
+//                            dismiss()
+//                        } label: {
+//                            Image(systemName: "xmark.circle.fill")
+//                                .font(.title2)
+//                                .foregroundColor(.white)
+//                        }
+//                        .padding()
+//                    }
+//
+//                    if !isNextPressed {
+//                        VStack(spacing: 16) {
+//                            Text("Hubungkan Perangkat Anda")
+//                                .font(.largeTitle)
+//                                .fontWeight(.bold)
+//                                .foregroundColor(.white)
+//
+//                            Text("Tekan tombol \"hubungkan\" di bawah lalu dekatkan iPad dengan iPhone, perangkat akan otomatis terhubung satu sama lain.")
+//                                .font(.body)
+//                                .foregroundColor(.white)
+//                                .multilineTextAlignment(.center)
+//                                .lineLimit(nil)
+//                                .padding(.horizontal, 40)
+//                        }
+//
+//                        CustomIpadButton(label: "Mulai Pencarian", color: .accent, style: .large) {
+//                            isNextPressed = true
+//                        }
+//                    } else {
+//                        PairDeviceView(isNextPressed: $isNextPressed, isPaired: $isPaired)
+//                            .onChange(of: isPaired) { _, newValue in
+//                                if newValue {
+//                                    dismiss()
+//                                }
+//                            }
+//                    }
+//
+//                    Spacer()
+//                }
+//            }
+//            .navigationBarBackButtonHidden(true)
+//        }
+//    }
+//}
 

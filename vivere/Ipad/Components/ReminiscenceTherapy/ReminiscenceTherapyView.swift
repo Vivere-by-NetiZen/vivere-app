@@ -118,7 +118,6 @@ struct ReminiscenceTherapyView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             .allowsHitTesting(false) // Let touches pass through
         }
-//        .ignoresSafeArea()
         .overlay {
             if showEndSessionAlert {
                 ZStack {
@@ -234,7 +233,7 @@ struct ReminiscenceTherapyView: View {
             }
         }
         .task {
-            await Task.yield()
+            //            await Task.yield()
             viewModel.toggle(resume: false)
         }
     }
@@ -299,22 +298,13 @@ struct ReminiscenceTherapyView: View {
                 .background(
                     LinearGradient(
                         stops: [
-                            Gradient.Stop(color: .gray100, location: 0.18),
+                            Gradient.Stop(color: Color(hex: "#d8e0f4"), location: 0.18),
                             Gradient.Stop(color: .white, location: 0.70),
                         ],
                         startPoint: UnitPoint(x: 0.5, y: 1.03),
                         endPoint: UnitPoint(x: 0.5, y: 0.1)
                     )
                 )
-                .background(LinearGradient(
-                    stops: [
-                        Gradient.Stop(color: Color(hex: "#6594D8"), location: 0.33),
-                        Gradient.Stop(color: .gray100, location: 0.60),
-                        Gradient.Stop(color: .white, location: 0.83),
-                    ],
-                    startPoint: UnitPoint(x: 0.5, y: 1.66),
-                    endPoint: UnitPoint(x: 0.5, y: -0.23)
-                ))
                 .cornerRadius(20)
                 .padding()
                 .transition(.move(edge: isPanelOnRight ? .trailing : .leading).combined(with: .opacity))
