@@ -81,7 +81,7 @@ struct PrivacyPolicyView: View {
             }
             .navigationBarBackButtonHidden(true)
             .navigationDestination(isPresented: $isNextPressed) {
-                DeviceConnectionView()
+                MediaCollectionView()
             }
         }
     }

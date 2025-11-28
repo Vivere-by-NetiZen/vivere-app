@@ -64,7 +64,7 @@ struct SidePanel: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .listRowBackground(
                             RoundedRectangle(cornerRadius: 20)
-                                .fill(.thinMaterial)
+                                .fill(Color(hex: "#d8e0f4").opacity(0.8))
                         )
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
@@ -93,19 +93,18 @@ struct SidePanel: View {
                     .disabled(viewModel.isFetchingSuggestion)
                 } else {
                     Button(action: {
-                        suggestionIndex = 0
                         viewModel.getSuggestions()
                         hasRequestSuggestion = true
                     }) {
-                        HStack(spacing: 8) {
-                            Text("Saran Tanggapan")
-                                .font(.headline)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
+                        Label("Refresh Tanggapan", systemImage: "arrow.clockwise")
+                            .font(.callout.weight(.medium))
+                            .foregroundStyle(.black)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 4)
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(.accentColor)
+                    .buttonBorderShape(.roundedRectangle(radius: 8))
+                    .tint(.white.opacity(0.7))
                     .disabled(viewModel.isFetchingSuggestion || (viewModel.partialTranscript.isEmpty && viewModel.finalTranscripts.isEmpty))
                 }
             }

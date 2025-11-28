@@ -17,7 +17,7 @@ struct PuzzleView: View {
     @State var isTutorialShown: Bool = false
     @State var isExitConfirmationShown: Bool = false
 
-    @Environment(MPCManager.self) private var mpc
+//    @Environment(MPCManager.self) private var mpc
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query private var images: [ImageModel]
@@ -138,26 +138,6 @@ struct PuzzleView: View {
             }
         }
     }
-
-    // MARK: - MPC send
-    func sendImageForInitialQuestion(_ image: UIImage) {
-        // Prefer JPEG to keep payload smaller; adjust quality as needed
-        guard let data = image.jpegData(compressionQuality: 0.8) ?? image.pngData() else {
-            return
-        }
-        // Simple envelope: 4 bytes length of "type" + utf8 type + payload
-        let type = "initial_question_image"
-        guard let typeData = type.data(using: .utf8) else { return }
-
-            var envelope = Data()
-            var typeLen = UInt32(typeData.count).bigEndian
-            withUnsafeBytes(of: &typeLen) { envelope.append(contentsOf: $0) }
-            envelope.append(typeData)
-            envelope.append(data)
-
-            mpc.send(data: envelope)
-            print("Sent image to iphone")
-        }
 }
 
 #Preview {
