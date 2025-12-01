@@ -49,9 +49,6 @@ struct IpadView: View {
                     }
             }
         }
-        .onChange(of: hasCompletedIpadOnboarding) { _, newValue in
-            // no-op; kept to make intent explicit
-        }
         .onReceive(NotificationCenter.default.publisher(for: .didReachIpadHome)) { _ in
             hasCompletedIpadOnboarding = true
         }
