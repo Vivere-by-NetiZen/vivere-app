@@ -18,5 +18,7 @@
 	</dict>
 	<key>WS_BASE_URL</key>
 	<string>wss://server-macro.bunny-kitchen.ts.net</string>
+	<key>UIRequiresFullScreen</key>
+	<true/>
 </dict>
 </plist>
