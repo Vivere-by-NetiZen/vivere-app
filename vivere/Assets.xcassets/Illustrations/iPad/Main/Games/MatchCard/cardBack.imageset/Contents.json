@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "memoryCardBack.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
