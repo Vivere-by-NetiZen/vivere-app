@@ -39,24 +39,26 @@ class PuzzleViewModel: ObservableObject {
         // If already prepared, skip
         if normalizedImage != nil && !pieces.isEmpty { return }
 
-        // Use PhotosSelectionService singleton to pick images
+        // Fast path: use prefetch cache if available
+        if let cached = await PhotosSelectionService.shared.getLastSelection() {
+            selectedImageModel = cached.featuredModel
+            setupPuzzle(screenSize: screenSize, using: cached.featuredImage)
+            normalizedImage = cached.featuredImage
+            ReminiscenceTherapyViewModel.shared.getInitialQuestion(image: cached.featuredImage)
+            triggerSendToIphone = true
+            return
+        }
+
+        // Fallback: pick now (previous behavior)
         guard let result = await PhotosSelectionService.shared.pickImages(from: images, count: 1) else {
             return
         }
 
-        // Store selected ImageModel for passing to completion view
         selectedImageModel = result.featuredModel
-
-        // Build puzzle from featured image
         setupPuzzle(screenSize: screenSize, using: result.featuredImage)
-
-        // Keep normalizedImage for reference overlay / external usage
         normalizedImage = result.featuredImage
         ReminiscenceTherapyViewModel.shared.getInitialQuestion(image: result.featuredImage)
-
-        // If you still use this flag elsewhere to trigger sending, keep it
-        // Otherwise you can remove this line and the property
-         triggerSendToIphone = true
+        triggerSendToIphone = true
     }
 
     // Setup puzzle with two-area layout: puzzle board on left, pieces area on right

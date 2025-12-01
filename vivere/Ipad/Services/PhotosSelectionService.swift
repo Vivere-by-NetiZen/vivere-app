@@ -34,7 +34,7 @@ actor PhotosSelectionService {
             return nil
         }
 
-        // Choose N models (or as many as available)
+        // Choose N models uniformly (or as many as available)
         let chosenModels = Array(allModels.shuffled().prefix(max(1, count)))
         var images: [UIImage] = []
         images.reserveCapacity(chosenModels.count)
@@ -48,8 +48,8 @@ actor PhotosSelectionService {
             }
         }
 
-        // Pick a featured one from the chosen set
-        guard let featuredIndex = chosenModels.indices.randomElement() else { return nil }
+        // Pick a featured one from the chosen set using emotion weights
+        guard let featuredIndex = weightedIndex(in: chosenModels) else { return nil }
         let featuredModel = chosenModels[featuredIndex]
         let featuredImage = images[featuredIndex]
         print("picked image")
@@ -133,5 +133,32 @@ actor PhotosSelectionService {
         return renderer.image { _ in
             image.draw(in: CGRect(origin: .zero, size: image.size))
         }
+    }
+
+    // MARK: - Emotion weighting (for featured selection)
+
+    // Tune these weights as you like (happy > neutral > sad)
+    private func weight(for emotion: Emotion) -> Int {
+        switch emotion {
+        case .happy: return 10
+        case .neutral: return 3
+        case .sad: return 1
+        }
+    }
+
+    // Returns an index into models chosen by weights. Nil if empty or all weights zero.
+    private func weightedIndex(in models: [ImageModel]) -> Int? {
+        guard !models.isEmpty else { return nil }
+        let weights = models.map { weight(for: $0.emotion) }
+        let total = weights.reduce(0, +)
+        guard total > 0 else { return nil }
+
+        var pick = Int.random(in: 1...total)
+        for (idx, w) in weights.enumerated() {
+            pick -= w
+            if pick <= 0 { return idx }
+        }
+        // Fallback (should not happen)
+        return models.indices.randomElement()
     }
 }

@@ -31,6 +31,16 @@ class MatchCardViewModel: ObservableObject {
             print("ImageModel in SwiftData not enough.")
             return
         }
+        
+        if let cached = await PhotosSelectionService.shared.getLastSelection() {
+            selectedImages = cached.selectedImages
+            selectedImageModels = cached.selectedModels
+            setupCards()
+            normalizedImage = cached.featuredImage
+            completionImage = cached.featuredModel
+            ReminiscenceTherapyViewModel.shared.getInitialQuestion(image: cached.featuredImage)
+            return
+        }
 
         // Ask the singleton to pick 3 images and choose a featured one among them
         guard let result = await PhotosSelectionService.shared.pickImages(from: images, count: 3) else {
@@ -48,7 +58,6 @@ class MatchCardViewModel: ObservableObject {
         normalizedImage = result.featuredImage
         completionImage = result.featuredModel
         ReminiscenceTherapyViewModel.shared.getInitialQuestion(image: result.featuredImage)
-        triggerSendToIphone = true
     }
 
     func setupCards() {
