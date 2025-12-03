@@ -113,8 +113,9 @@ class VideoGenerationService {
 
         // 2. Upload Loop with AsyncUtils
         return try await AsyncUtils.withRetry(
-            timeout: 5 * 60, // 5 minutes
-            retryInterval: 10,
+            timeout: 15 * 60, // Increase total timeout to 15 minutes for better persistence
+            retryInterval: 5, // Start faster
+            backoffFactor: 2.0, // Exponential backoff (5s, 10s, 20s, 40s...)
             operationDescription: "Video Upload",
             shouldRetry: { error in
                 // Don't retry invalid image errors

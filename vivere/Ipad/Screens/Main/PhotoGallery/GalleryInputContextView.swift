@@ -164,7 +164,7 @@ struct GalleryInputContextView: View {
                 let imgData = ImageModel(
                     assetId: viewModel.imageIdentifiers[i],
                     context: viewModel.imageContexts[i],
-                    operationId: nil // Will be updated in background
+                    operationId: "PENDING_UPLOAD" // Mark as pending to prevent duplicate uploads
                 )
                 modelContext.insert(imgData)
             }
