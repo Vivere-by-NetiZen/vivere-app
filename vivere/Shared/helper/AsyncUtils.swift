@@ -24,12 +24,14 @@ struct AsyncUtils {
     /// - Parameters:
     ///   - timeout: Total duration to keep retrying (default 5 minutes)
     ///   - retryInterval: Time to wait between retries (default 10 seconds)
+    ///   - backoffFactor: Multiplier for retry interval after each failure (default 1.0 = constant)
     ///   - operationDescription: Description for logging (e.g. "Upload image")
     ///   - shouldRetry: Optional closure to determine if a specific error should trigger a retry. Returns true by default.
     ///   - operation: The async operation to perform
     static func withRetry<T>(
         timeout: TimeInterval = 300,
         retryInterval: TimeInterval = 10,
+        backoffFactor: Double = 1.0,
         operationDescription: String = "Operation",
         shouldRetry: ((Error) -> Bool)? = nil,
         operation: () async throws -> T
@@ -37,6 +39,7 @@ struct AsyncUtils {
         let startTime = CFAbsoluteTimeGetCurrent()
         var attempt = 0
         var lastError: Error?
+        var currentInterval = retryInterval
 
         while (CFAbsoluteTimeGetCurrent() - startTime) < timeout {
             attempt += 1
@@ -57,10 +60,13 @@ struct AsyncUtils {
                 let elapsed = CFAbsoluteTimeGetCurrent() - startTime
                 let remaining = max(0, timeout - elapsed)
                 print("⚠️ \(operationDescription) failed (Attempt \(attempt)): \(error.localizedDescription)")
-                print("   Retrying in \(Int(retryInterval))s... (Time remaining: \(Int(remaining))s)")
+                print("   Retrying in \(Int(currentInterval))s... (Time remaining: \(Int(remaining))s)")
                 #endif
 
-                try? await Task.sleep(nanoseconds: UInt64(retryInterval * 1_000_000_000))
+                try? await Task.sleep(nanoseconds: UInt64(currentInterval * 1_000_000_000))
+
+                // Increase interval for next retry
+                currentInterval *= backoffFactor
             }
         }
 

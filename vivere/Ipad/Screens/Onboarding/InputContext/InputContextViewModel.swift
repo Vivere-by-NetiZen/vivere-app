@@ -247,7 +247,7 @@ class InputContextViewModel {
                     if let existingModel = matches.first {
                         // Update the first match
                         existingModel.context = context
-                        existingModel.operationId = nil // Reset for new generation
+                        existingModel.operationId = "PENDING_UPLOAD" // Mark as pending to prevent duplicate uploads
                         #if DEBUG
                         print("🔄 Updating existing model for asset: \(assetId)")
                         #endif
@@ -264,7 +264,7 @@ class InputContextViewModel {
                         let imgData = ImageModel(
                             assetId: assetId,
                             context: context,
-                            operationId: nil // Will be updated in background
+                            operationId: "PENDING_UPLOAD" // Mark as pending to prevent duplicate uploads
                         )
                         modelContext.insert(imgData)
                     }

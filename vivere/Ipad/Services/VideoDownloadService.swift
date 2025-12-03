@@ -231,6 +231,10 @@ class VideoDownloadService {
             let images = try modelContext.fetch(descriptor)
             for image in images {
                 if let operationId = image.operationId {
+                    // Skip if currently uploading
+                    if operationId == "PENDING_UPLOAD" {
+                        continue
+                    }
                     startMonitoring(operationId: operationId)
                 } else {
                     // Case where image exists but upload hasn't started/finished
@@ -249,6 +253,9 @@ class VideoDownloadService {
 
     private func reuploadImageIfNeeded(_ imageModel: ImageModel, modelContext: ModelContext) async {
         guard imageModel.operationId == nil else { return }
+
+        // Double check if it's pending (in case it changed since check)
+        if imageModel.operationId == "PENDING_UPLOAD" { return }
 
         // Use PhotosSelectionService to get the image efficiently?
         // Or just re-fetch PHAsset here. Since we are in a background service, simpler is better.
