@@ -2,14 +2,14 @@
   
 # Vivere: Reminiscence Therapy Companion App (iPad Only)
 
-![Platform](https://img.shields.io/badge/platform-iPad-blue)
+![Platform](https://img.shields.io/badge/Platform-iPad-blue)
 ![iOS](https://img.shields.io/badge/iOS-17.6%2B-lightgrey)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![Xcode](https://img.shields.io/badge/Xcode-16-blue)
 
 ![License](https://img.shields.io/badge/license-MIT-green)
-[![Backend Repo](https://img.shields.io/badge/backend-repo-black)](https://github.com/Vivere-by-NetiZen/vivere-backend)
-[![TestFlight](https://img.shields.io/badge/TestFlight-Link-lightblue)](https://testflight.apple.com/join/placeholder)
+[![Backend Repo](https://img.shields.io/badge/Backend-Repo-black)](https://github.com/Vivere-by-NetiZen/vivere-backend)
+[![TestFlight](https://img.shields.io/badge/TestFlight-Link-lightblue)](https://testflight.apple.com/join/6fr2sVeB)
 
 </div>
 
