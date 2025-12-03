@@ -181,6 +181,24 @@ struct iPadHomeView: View {
                     }
                 }
                 .zIndex(0)
+
+                // Inline overlay for InstructionSheetView (replaces .sheet)
+                if showInstructionsSheet {
+                    ZStack {
+                        InstructionSheetView(onDismiss: {
+                            // Toggle visibility and persist flag when dismissed
+                            showInstructionsSheet = false
+                            if !debugAlwaysShowInstructions {
+                                hasShownInstructionsAutomatically = true
+                            }
+                        })
+                    }
+                    .transition(.opacity)
+                    .zIndex(2)
+                    .onReceive(NotificationCenter.default.publisher(for: .showInstructionsOnLaunch)) { _ in
+                        // no-op while visible
+                    }
+                }
             }
             .navigationBarBackButtonHidden(true)
             .navigationDestination(for: HomeDestination.self) { destination in
@@ -190,7 +208,7 @@ struct iPadHomeView: View {
                 case .photoGallery:
                     PhotoGalleryView()
                 case .instructions:
-                    EmptyView() // No longer used - InstructionSheetView is now a sheet
+                    EmptyView() // No longer used - InstructionSheetView is now an overlay
                 case .matchCard:
                     MatchCardView()
                 }
@@ -198,15 +216,7 @@ struct iPadHomeView: View {
             .navigationDestination(isPresented: $addNewImagesDetailTrigger) {
                 InputContextView(imagesIds: imageIds, isOnboarding: false)
             }
-            .sheet(isPresented: $showInstructionsSheet) {
-                InstructionSheetView()
-                    .onDisappear {
-                        // Mark as shown automatically only if debug mode is off
-                        if !debugAlwaysShowInstructions {
-                            hasShownInstructionsAutomatically = true
-                        }
-                    }
-            }
+            // Removed .sheet for InstructionSheetView to avoid sheet chrome/background
             .onReceive(NotificationCenter.default.publisher(for: .showInstructionsOnLaunch)) { _ in
                 // Show instructions when app launches (first install or debug mode)
                 showInstructionsSheet = true
@@ -226,10 +236,6 @@ struct iPadHomeView: View {
                     OnboardingView()
                 }
             }
-//            .task(id: images.map(\.id)) {
-//                // Whenever the image set changes, consider prefetching again if needed
-//                await prefetchPuzzleFeaturedIfNeeded()
-//            }
             .onAppear {
                 Task {
                     await prefetchPuzzleFeaturedIfNeeded()
